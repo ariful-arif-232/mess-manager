@@ -27,13 +27,18 @@
       if (!pendingEmail) return notify('Enter your email.');
 
       await run(async () => {
-        assertResult(await client.auth.signInWithOtp({
-          email: pendingEmail,
-          options: { shouldCreateUser: true }
-        }));
+        const response = await fetch(`${cfg.supabaseUrl}/functions/v1/request-mess-otp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: cfg.supabaseAnonKey,
+          },
+          body: JSON.stringify({ email: pendingEmail }),
+        });
+        if (!response.ok) throw new Error('Unable to send OTP right now.');
         sendButton.textContent = 'Resend OTP';
         codeInput.focus();
-      }, 'OTP sent.');
+      }, 'If this email belongs to an active member, an OTP has been sent.');
     });
 
     $('#verifyOtp').addEventListener('click', async () => {
@@ -44,18 +49,12 @@
       if (!/^\d{8}$/.test(token)) return notify('Enter the 8-digit OTP.');
 
       await run(async () => {
-        const authData = assertResult(await client.auth.verifyOtp({
-          email,
-          token,
-          type: 'email'
-        }));
-
+        const authData = assertResult(await client.auth.verifyOtp({ email, token, type: 'email' }));
         const authSession = authData?.session || (await client.auth.getSession()).data.session;
         if (!authSession) throw new Error('Login session was not created. Please request a new OTP.');
 
         const claim = await client.rpc('claim_member_by_email');
         if (claim.error && !String(claim.error.message || '').includes('already')) throw claim.error;
-
         location.reload();
       });
     });
