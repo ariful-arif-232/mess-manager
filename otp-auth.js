@@ -4,20 +4,12 @@
   let pendingEmail = '';
   const originalBootstrap = window.bootstrap;
 
-  async function claimAndLoad(authSession) {
-    if (!authSession?.user) return false;
-
-    const claim = await client.rpc('claim_member_by_email');
-    if (claim.error) console.warn('Member auto-link skipped:', claim.error.message);
-
-    await originalBootstrap(authSession);
-    document.querySelector('.toast')?.remove();
-    return Boolean(profile && mess);
-  }
-
   window.bootstrap = async function otpAwareBootstrap(authSession) {
-    if (!authSession) return originalBootstrap(authSession);
-    await claimAndLoad(authSession);
+    if (authSession?.user) {
+      const claim = await client.rpc('claim_member_by_email');
+      if (claim.error) console.warn('Member auto-link skipped:', claim.error.message);
+    }
+    return originalBootstrap(authSession);
   };
 
   window.renderLogin = function renderOtpLogin() {
@@ -61,10 +53,10 @@
         const authSession = authData?.session || (await client.auth.getSession()).data.session;
         if (!authSession) throw new Error('Login session was not created. Please request a new OTP.');
 
-        const loaded = await claimAndLoad(authSession);
-        if (!loaded) throw new Error('This email is not linked to an active mess member.');
+        const claim = await client.rpc('claim_member_by_email');
+        if (claim.error && !String(claim.error.message || '').includes('already')) throw claim.error;
 
-        render();
+        location.reload();
       });
     });
   };
