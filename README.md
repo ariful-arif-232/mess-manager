@@ -1,6 +1,6 @@
 # Mess Manager
 
-A responsive, installable mess-management PWA backed by Supabase PostgreSQL and Supabase Auth. It supports Admin and Member roles, daily meals, bazar costs, deposits, utility sharing, bazar schedules, monthly settlements, reports, settings, and audit activity.
+A responsive, installable and live mess-management PWA backed by Supabase PostgreSQL, Auth, and Realtime. It supports database-enforced Admin and Member roles, a shared member roster, daily meals, itemized bazar costs, deposits, utility sharing, bazar schedules, monthly settlements, reports, settings, and audit activity.
 
 ## Architecture
 
@@ -38,5 +38,6 @@ Recommended production Auth settings include confirmed email, MFA for admins, le
 
 * Apply the migration before using a browser key; every business table has RLS enabled.
 * Role checks in JavaScript only tailor the UI. Database policies enforce the actual permissions.
+* The follow-up migration normalizes bazar items, protects the final active admin with a database trigger, and adds live-table publication entries.
 * Do not commit real project credentials if the repository is public. Inject `config.js` in the deployment pipeline.
 * Test policies using distinct admin/member accounts and a second mess before launch.

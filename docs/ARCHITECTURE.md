@@ -23,16 +23,17 @@ The browser never receives a service-role key and never decides authorization. U
 | Table | Purpose and important relationships |
 | --- | --- |
 | `messes` | Tenant/root record. Every business row is scoped to one mess. |
-| `members` | Profile, `auth.users` link, active state, and `admin`/`member` role. This is the roles model. |
+| `members` | Profile, contact fields, join date, `auth.users` link, active state, and `admin`/`member` role. A database trigger prevents removing the final active admin. |
 | `meals` | One member/day row with enabled state and fractional units. |
-| `bazar_entries` | Dated buyer, item description, and food-market cost. |
+| `bazar_entries` | Dated member buyer, optional note, and database-maintained total. |
+| `bazar_items` | Ordered, categorized line items with optional quantity/unit pricing and a required total. |
 | `deposits` | Positive member payments with date and note. |
 | `utility_bills` | Dated utility expense; many-to-many shares live in `utility_bill_members`. |
 | `bazar_schedules` | Dated assignment and pending/done state. |
 | `monthly_settlements` | Immutable-ready monthly member totals with draft/finalized lifecycle. |
 | `activity_logs` | Append-oriented actor/action/entity metadata audit trail. |
 
-See `supabase/migrations/202608070001_initial_schema.sql` for types, constraints, indexes, helper functions, and all RLS policies.
+See the ordered files in `supabase/migrations/` for types, constraints, indexes, helper functions, normalized bazar data, and all RLS policies.
 
 ## Security model
 
