@@ -1,5 +1,5 @@
-// Deployment configuration. Replace these placeholders; never put a service-role key here.
+// Browser-safe deployment configuration. Never put a secret or service-role key here.
 window.MESS_MANAGER_CONFIG = window.MESS_MANAGER_CONFIG || {
-  supabaseUrl: 'https://YOUR_PROJECT.supabase.co',
-  supabaseAnonKey: 'YOUR_PUBLISHABLE_OR_ANON_KEY'
+  supabaseUrl: 'https://xcggmwzmhIkvgwqgbwwu.supabase.co',
+  supabaseAnonKey: 'sb_publishable_x5ifKDJgUJgt80kasmGRDg_zl1ZMpPI'
 };
