@@ -1,33 +1,42 @@
-# Mess Manager MVP
+# Mess Manager
 
-Responsive admin-controlled mess management PWA.
+A responsive, installable mess-management PWA backed by Supabase PostgreSQL and Supabase Auth. It supports Admin and Member roles, daily meals, bazar costs, deposits, utility sharing, bazar schedules, monthly settlements, reports, settings, and audit activity.
 
-## Run locally
-Use any static web server in this folder, for example:
+## Architecture
 
-```bash
-python3 -m http.server 8080
-```
+Business data is no longer stored in browser `localStorage`. The browser uses the Supabase publishable/anon key; PostgreSQL Row Level Security (RLS) is the authorization boundary. Supabase Auth may persist its managed refresh session in browser storage by design, but passwords and application records are never stored there.
 
-Then open http://localhost:8080
+Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the audited legacy design, schema map, security decisions, and staged rollout plan.
 
-## Demo login
-- Admin PIN: 1234
-- Member PIN: 1111
+## Setup
 
-## Included modules
-- Admin dashboard
-- Member add/edit/activate/deactivate
-- Daily meal ON/OFF
-- Bazar add/edit/delete
-- Member deposits
-- Utility bills with selected-member sharing
-- Bazar schedule
-- Monthly settlement / due / advance
-- Reports
-- Settings and reset
-- PWA manifest + service worker
-- Browser localStorage persistence
+1. Create a Supabase project and install the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
+2. Link the project and apply the schema:
 
-## Production upgrade path
-This MVP stores data in the browser. For real multi-user deployment, connect the same UI to a hosted backend such as Supabase/PostgreSQL, add secure authentication, row-level permissions, backups, and audit logs.
+   ```bash
+   supabase link --project-ref YOUR_PROJECT_REF
+   supabase db push
+   ```
+
+3. In Supabase Auth, create the initial admin user. Run the two commented bootstrap statements at the bottom of `supabase/migrations/202608070001_initial_schema.sql`, using that Auth user's UUID.
+4. Replace the placeholders in `config.js` (or generate it during deployment) with the project URL and **publishable/anon** key. Never place a service-role key in frontend files.
+5. Serve the repository over HTTP:
+
+   ```bash
+   python3 -m http.server 8080
+   ```
+
+6. Open `http://localhost:8080`. Production must use HTTPS for full PWA behavior.
+
+## Authentication and member onboarding
+
+There are no demo PINs or client-side credentials. Users sign in with Supabase email/password authentication and can request a password reset. A user also needs an active `members` row whose `user_id` points to their Auth UUID. Admins can manage member profiles and roles in the app; creating/inviting Auth identities should happen through the Supabase dashboard or a server-side Edge Function so privileged keys never reach the browser.
+
+Recommended production Auth settings include confirmed email, MFA for admins, leaked-password protection, appropriate rate limits, and exact redirect allow-list entries.
+
+## Security notes
+
+* Apply the migration before using a browser key; every business table has RLS enabled.
+* Role checks in JavaScript only tailor the UI. Database policies enforce the actual permissions.
+* Do not commit real project credentials if the repository is public. Inject `config.js` in the deployment pipeline.
+* Test policies using distinct admin/member accounts and a second mess before launch.

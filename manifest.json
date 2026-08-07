@@ -1,9 +1,16 @@
 {
+  "id": "./",
   "name": "Mess Manager",
   "short_name": "Mess",
+  "description": "Secure meals, bazar, deposits, bills and monthly settlements.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#f8fafc",
   "theme_color": "#111827",
-  "icons": []
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {"src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
 }
