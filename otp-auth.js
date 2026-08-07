@@ -44,4 +44,8 @@
       }, 'Login successful.');
     });
   };
+
+  // app.js may have already rendered the old password form before this deferred
+  // enhancement runs. Replace it immediately for signed-out users.
+  if (!session) window.renderLogin();
 })();
