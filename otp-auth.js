@@ -4,16 +4,20 @@
   let pendingEmail = '';
   const originalBootstrap = window.bootstrap;
 
-  window.bootstrap = async function otpAwareBootstrap(authSession) {
-    if (authSession?.user) {
-      const claim = await client.rpc('claim_member_by_email');
-      if (claim.error) console.warn('Member auto-link skipped:', claim.error.message);
-    }
+  async function claimAndLoad(authSession) {
+    if (!authSession?.user) return false;
+
+    const claim = await client.rpc('claim_member_by_email');
+    if (claim.error) console.warn('Member auto-link skipped:', claim.error.message);
 
     await originalBootstrap(authSession);
+    document.querySelector('.toast')?.remove();
+    return Boolean(profile && mess);
+  }
 
-    const toast = document.querySelector('.toast');
-    if (toast?.textContent?.includes('Your account is not linked to an active mess')) toast.remove();
+  window.bootstrap = async function otpAwareBootstrap(authSession) {
+    if (!authSession) return originalBootstrap(authSession);
+    await claimAndLoad(authSession);
   };
 
   window.renderLogin = function renderOtpLogin() {
@@ -29,6 +33,7 @@
       event.preventDefault();
       pendingEmail = emailInput.value.trim().toLowerCase();
       if (!pendingEmail) return notify('Enter your email.');
+
       await run(async () => {
         assertResult(await client.auth.signInWithOtp({
           email: pendingEmail,
@@ -40,15 +45,27 @@
     });
 
     $('#verifyOtp').addEventListener('click', async () => {
+      const email = (pendingEmail || emailInput.value).trim().toLowerCase();
       const token = codeInput.value.trim();
+
+      if (!email) return notify('Enter your email.');
       if (!/^\d{8}$/.test(token)) return notify('Enter the 8-digit OTP.');
+
       await run(async () => {
-        assertResult(await client.auth.verifyOtp({
-          email: pendingEmail || emailInput.value.trim().toLowerCase(),
+        const authData = assertResult(await client.auth.verifyOtp({
+          email,
           token,
           type: 'email'
         }));
-      }, 'Login successful.');
+
+        const authSession = authData?.session || (await client.auth.getSession()).data.session;
+        if (!authSession) throw new Error('Login session was not created. Please request a new OTP.');
+
+        const loaded = await claimAndLoad(authSession);
+        if (!loaded) throw new Error('This email is not linked to an active mess member.');
+
+        render();
+      });
     });
   };
 
