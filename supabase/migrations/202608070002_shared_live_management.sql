@@ -11,6 +11,12 @@ alter table public.bazar_entries
 alter table public.members add constraint members_id_mess_unique unique (id, mess_id);
 alter table public.bazar_entries add constraint bazar_buyer_same_mess_fk
   foreign key (buyer_member_id, mess_id) references public.members(id, mess_id) on delete restrict;
+alter table public.meals add constraint meals_member_same_mess_fk
+  foreign key (member_id, mess_id) references public.members(id, mess_id) on delete cascade;
+alter table public.deposits add constraint deposits_member_same_mess_fk
+  foreign key (member_id, mess_id) references public.members(id, mess_id) on delete restrict;
+alter table public.monthly_settlements add constraint settlements_member_same_mess_fk
+  foreign key (member_id, mess_id) references public.members(id, mess_id) on delete restrict;
 
 create table public.bazar_items (
   id uuid primary key default gen_random_uuid(),
@@ -36,7 +42,13 @@ language plpgsql security definer set search_path = public
 as $$
 declare target_id uuid;
 begin
-  target_id := coalesce(new.bazar_entry_id, old.bazar_entry_id);
+  if tg_op = 'UPDATE' and old.bazar_entry_id <> new.bazar_entry_id then
+    update public.bazar_entries
+       set amount = coalesce((select sum(total) from public.bazar_items where bazar_entry_id = old.bazar_entry_id), 0),
+           updated_at = now()
+     where id = old.bazar_entry_id;
+  end if;
+  target_id := case when tg_op = 'DELETE' then old.bazar_entry_id else new.bazar_entry_id end;
   update public.bazar_entries
      set amount = coalesce((select sum(total) from public.bazar_items where bazar_entry_id = target_id), 0),
          updated_at = now()
@@ -49,6 +61,47 @@ $$;
 create trigger bazar_items_sync_total
 after insert or update or delete on public.bazar_items
 for each row execute function public.sync_bazar_entry_total();
+
+-- The entry amount is derived data. Do not allow a client to override it.
+create function public.enforce_bazar_entry_total() returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  new.amount := coalesce((
+    select sum(total) from public.bazar_items where bazar_entry_id = new.id
+  ), 0);
+  return new;
+end;
+$$;
+
+create trigger bazar_entries_enforce_total_insert
+before insert on public.bazar_entries
+for each row execute function public.enforce_bazar_entry_total();
+
+create trigger bazar_entries_enforce_total_update
+before update of amount on public.bazar_entries
+for each row execute function public.enforce_bazar_entry_total();
+
+-- A bill share must point to a member of the bill's mess.
+create function public.enforce_bill_member_same_mess() returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not exists (
+    select 1
+    from public.utility_bills bill
+    join public.members member on member.id = new.member_id
+    where bill.id = new.utility_bill_id and bill.mess_id = member.mess_id
+  ) then
+    raise exception 'Bill member must belong to the same mess';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger utility_bill_members_same_mess
+before insert or update on public.utility_bill_members
+for each row execute function public.enforce_bill_member_same_mess();
 
 create policy "mess members read bazar items" on public.bazar_items for select
 using (exists (
@@ -74,11 +127,22 @@ create policy "admins update meals" on public.meals for update
 using (mess_id = public.current_mess_id() and public.is_admin())
 with check (mess_id = public.current_mess_id() and public.is_admin());
 
+drop policy if exists "members write logs" on public.activity_logs;
+create policy "admins write logs" on public.activity_logs for insert
+with check (
+  mess_id = public.current_mess_id()
+  and actor_id = auth.uid()
+  and public.is_admin()
+);
+
 -- Reject role/status changes that would leave a mess without an active admin.
 create function public.protect_last_active_admin() returns trigger
 language plpgsql security definer set search_path = public
 as $$
 begin
+  -- Serialize last-admin changes within a mess so concurrent demotions cannot
+  -- both pass the existence check.
+  perform pg_advisory_xact_lock(hashtextextended(old.mess_id::text, 0));
   if old.active and old.role = 'admin' and not exists (
        select 1 from public.members
        where mess_id = old.mess_id and id <> old.id and active and role = 'admin'

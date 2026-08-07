@@ -45,8 +45,12 @@ async function logActivity(action, entityType, entityId=null, metadata={}){
 
 async function loadData(){
   const [start,end] = dateRange();
+  const membersResult = await client.from('members').select('*').order('name');
+  db.members = assertResult(membersResult);
+  const refreshedProfile = db.members.find(member => member.user_id === session.user.id && member.active);
+  if(!refreshedProfile) throw new Error('Your account is no longer an active mess member.');
+  profile = refreshedProfile;
   const calls = [
-    client.from('members').select('*').order('name'),
     client.from('meals').select('*').gte('meal_date',start).lte('meal_date',end),
     client.from('bazar_entries').select('*, bazar_items(*)').gte('entry_date',start).lte('entry_date',end).order('entry_date',{ascending:false}),
     client.from('deposits').select('*').gte('deposit_date',start).lte('deposit_date',end).order('deposit_date',{ascending:false}),
@@ -57,14 +61,13 @@ async function loadData(){
   if(profile.role === 'admin') calls.push(client.from('activity_logs').select('*').order('created_at',{ascending:false}).limit(100));
   const results = await Promise.all(calls);
   results.forEach(assertResult);
-  db.members = results[0].data;
-  db.meals = results[1].data.map(x => ({...x,date:x.meal_date,memberId:x.member_id,on:x.enabled}));
-  db.bazar = results[2].data.map(x => ({...x,date:x.entry_date,items:x.bazar_items || []}));
-  db.deposits = results[3].data.map(x => ({...x,date:x.deposit_date,memberId:x.member_id}));
-  db.utilities = results[4].data.map(x => ({...x,date:x.bill_date,type:x.bill_type,memberIds:x.utility_bill_members.map(y=>y.member_id)}));
-  db.schedules = results[5].data.map(x => ({...x,date:x.schedule_date,names:x.assigned_names,done:x.status==='done'}));
-  db.settlements = results[6].data;
-  db.logs = results[7]?.data || [];
+  db.meals = results[0].data.map(x => ({...x,date:x.meal_date,memberId:x.member_id,on:x.enabled}));
+  db.bazar = results[1].data.map(x => ({...x,date:x.entry_date,items:x.bazar_items || []}));
+  db.deposits = results[2].data.map(x => ({...x,date:x.deposit_date,memberId:x.member_id}));
+  db.utilities = results[3].data.map(x => ({...x,date:x.bill_date,type:x.bill_type,memberIds:x.utility_bill_members.map(y=>y.member_id)}));
+  db.schedules = results[4].data.map(x => ({...x,date:x.schedule_date,names:x.assigned_names,done:x.status==='done'}));
+  db.settlements = results[5].data;
+  db.logs = results[6]?.data || [];
 }
 async function bootstrap(authSession){
   session = authSession;
@@ -75,7 +78,7 @@ async function bootstrap(authSession){
     await loadData();
     subscribeRealtime();
     if(profile.role !== 'admin' && adminPages.has(state.page)) state.page='dashboard';
-  } catch(error){ profile=null; notify('Your account is not linked to an active mess. Contact an administrator.'); console.error(error); }
+  } catch(error){ profile=null; if(realtimeChannel) client.removeChannel(realtimeChannel); realtimeChannel=null; notify('Your account is not linked to an active mess. Contact an administrator.'); console.error(error); }
   render();
 }
 
@@ -86,7 +89,7 @@ function subscribeRealtime(){
       const shared = new Set(['members','meals','bazar_entries','bazar_items','deposits','utility_bills','utility_bill_members','bazar_schedules','monthly_settlements']);
       if(!shared.has(payload.table)) return;
       clearTimeout(realtimeRefresh);
-      realtimeRefresh = setTimeout(async()=>{ try { await loadData(); render(); } catch(error) { console.error('Realtime refresh failed', error); } }, 150);
+      realtimeRefresh = setTimeout(()=>bootstrap(session), 150);
     }).subscribe();
 }
 function nav(){
