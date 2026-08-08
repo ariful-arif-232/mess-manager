@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v18';
+const CACHE = 'mess-manager-v19';
 const SHELL = ['./','./index.html','./styles.css','./polish-v2.css','./polish-v3.css','./admin-ai.css','./app.js','./ui-pro.js','./features-pro.js','./ux-fixes.js','./polish-v2.js','./polish-v3.js','./admin-ai.js','./otp-auth.js','./config.js','./manifest.json','./icons/icon.svg'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
