@@ -1,0 +1,16 @@
+@media(max-width:900px){
+.topbar{margin:0 0 12px!important;min-height:54px!important;padding:0!important;gap:8px!important;}
+.page-heading{gap:8px!important;min-height:42px!important;}
+.page-heading:before{content:"M"!important;width:32px!important;height:32px!important;flex:0 0 32px!important;border:0!important;border-radius:10px!important;background:linear-gradient(145deg,#5f8df7,#3f72e8)!important;color:#fff!important;display:grid!important;place-items:center!important;font:800 13px/1 Inter,system-ui,sans-serif!important;box-shadow:0 6px 16px rgba(60,111,229,.18)!important;}
+.page-heading h1{font-size:18px!important;line-height:1!important;max-width:150px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+.top-actions{gap:4px!important;}
+.top-actions input{width:104px!important;height:32px!important;padding:4px 8px!important;border-radius:10px!important;font-size:11px!important;box-shadow:none!important;}
+.badge{padding:5px 8px!important;font-size:9.5px!important;box-shadow:none!important;}
+}
+@media(max-width:430px){
+.topbar{min-height:50px!important;margin-bottom:10px!important;}
+.page-heading:before{width:30px!important;height:30px!important;flex-basis:30px!important;border-radius:9px!important;font-size:12px!important;}
+.page-heading h1{font-size:17px!important;max-width:132px!important;}
+.top-actions input{width:100px!important;height:31px!important;font-size:10.5px!important;}
+.badge{font-size:9px!important;padding:4px 7px!important;}
+}
