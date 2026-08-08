@@ -1,39 +1,55 @@
-/* Compact professional app UI — final override */
+/* Reference-matched compact mobile UI */
 :root{--app-font:Inter,"Noto Sans Bengali","Hind Siliguri",system-ui,sans-serif}
 body,button,input,select,textarea{font-family:var(--app-font)!important}
-body{font-size:13px!important;letter-spacing:-.01em}
 @media(max-width:900px){
-.container{padding-left:14px!important;padding-right:14px!important}
-.topbar{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;min-height:58px!important;margin:0 0 12px!important;padding:7px 0!important}
+body{font-size:12px!important;letter-spacing:-.012em}
+.main{padding-top:10px!important}
+.container{padding-left:12px!important;padding-right:12px!important}
+.topbar{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;min-height:58px!important;margin:0 0 14px!important;padding:7px 10px!important;background:rgba(255,255,255,.72)!important;border:1px solid #e7ebf3!important;border-radius:14px!important;box-shadow:0 6px 18px rgba(25,50,90,.045)!important}
 .page-heading{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;flex:1 1 auto!important}
 .page-heading:before{display:none!important;content:none!important}
-.page-icon{width:36px;height:36px;flex:0 0 36px;border:1px solid #e2e8f3;border-radius:11px;background:#fff;display:grid;place-items:center;box-shadow:0 4px 12px rgba(20,43,84,.06)}
-.page-icon svg{width:19px;height:19px;fill:none;stroke:#2f6fe4;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.page-heading h1{margin:0!important;font-size:16px!important;line-height:1.12!important;font-weight:750!important;letter-spacing:-.025em!important;max-width:128px!important;white-space:normal!important}
-.top-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:5px!important;flex:0 1 auto!important;min-width:0!important}
-.top-chip{height:32px!important;border:1px solid #e1e7f1!important;border-radius:10px!important;background:rgba(255,255,255,.92)!important;box-shadow:0 3px 10px rgba(20,43,84,.045)!important;display:flex!important;align-items:center!important;gap:5px!important;padding:0 7px!important;color:#172744!important;white-space:nowrap!important}
+.page-heading .eyebrow{display:none!important}
+.page-icon{width:34px;height:34px;flex:0 0 34px;border:1px solid #e0e6f0;border-radius:10px;background:#fff;display:grid;place-items:center;box-shadow:0 3px 9px rgba(20,43,84,.055)}
+.page-icon svg{width:18px;height:18px;fill:none;stroke:#2868df;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.page-heading h1{margin:0!important;font-size:14px!important;line-height:1.12!important;font-weight:700!important;letter-spacing:-.025em!important;max-width:105px!important;white-space:normal!important}
+.top-actions{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;gap:5px!important;flex:0 0 auto!important;min-width:0!important}
+.top-chip{height:31px!important;border:1px solid #e0e6ef!important;border-radius:9px!important;background:#fff!important;box-shadow:0 3px 9px rgba(20,43,84,.04)!important;display:flex!important;align-items:center!important;gap:4px!important;padding:0 7px!important;color:#172744!important;white-space:nowrap!important}
 .chip-icon{display:grid;place-items:center;flex:0 0 auto}
-.chip-icon svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chip-icon svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .month-chip{padding-right:5px!important}
-.month-chip input,#month{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;margin:0!important;width:78px!important;height:28px!important;min-height:0!important;font:600 10.5px/1 var(--app-font)!important;color:#172744!important}
-.badge.user-chip{margin:0!important;font:600 9.5px/1 var(--app-font)!important;max-width:118px!important;overflow:hidden!important;text-overflow:ellipsis!important}
-.badge.user-chip .chip-icon{flex:0 0 auto}
-.section-title,.eyebrow{font-size:10px!important;letter-spacing:.12em!important}
-h2{font-size:17px!important;line-height:1.15!important}
-h3{font-size:15px!important;line-height:1.2!important}
-.card{font-size:12.5px!important}
-.btn,button{font-size:12px!important}
-.muted,small{font-size:10.5px!important}
+.month-chip input,#month{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;margin:0!important;width:68px!important;height:27px!important;min-height:0!important;font:600 9.5px/1 var(--app-font)!important;color:#172744!important}
+.badge.user-chip{margin:0!important;font:600 9px/1 var(--app-font)!important;max-width:105px!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.section-head{margin:10px 0 8px!important}
+.section-head .eyebrow,.section-title,.eyebrow{font-size:8.5px!important;letter-spacing:.11em!important}
+.section-head h2,h2{font-size:16px!important;line-height:1.12!important}
+h3{font-size:13px!important;line-height:1.18!important}
+.card{font-size:11.5px!important}
+.btn,button{font-size:11px!important}
+.muted,small{font-size:9.5px!important}
+.kpis{gap:10px!important}
+.kpi{min-height:100px!important;padding:14px!important;border-radius:16px!important}
+.kpi .value{font-size:23px!important;line-height:1!important}
+.kpi .label{font-size:10px!important}
+.member-summary-card{padding:14px!important;border-radius:16px!important}
+.member-summary-head b{font-size:14px!important}
+.mobilebar{min-height:64px!important;padding-top:6px!important;padding-bottom:6px!important}
+.mobilebar button{font-size:9.5px!important}
+.mobilebar .mobile-ico{width:22px!important;height:22px!important;-webkit-mask-size:22px 22px!important;mask-size:22px 22px!important}
 }
 @media(max-width:430px){
-.topbar{min-height:54px!important;padding:5px 0!important;gap:6px!important}
-.page-heading{gap:7px!important}
-.page-icon{width:33px;height:33px;flex-basis:33px;border-radius:10px}
-.page-icon svg{width:18px;height:18px}
-.page-heading h1{font-size:14.5px!important;max-width:103px!important}
+.main{padding-left:11px!important;padding-right:11px!important;padding-top:8px!important}
+.topbar{min-height:54px!important;padding:6px 8px!important;gap:5px!important;border-radius:13px!important;margin-bottom:12px!important}
+.page-heading{gap:6px!important}
+.page-icon{width:32px;height:32px;flex-basis:32px;border-radius:9px}
+.page-icon svg{width:17px;height:17px}
+.page-heading h1{font-size:13px!important;max-width:91px!important}
 .top-actions{gap:4px!important}
-.top-chip{height:30px!important;padding:0 6px!important;border-radius:9px!important}
-.month-chip input,#month{width:68px!important;font-size:9.5px!important}
-.badge.user-chip{font-size:8.8px!important;max-width:103px!important}
-.chip-icon svg{width:13px;height:13px}
+.top-chip{height:29px!important;padding:0 5px!important;border-radius:8px!important}
+.month-chip input,#month{width:61px!important;font-size:8.7px!important}
+.badge.user-chip{font-size:8.2px!important;max-width:94px!important}
+.chip-icon svg{width:12px;height:12px}
+.kpis{gap:8px!important}
+.kpi{min-height:94px!important;padding:12px!important}
+.kpi .value{font-size:21px!important}
+.mobilebar{left:22px!important;right:22px!important;min-height:62px!important;border-radius:20px!important}
 }
