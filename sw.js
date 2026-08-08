@@ -1,5 +1,5 @@
-const CACHE = 'mess-manager-v12';
-const SHELL = ['./','./index.html','./styles.css','./polish-v2.css','./app.js','./ui-pro.js','./features-pro.js','./ux-fixes.js','./polish-v2.js','./otp-auth.js','./config.js','./manifest.json','./icons/icon.svg'];
+const CACHE = 'mess-manager-v13';
+const SHELL = ['./','./index.html','./styles.css','./polish-v2.css','./polish-v3.css','./app.js','./ui-pro.js','./features-pro.js','./ux-fixes.js','./polish-v2.js','./polish-v3.js','./otp-auth.js','./config.js','./manifest.json','./icons/icon.svg'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch', event => {
