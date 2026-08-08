@@ -5,7 +5,7 @@
   const cfg=window.MESS_MANAGER_CONFIG||{};
   const supabaseUrl=String(cfg.supabaseUrl||'').replace(/\/$/,'');
   const anonKey=String(cfg.supabaseAnonKey||'');
-  const escAi=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const escAi=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   function speak(text){if(!('speechSynthesis'in window)||!text)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='bn-BD';u.rate=.96;const v=speechSynthesis.getVoices().find(x=>/^bn/i.test(x.lang));if(v)u.voice=v;speechSynthesis.speak(u);}
   function bubble(kind,text,html=false){const log=$('#aiChatLog');if(!log)return;const el=document.createElement('div');el.className=`ai-bubble ${kind}`;if(html)el.innerHTML=text;else el.textContent=text;log.appendChild(el);log.scrollTop=log.scrollHeight;return el;}
   function removeThinking(){document.querySelector('.ai-bubble.thinking')?.remove();}
@@ -16,7 +16,41 @@
   async function processResult(data){removeThinking();if(data.mode==='confirm')showConfirmation(data);else{bubble('assistant success',data.reply||'Done');speak(data.reply);}}
   async function sendText(text){const value=String(text||'').trim();if(!value)return;bubble('user',value);const input=$('#aiTextCommand');if(input)input.value='';bubble('thinking','AI বুঝছে…');try{await processResult(await callFunction({jsonBody:{text:value}}));}catch(e){removeThinking();bubble('assistant error',e?.message||'AI assistant কাজ করতে পারছে না।');}}
   async function sendAudio(blob){bubble('thinking','আপনার কথা শুনে AI বুঝছে…');try{const form=new FormData();form.append('audio',blob,blob.type.includes('mp4')?'voice.m4a':'voice.webm');await processResult(await callFunction({formBody:form}));}catch(e){removeThinking();bubble('assistant error',e?.message||'Voice command কাজ করেনি।');}}
-  async function toggleRecording(button){if(recording&&recorder){recorder.stop();return;}if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)return notify('এই browser-এ microphone recording support নেই।');try{stream=await navigator.mediaDevices.getUserMedia({audio:true});const mime=MediaRecorder.isTypeSupported('audio/mp4')?'audio/mp4':MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'';recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);chunks=[];recording=true;button.classList.add('recording');button.querySelector('.voice-label').textContent='শেষ হলে চাপুন';recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=async()=>{recording=false;button.classList.remove('recording');button.querySelector('.voice-label').textContent='কথা বলুন';stream?.getTracks().forEach(t=>t.stop());const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});if(blob.size>500)await sendAudio(blob);};recorder.start();}catch{notify('Microphone permission দিন, তারপর আবার চেষ্টা করুন।');}}
+  async function toggleRecording(button){
+    const label=document.querySelector('.voice-label');
+    if(recording&&recorder){
+      if(recorder.state!=='inactive')recorder.stop();
+      return;
+    }
+    if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)return notify('এই browser-এ microphone recording support নেই।');
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      const mime=MediaRecorder.isTypeSupported('audio/mp4')?'audio/mp4':MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'';
+      recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);
+      chunks=[];
+      recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+      recorder.onerror=()=>{recording=false;button.classList.remove('recording');if(label)label.textContent='কথা বলুন';stream?.getTracks().forEach(t=>t.stop());notify('Voice record করা যায়নি। আবার চেষ্টা করুন।');};
+      recorder.onstop=async()=>{
+        recording=false;
+        button.classList.remove('recording');
+        if(label)label.textContent='কথা বলুন';
+        stream?.getTracks().forEach(t=>t.stop());
+        const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});
+        recorder=null;stream=null;
+        if(blob.size>500)await sendAudio(blob);else bubble('assistant error','কথা শোনা যায়নি। আবার বলুন।');
+      };
+      recorder.start();
+      recording=true;
+      button.classList.add('recording');
+      if(label)label.textContent='শেষ হলে আবার চাপুন';
+    }catch(e){
+      recording=false;
+      button.classList.remove('recording');
+      if(label)label.textContent='কথা বলুন';
+      stream?.getTracks().forEach(t=>t.stop());
+      notify(e?.name==='NotAllowedError'?'Microphone permission দিন, তারপর আবার চেষ্টা করুন।':'Microphone চালু করা যায়নি। আবার চেষ্টা করুন।');
+    }
+  }
   function assistantPage(c){c.innerHTML=`<section class="ai-reference-page"><h2>Voice Assistant</h2><div class="ai-voice-stage"><button id="aiMic" class="ai-orb" type="button" aria-label="কথা বলুন"><span class="ai-orb-rings"></span><span class="ai-mic-icon">🎙</span></button><div class="voice-label">কথা বলুন</div></div><div id="aiChatLog" class="ai-chat-log ai-reference-log"></div><div class="ai-reference-composer"><span class="composer-mic">🎙</span><input id="aiTextCommand" placeholder="আপনার কথা লিখুন..." autocomplete="off"><button id="aiSend" type="button">Send</button></div></section>`;const mic=$('#aiMic'),input=$('#aiTextCommand');mic.onclick=()=>toggleRecording(mic);$('#aiSend').onclick=()=>sendText(input.value);input.onkeydown=e=>{if(e.key==='Enter')sendText(input.value)};}
   const oldTitle=window.pageTitle;window.pageTitle=function(){return state.page==='assistant'?'':oldTitle();};
   const oldPage=window.renderPage;window.renderPage=function(){if(state.page==='assistant')return assistantPage($('#content'));return oldPage();};
