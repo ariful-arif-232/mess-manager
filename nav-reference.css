@@ -1,0 +1,27 @@
+/* Reference-style mobile background + bottom navigation */
+@media (max-width:900px){
+html,body{background:#f7f9ff!important;min-height:100%;}
+body{background:linear-gradient(180deg,#f8faff 0%,#f5f8ff 58%,#f8faff 100%)!important;}
+.main{background:transparent!important;}
+.mobilebar{left:28px!important;right:28px!important;bottom:calc(18px + env(safe-area-inset-bottom))!important;min-height:72px!important;padding:8px 9px!important;border-radius:25px!important;background:rgba(255,255,255,.98)!important;border:1px solid #e5eaf2!important;box-shadow:0 10px 30px rgba(38,59,102,.10)!important;gap:0!important;}
+.mobilebar button{position:relative!important;background:transparent!important;border:0!important;color:#17284b!important;font-size:11px!important;font-weight:650!important;padding:5px 2px!important;gap:4px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;}
+.mobilebar button.active{background:transparent!important;color:#3979ee!important;}
+.mobilebar .mobile-ico{font-size:0!important;width:25px!important;height:25px!important;display:block!important;position:relative!important;color:currentColor!important;}
+.mobilebar .mobile-ico:before,.mobilebar .mobile-ico:after{content:"";position:absolute;box-sizing:border-box;}
+/* Home */
+.mobilebar button:nth-child(1) .mobile-ico:before{left:4px;top:9px;width:17px;height:13px;border:2px solid currentColor;border-top:0;border-radius:2px;}
+.mobilebar button:nth-child(1) .mobile-ico:after{left:5px;top:3px;width:15px;height:15px;border-left:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(45deg);border-radius:2px;}
+/* Members */
+.mobilebar button:nth-child(2) .mobile-ico:before{left:8px;top:2px;width:9px;height:9px;border:2px solid currentColor;border-radius:50%;box-shadow:-8px 9px 0 -3px #f7f9ff,8px 9px 0 -3px #f7f9ff;}
+.mobilebar button:nth-child(2) .mobile-ico:after{left:5px;top:13px;width:15px;height:10px;border:2px solid currentColor;border-bottom:0;border-radius:10px 10px 0 0;}
+/* Meal - fork and knife */
+.mobilebar button:nth-child(3) .mobile-ico:before{left:5px;top:2px;width:7px;height:21px;border-left:2px solid currentColor;border-right:2px solid currentColor;border-radius:0 0 4px 4px;}
+.mobilebar button:nth-child(3) .mobile-ico:after{right:5px;top:2px;width:2px;height:21px;background:currentColor;border-radius:2px;box-shadow:-3px 0 0 -1px currentColor;}
+/* Bazar basket */
+.mobilebar button:nth-child(4) .mobile-ico:before{left:3px;top:9px;width:19px;height:13px;border:2px solid currentColor;border-radius:3px 3px 6px 6px;}
+.mobilebar button:nth-child(4) .mobile-ico:after{left:7px;top:4px;width:11px;height:9px;border:2px solid currentColor;border-bottom:0;border-radius:8px 8px 0 0;}
+/* More */
+.mobilebar button:nth-child(5) .mobile-ico:before{left:2px;top:10px;width:5px;height:5px;background:currentColor;border-radius:50%;box-shadow:8px 0 0 currentColor,16px 0 0 currentColor;}
+.action-sheet{background:#fff!important;border-radius:30px 30px 0 0!important;box-shadow:0 -10px 40px rgba(31,49,88,.12)!important;}
+.sheet-grid button{background:#f8faff!important;border:1px solid #e5ebf4!important;color:#17284b!important;border-radius:18px!important;box-shadow:none!important;}
+}
