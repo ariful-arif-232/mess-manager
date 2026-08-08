@@ -2,7 +2,21 @@
 'use strict';
 (() => {
   const META={
-    dashboard:['Dashboard','home'],members:['Member Management','users'],meals:['Meal Management','meal'],bazar:['Bazar Management','bag'],deposits:['Deposit Management','wallet'],utilities:['Bills Management','bill'],schedule:['Schedule','calendar'],settlement:['Settlement','check'],reports:['Reports','report'],chat:['Mess Chat','chat'],activity:['Activity','activity'],settings:['Settings','settings'],assistant:['Voice Assistant','mic']
+    'dashboard':['Dashboard','home'],
+    'members':['Member Management','users'],
+    'daily meal':['Meal Management','meal'],
+    'meal':['Meal Management','meal'],
+    'bazar':['Bazar Management','bag'],
+    'deposit':['Deposit Management','wallet'],
+    'bills':['Bills Management','bill'],
+    'schedule':['Schedule','calendar'],
+    'settlement':['Settlement','check'],
+    'reports':['Reports','report'],
+    'mess chat':['Mess Chat','chat'],
+    'chat':['Mess Chat','chat'],
+    'activity':['Activity','activity'],
+    'settings':['Settings','settings'],
+    'voice assistant':['Voice Assistant','mic']
   };
   const icons={
     home:'<path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3"/>',
@@ -20,15 +34,23 @@
     mic:'<rect x="8" y="3" width="8" height="12" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>'
   };
   const svg=name=>`<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.home}</svg>`;
+  function metaFor(text){
+    const t=String(text||'').trim().toLowerCase();
+    if(META[t])return META[t];
+    for(const [key,value] of Object.entries(META)){if(t.includes(key))return value;}
+    return [text||'Mess Manager','home'];
+  }
   function apply(){
-    const top=document.querySelector('.topbar'); if(!top||!window.state)return;
-    const heading=top.querySelector('.page-heading'), title=heading?.querySelector('h1');
-    if(!heading||!title)return;
-    const [label,icon]=META[state.page]||[title.textContent||'Mess Manager','home'];
+    const top=document.querySelector('.topbar');
+    const heading=top?.querySelector('.page-heading');
+    const title=heading?.querySelector('h1');
+    if(!top||!heading||!title)return;
+    const [label,icon]=metaFor(title.dataset.rawTitle||title.textContent);
+    if(!title.dataset.rawTitle)title.dataset.rawTitle=title.textContent.trim();
     title.textContent=label;
     let mark=heading.querySelector('.page-icon');
     if(!mark){mark=document.createElement('span');mark.className='page-icon';heading.prepend(mark);}
-    mark.innerHTML=svg(icon);
+    if(mark.dataset.icon!==icon){mark.dataset.icon=icon;mark.innerHTML=svg(icon);}
     const month=top.querySelector('#month');
     if(month&&!month.closest('.month-chip')){
       const wrap=document.createElement('label');wrap.className='top-chip month-chip';
@@ -36,9 +58,14 @@
       month.parentNode.insertBefore(wrap,month);wrap.appendChild(month);
     }
     const badge=top.querySelector('.badge');
-    if(badge&&!badge.classList.contains('user-chip')){badge.classList.add('top-chip','user-chip');badge.insertAdjacentHTML('afterbegin',`<span class="chip-icon">${svg('users')}</span>`);}
+    if(badge&&!badge.classList.contains('user-chip')){
+      badge.classList.add('top-chip','user-chip');
+      badge.insertAdjacentHTML('afterbegin',`<span class="chip-icon">${svg('users')}</span>`);
+    }
   }
-  const previous=window.render;
-  window.render=function(){const out=previous.apply(this,arguments);requestAnimationFrame(apply);return out;};
-  addEventListener('DOMContentLoaded',()=>setTimeout(apply,0));
+  let queued=false;
+  const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;apply();});};
+  new MutationObserver(schedule).observe(document.documentElement,{subtree:true,childList:true});
+  addEventListener('DOMContentLoaded',schedule);
+  addEventListener('pageshow',schedule);
 })();
