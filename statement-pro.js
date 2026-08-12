@@ -1,17 +1,108 @@
-/* Premium monthly statement preview, print/PDF and PDF email attachment. */
+/* Premium monthly statement preview, real PDF save, email attachment and reliable back. */
 'use strict';
 (()=>{
- const money2=n=>`৳${Number(n||0).toLocaleString('en-BD',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
- const safe=s=>esc(s??'');
- const initials=n=>String(n||'M').split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
- const statementId=x=>`MM-${state.month.replace('-','')}-${String(x.member.id).replace(/-/g,'').slice(0,7).toUpperCase()}`;
- function bazarRows(){return db.bazar.flatMap(e=>(e.items||[]).map(i=>({date:e.date,buyer:memberName(e.buyer_member_id),item:i.item_name,qty:`${i.quantity||''} ${i.unit||''}`.trim(),amount:Number(i.total??Number(i.quantity||0)*Number(i.unit_price||0))})));}
- function css(){return `*{box-sizing:border-box}body{margin:0;background:#eef3fb;color:#10203e;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.stmt-toolbar{position:sticky;top:0;z-index:9;display:flex;gap:10px;align-items:center;padding:12px max(16px,calc((100% - 900px)/2));background:rgba(255,255,255,.96);border-bottom:1px solid #dce6f5}.stmt-toolbar button{border:0;border-radius:12px;padding:11px 16px;font-weight:800}.stmt-toolbar .back{background:#e9f0fb;color:#173a70}.stmt-toolbar .save{background:#2161e8;color:white;margin-left:auto}.stmt-toolbar .mail{background:#eaf8ef;color:#147a3d}.sheet{width:min(900px,calc(100% - 24px));margin:22px auto 48px;background:white;border-radius:26px;overflow:hidden;box-shadow:0 22px 70px #23446c22}.hero{padding:34px 38px;color:white;background:linear-gradient(135deg,#123b8f,#2467e8 62%,#19a8d7);position:relative}.hero:after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:#ffffff12;right:-55px;top:-85px}.brand{font-size:13px;letter-spacing:1.7px;text-transform:uppercase;opacity:.85}.hero h1{font-size:31px;margin:8px 0 5px}.hero p{margin:0;opacity:.86}.statement-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}.statement-meta span{background:#ffffff17;border:1px solid #ffffff25;border-radius:12px;padding:8px 11px;font-size:12px}.body{padding:30px 38px}.person{display:flex;align-items:center;gap:15px}.avatar{width:52px;height:52px;border-radius:17px;background:#e8f0ff;color:#225dcc;display:grid;place-items:center;font-weight:900;font-size:18px}.person h2{margin:0;font-size:22px}.person p{margin:4px 0 0;color:#73839d}.status{margin-left:auto;border-radius:999px;padding:9px 13px;font-weight:900}.advance{background:#e9f9ef;color:#168246}.due{background:#fff0ef;color:#c63d38}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:25px 0}.metric{padding:17px;border:1px solid #e3eaf5;border-radius:17px;background:#f9fbff}.metric small{display:block;color:#7b899f;margin-bottom:6px}.metric b{font-size:20px}.metric.total{background:#eff5ff;border-color:#cbdcff}.metric.balance{background:#effbf3;border-color:#ccebd7}.section-title{display:flex;align-items:end;justify-content:space-between;margin:30px 0 12px}.section-title h3{margin:0;font-size:18px}.section-title span{font-size:12px;color:#8491a5}.table-wrap{overflow:hidden;border:1px solid #e2e9f3;border-radius:16px}table{border-collapse:collapse;width:100%;font-size:13px}th{background:#f0f5fd;color:#4d6181;text-transform:uppercase;letter-spacing:.5px;font-size:10px;text-align:left;padding:11px 12px}td{padding:11px 12px;border-top:1px solid #edf1f7}td:last-child,th:last-child{text-align:right}.grand{display:flex;justify-content:flex-end;margin-top:10px;font-weight:900}.footer{display:flex;justify-content:space-between;gap:20px;margin-top:28px;padding-top:18px;border-top:1px solid #e8edf5;color:#8190a7;font-size:11px}.empty{padding:25px;text-align:center;color:#8190a7}@media(max-width:600px){.hero,.body{padding:25px 20px}.summary{grid-template-columns:1fr 1fr}.metric b{font-size:17px}.sheet{width:calc(100% - 14px);margin-top:8px}.stmt-toolbar{padding:10px}.stmt-toolbar button{padding:10px 12px}.person{align-items:flex-start}.status{font-size:11px}}@media print{body{background:white}.stmt-toolbar{display:none}.sheet{width:100%;margin:0;box-shadow:none;border-radius:0}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}.metric,th,.status{-webkit-print-color-adjust:exact;print-color-adjust:exact}.body{padding:24px 30px}.section-title{break-after:avoid}.table-wrap{break-inside:auto}tr{break-inside:avoid}.sheet{font-size:11px}@page{size:A4;margin:8mm}}`;}
- function documentHtml(x,withToolbar=true){const rows=bazarRows(),total=rows.reduce((s,r)=>s+r.amount,0),balance=x.balance>=0?'Advance':'Due';return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safe(x.member.name)} - ${safe(state.month)} Statement</title><style>${css()}</style></head><body>${withToolbar?`<div class="stmt-toolbar"><button class="back" onclick="history.back()">← Back</button><button class="save" onclick="window.print()">Save / Print PDF</button>${profile.role==='admin'&&x.member.email?`<button class="mail" id="emailPdf">Email PDF</button>`:''}</div>`:''}<main class="sheet"><section class="hero"><div class="brand">Mess Manager · Monthly Statement</div><h1>${safe(mess.name)}</h1><p>Clear monthly account summary</p><div class="statement-meta"><span>${safe(statementId(x))}</span><span>Period: ${safe(state.month)}</span><span>Generated: ${new Date().toLocaleDateString('en-GB')}</span></div></section><section class="body"><div class="person"><div class="avatar">${safe(initials(x.member.name))}</div><div><h2>${safe(x.member.name)}</h2><p>${safe(x.member.email||'No email added')}</p></div><div class="status ${x.balance>=0?'advance':'due'}">${balance} ${money2(Math.abs(x.balance))}</div></div><div class="summary"><div class="metric"><small>Meal units</small><b>${x.units}</b></div><div class="metric"><small>Deposit</small><b>${money2(x.deposit)}</b></div><div class="metric"><small>Food cost</small><b>${money2(x.food)}</b></div><div class="metric"><small>Utility share</small><b>${money2(x.util)}</b></div><div class="metric total"><small>Total bill</small><b>${money2(x.total)}</b></div><div class="metric balance"><small>${balance}</small><b>${money2(Math.abs(x.balance))}</b></div></div><div class="section-title"><h3>Complete Bazar List</h3><span>${rows.length} items · Monthly total ${money2(total)}</span></div>${rows.length?`<div class="table-wrap"><table><thead><tr><th>Date</th><th>Item</th><th>Buyer</th><th>Qty</th><th>Amount</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${safe(r.date)}</td><td><b>${safe(r.item)}</b></td><td>${safe(r.buyer)}</td><td>${safe(r.qty||'-')}</td><td><b>${money2(r.amount)}</b></td></tr>`).join('')}</tbody></table></div><div class="grand">Bazar total&nbsp;&nbsp; ${money2(total)}</div>`:'<div class="empty">No bazar items for this month.</div>'}<div class="footer"><span>Generated securely by Mess Manager</span><span>This is a computer-generated statement.</span></div></section></main></body></html>`;}
- function openStatement(x){const w=window.open('','_blank');if(!w)return notify('Allow pop-ups to open the statement.');w.document.open();w.document.write(documentHtml(x,true));w.document.close();if(profile.role==='admin'&&x.member.email){w.addEventListener('load',()=>{const b=w.document.getElementById('emailPdf');if(b)b.onclick=()=>emailPdf(x,b);});}}
- async function pdfBase64(x){if(!window.html2pdf)throw Error('PDF engine is still loading. Please try again.');const host=document.createElement('div');host.style.cssText='position:fixed;left:-12000px;top:0;width:794px;background:white;z-index:-1';host.innerHTML=documentHtml(x,false).match(/<main[\s\S]*<\/main>/)?.[0]||'';document.body.appendChild(host);try{const el=host.querySelector('.sheet');const worker=html2pdf().set({margin:0,filename:`${x.member.name}-${state.month}-statement.pdf`,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy'],avoid:['tr','.metric','.person']}}).from(el).toPdf();const data=await worker.outputPdf('datauristring');return data.split(',')[1]}finally{host.remove()}}
- async function emailPdf(x,button){const old=button?.textContent;if(button){button.disabled=true;button.textContent='Preparing PDF…'}try{const base64=await pdfBase64(x);if(button)button.textContent='Sending…';const message=`Hi ${x.member.name},\n\nYour ${state.month} monthly statement from ${mess.name} is attached as a PDF.\n\nTotal bill: ${money2(x.total)}\n${x.balance>=0?'Advance':'Due'}: ${money2(Math.abs(x.balance))}\n\n- Mess Manager`;const html=`<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:28px;color:#10203e"><div style="background:linear-gradient(135deg,#123b8f,#2467e8);color:white;padding:26px;border-radius:20px"><div style="font-size:12px;opacity:.8">MESS MANAGER · MONTHLY STATEMENT</div><h1 style="margin:8px 0">${safe(mess.name)}</h1><div>${safe(state.month)}</div></div><h2 style="margin-top:24px">Hi ${safe(x.member.name)},</h2><p style="line-height:1.7;color:#53647e">Your complete monthly statement is attached as a beautifully formatted PDF.</p><div style="display:flex;gap:10px"><div style="padding:14px;background:#f0f5ff;border-radius:14px"><small>Total bill</small><br><b>${money2(x.total)}</b></div><div style="padding:14px;background:${x.balance>=0?'#eaf9ef':'#fff0ef'};border-radius:14px"><small>${x.balance>=0?'Advance':'Due'}</small><br><b>${money2(Math.abs(x.balance))}</b></div></div><p style="color:#8793a6;margin-top:24px">Open the attached PDF for account summary and the complete bazar list.</p></div>`;const r=await client.functions.invoke('mess-notify',{body:{member_id:x.member.id,subject:`${mess.name}: ${state.month} monthly statement`,message,html,pdf_base64:base64,pdf_filename:`${x.member.name}-${state.month}-statement.pdf`}});if(r.error)throw r.error;if(r.data?.error)throw Error(r.data.error);notify('Designed PDF emailed successfully.','success');if(button)button.textContent='Sent ✓'}catch(e){notify(e?.message||'PDF email failed.');if(button)button.textContent=old||'Email PDF'}finally{if(button){button.disabled=false;setTimeout(()=>button.textContent=old||'Email PDF',1800)}}}
- function enhance(){if(!window.html2pdf){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';s.defer=true;document.head.appendChild(s)}}enhance();
- const baseReports=window.reports;
- window.reports=function statementReports(c){baseReports(c);const calc=calcMonth();c.querySelectorAll('[data-pdf]').forEach(b=>b.onclick=()=>openStatement(calc.find(x=>x.member.id===b.dataset.pdf)));c.querySelectorAll('[data-email]').forEach(b=>b.onclick=()=>{const x=calc.find(y=>y.member.id===b.dataset.email);emailPdf(x,b)});};
+  const money2=n=>`৳${Number(n||0).toLocaleString('en-BD',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  const safe=s=>esc(s??'');
+  const initials=n=>String(n||'M').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
+  const statementId=x=>`MM-${state.month.replace('-','')}-${String(x.member.id).replace(/-/g,'').slice(0,7).toUpperCase()}`;
+  const itemAmount=i=>Number(i?.total ?? (Number(i?.quantity||0)*Number(i?.unit_price||0)));
+  const isFresh=i=>i?.category==='Vegetable'||i?.category==='কাঁচাবাজার';
+  const niceDate=v=>{const d=new Date(`${v}T00:00:00`);return Number.isNaN(d.getTime())?String(v||''):d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});};
+  const fileName=x=>`${String(mess.name||'mess').replace(/[^\p{L}\p{N}-]+/gu,'-')}-${String(x.member.name||'member').replace(/[^\p{L}\p{N}-]+/gu,'-')}-${state.month}-statement.pdf`;
+
+  function bazarGroups(){
+    return (db.bazar||[]).map(entry=>{
+      const items=entry.items||[],fresh=items.filter(isFresh),normal=items.filter(i=>!isFresh(i));
+      const lines=normal.map(i=>({name:i.item_name,qty:`${i.quantity||''} ${i.unit||''}`.trim(),amount:itemAmount(i),fresh:false}));
+      if(fresh.length){
+        lines.push({name:'কাঁচাবাজার',qty:fresh.map(i=>`${i.item_name}${i.quantity?` ${i.quantity}${i.unit?` ${i.unit}`:''}`:''}`).join(' · '),amount:fresh.reduce((s,i)=>s+itemAmount(i),0),fresh:true});
+      }
+      return {id:entry.id,date:entry.date,buyer:memberName(entry.buyer_member_id),amount:Number(entry.amount||lines.reduce((s,l)=>s+l.amount,0)),lines};
+    }).filter(g=>g.lines.length);
+  }
+
+  function summaryMarkup(x){
+    const balance=x.balance>=0?'Advance':'Due';
+    return `<section class="statement-page statement-summary-page">
+      <header class="statement-cover-head"><div class="statement-kicker">Mess Manager · Monthly Statement</div><h1>${safe(mess.name)}</h1><p>Clear, complete and easy-to-read monthly account statement</p><div class="statement-meta"><span>${safe(statementId(x))}</span><span>Period: ${safe(state.month)}</span><span>Generated: ${safe(new Date().toLocaleDateString('en-GB'))}</span></div></header>
+      <div class="statement-body">
+        <div class="statement-person"><div class="statement-avatar">${safe(initials(x.member.name))}</div><div><h2>${safe(x.member.name)}</h2><p>${safe(x.member.email||'Email not added')}</p></div><div class="statement-status ${x.balance>=0?'advance':'due'}"><small>${balance}</small><b>${money2(Math.abs(x.balance))}</b></div></div>
+        <div class="statement-summary"><div class="statement-metric"><small>Meal units</small><b>${safe(x.units)}</b></div><div class="statement-metric"><small>Deposit</small><b>${money2(x.deposit)}</b></div><div class="statement-metric"><small>Food cost</small><b>${money2(x.food)}</b></div><div class="statement-metric"><small>Utility share</small><b>${money2(x.util)}</b></div><div class="statement-metric total"><small>Total bill</small><b>${money2(x.total)}</b></div><div class="statement-metric balance ${x.balance>=0?'advance':'due'}"><small>${balance}</small><b>${money2(Math.abs(x.balance))}</b></div></div>
+        <div class="statement-section-title"><h3>Account Breakdown</h3><span>All amounts in BDT</span></div>
+        <div class="statement-breakdown"><div class="statement-breakdown-card"><div><span>Total deposited</span><b>${money2(x.deposit)}</b></div><div><span>Food expense share</span><b>${money2(x.food)}</b></div><div><span>Utility expense share</span><b>${money2(x.util)}</b></div></div><div class="statement-breakdown-card"><div><span>Total payable</span><b>${money2(x.total)}</b></div><div><span>Paid / deposited</span><b>${money2(x.deposit)}</b></div><div><span>Closing ${balance.toLowerCase()}</span><b>${money2(Math.abs(x.balance))}</b></div></div></div>
+        <div class="statement-footnote"><span>Generated securely by Mess Manager</span><span>This is a computer-generated statement.</span></div>
+      </div>
+    </section>`;
+  }
+
+  function bazarMarkup(){
+    const groups=bazarGroups(),total=groups.reduce((s,g)=>s+g.amount,0),count=groups.reduce((s,g)=>s+g.lines.reduce((n,l)=>n+(l.fresh?String(l.qty).split(' · ').length:1),0),0);
+    return `<section class="statement-page statement-bazar-page"><div class="statement-bazar-head"><div class="title"><small>Complete monthly purchase record</small><h2>Bazar List</h2><p>${safe(state.month)} · ${count} items grouped by purchase</p></div><div class="statement-bazar-total"><small>Monthly Bazar Total</small><b>${money2(total)}</b></div></div><div class="statement-bazar-grid">${groups.map(g=>`<article class="statement-bazar-card"><div class="statement-bazar-card-head"><div><strong>${safe(niceDate(g.date))}</strong><span>Buyer · ${safe(g.buyer)}</span></div><b>${money2(g.amount)}</b></div><div class="statement-bazar-lines">${g.lines.map(l=>`<div class="statement-bazar-line ${l.fresh?'statement-fresh':''}"><div class="item"><b>${safe(l.name)}</b><small>${safe(l.qty||'-')}</small></div><div class="amount">${money2(l.amount)}</div></div>`).join('')}</div></article>`).join('')||'<div class="empty">No bazar items for this month.</div>'}</div><div class="statement-bazar-footer"><span>${safe(mess.name)} · ${safe(state.month)}</span><span>Complete Bazar List · ${money2(total)}</span></div></section>`;
+  }
+
+  function paperMarkup(x){return `<div class="statement-paper" data-statement-paper>${summaryMarkup(x)}${bazarMarkup()}</div>`;}
+  function toolbarMarkup(x){return `<div class="statement-toolbar"><button type="button" class="statement-back" data-statement-back>← Back</button><div></div><div class="toolbar-actions"><button type="button" class="statement-save" data-statement-save>Save PDF</button>${profile.role==='admin'&&x.member.email?'<button type="button" class="statement-email" data-statement-email>Email PDF</button>':''}</div></div>`;}
+
+  function showToast(message){document.querySelector('.statement-toast')?.remove();document.body.insertAdjacentHTML('beforeend',`<div class="statement-toast">${safe(message)}</div>`);setTimeout(()=>document.querySelector('.statement-toast')?.remove(),2600);}
+  function setBusy(button,on,label){if(!button)return;if(on){button.dataset.old=button.textContent;button.disabled=true;button.textContent=label}else{button.disabled=false;button.textContent=button.dataset.old||button.textContent}}
+  function closeStatement(){document.querySelector('.statement-view')?.remove();document.body.style.overflow='';}
+
+  function openStatement(x){
+    closeStatement();
+    document.body.style.overflow='hidden';
+    document.body.insertAdjacentHTML('beforeend',`<div class="statement-view" data-statement-view>${toolbarMarkup(x)}<div class="statement-stage">${paperMarkup(x)}</div></div>`);
+    const view=document.querySelector('[data-statement-view]');
+    view.querySelector('[data-statement-back]').onclick=closeStatement;
+    view.querySelector('[data-statement-save]').onclick=e=>savePdf(x,e.currentTarget,view.querySelector('[data-statement-paper]'));
+    view.querySelector('[data-statement-email]')?.addEventListener('click',e=>emailPdf(x,e.currentTarget,view.querySelector('[data-statement-paper]')));
+  }
+
+  async function waitPdfEngine(){
+    if(window.html2pdf)return;
+    for(let i=0;i<30;i++){await new Promise(r=>setTimeout(r,150));if(window.html2pdf)return;}
+    throw new Error('PDF engine load হয়নি। Page refresh করে আবার চেষ্টা করুন।');
+  }
+
+  async function generatePdfBlob(x,paper){
+    await waitPdfEngine();
+    if(document.fonts?.ready)await document.fonts.ready;
+    let host=null,el=paper;
+    if(!el){host=document.createElement('div');host.style.cssText='position:fixed;left:-10000px;top:0;width:794px;background:#fff;z-index:-1;';host.innerHTML=paperMarkup(x);document.body.appendChild(host);el=host.querySelector('[data-statement-paper]');await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));}
+    try{
+      const worker=window.html2pdf().set({margin:0,filename:fileName(x),image:{type:'jpeg',quality:.99},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',letterRendering:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy'],before:['.statement-bazar-page'],avoid:['.statement-bazar-card','.statement-person','.statement-metric']}}).from(el).toPdf();
+      return await worker.outputPdf('blob');
+    }finally{host?.remove();}
+  }
+
+  async function savePdf(x,button,paper){
+    setBusy(button,true,'Preparing PDF…');
+    try{
+      const blob=await generatePdfBlob(x,paper),name=fileName(x),file=new File([blob],name,{type:'application/pdf'});
+      if(navigator.share&&navigator.canShare?.({files:[file]})){await navigator.share({files:[file],title:`${mess.name} monthly statement`,text:`${x.member.name} · ${state.month}`});}
+      else{const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+      showToast('PDF ready to save.');
+    }catch(e){if(e?.name!=='AbortError')notify(e?.message||'PDF save failed.');}
+    finally{setBusy(button,false);}
+  }
+
+  function blobToBase64(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=reject;r.readAsDataURL(blob);});}
+  async function emailPdf(x,button,paper=null){
+    const old=button?.textContent;setBusy(button,true,'Preparing PDF…');
+    try{
+      const blob=await generatePdfBlob(x,paper),base64=await blobToBase64(blob);if(button)button.textContent='Sending…';
+      const balance=x.balance>=0?'Advance':'Due';
+      const message=`Hi ${x.member.name},\n\nYour ${state.month} monthly statement from ${mess.name} is attached as a PDF.\n\nTotal bill: ${money2(x.total)}\n${balance}: ${money2(Math.abs(x.balance))}\n\nOpen the attached PDF for the complete account summary and Bazar list.\n\n- Mess Manager`;
+      const html=`<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:28px;color:#10203e"><div style="background:#1760d1;color:white;padding:26px;border-radius:20px"><div style="font-size:12px;opacity:.82;letter-spacing:1px">MESS MANAGER · MONTHLY STATEMENT</div><h1 style="margin:8px 0 4px">${safe(mess.name)}</h1><div>${safe(state.month)}</div></div><h2 style="margin:24px 0 6px">Hi ${safe(x.member.name)},</h2><p style="line-height:1.65;color:#596b86">Your complete monthly statement is attached as a professionally formatted PDF.</p><table role="presentation" style="width:100%;border-collapse:separate;border-spacing:8px"><tr><td style="padding:14px;background:#eef4ff;border-radius:14px"><small style="color:#71809a">Total bill</small><br><b style="font-size:20px">${money2(x.total)}</b></td><td style="padding:14px;background:${x.balance>=0?'#eaf9ef':'#fff0ef'};border-radius:14px"><small style="color:#71809a">${balance}</small><br><b style="font-size:20px">${money2(Math.abs(x.balance))}</b></td></tr></table><p style="color:#8491a5;margin-top:22px">The attached PDF includes the account breakdown and complete Bazar list.</p></div>`;
+      const r=await client.functions.invoke('mess-notify',{body:{member_id:x.member.id,subject:`${mess.name}: ${state.month} monthly statement`,message,html,pdf_base64:base64,pdf_filename:fileName(x)}});if(r.error)throw r.error;if(r.data?.error)throw new Error(r.data.error);
+      showToast('PDF emailed successfully.');
+    }catch(e){notify(e?.message||'PDF email failed.');}
+    finally{if(button){button.disabled=false;button.textContent=old||'Email PDF';}}
+  }
+
+  const baseReports=window.reports;
+  window.reports=function statementReports(c){
+    baseReports(c);const calc=calcMonth();
+    c.querySelectorAll('[data-pdf]').forEach(b=>b.onclick=()=>openStatement(calc.find(x=>x.member.id===b.dataset.pdf)));
+    c.querySelectorAll('[data-email]').forEach(b=>b.onclick=()=>emailPdf(calc.find(x=>x.member.id===b.dataset.email),b));
+  };
 })();
