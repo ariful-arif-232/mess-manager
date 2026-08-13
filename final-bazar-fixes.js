@@ -8,7 +8,7 @@
   };
   const FRESH=[['আলু','kg'],['পেঁয়াজ','kg'],['রসুন','kg'],['আদা','kg'],['টমেটো','kg'],['কাঁচামরিচ','kg'],['বেগুন','kg'],['শসা','kg'],['পটল','kg'],['লাউ','pcs'],['কুমড়া','kg'],['ঢেঁড়স','kg'],['করলা','kg'],['পেঁপে','kg'],['ফুলকপি','pcs'],['বাঁধাকপি','pcs'],['শিম','kg'],['গাজর','kg'],['লেবু','pcs'],['ধনেপাতা','আঁটি'],['পালং শাক','আঁটি'],['লাল শাক','আঁটি'],['পুঁই শাক','আঁটি']];
   const normalizeCategory=item=>item?.category==='Vegetable'?'কাঁচাবাজার':(PRESETS[item?.category]?item.category:'অন্যান্য');
-  const itemTotal=item=>Number(item?.total ?? (Number(item?.quantity||0)*Number(item?.unit_price||0)));
+  const itemTotal=item=>Number(item?.entered_total ?? item?.total ?? (Number(item?.quantity||0)*Number(item?.unit_price||0)));
   const unitName=u=>u==='L'?'L':u==='pcs'?'pcs':u||'kg';
 
   const freshLine=(item={},mode='individual')=>`<div class="fresh-detail-row" data-fresh-detail data-name="${esc(item.item_name||'')}" data-unit="${esc(item.unit||'kg')}">
