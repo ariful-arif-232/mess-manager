@@ -1,9 +1,9 @@
 /* Compact pass for narrow phones. Loaded last to override earlier form polish. */
 .entry-date-wrap:before{content:none!important}
 .entry-date-wrap{height:50px!important;border-color:#cfdef0!important;border-radius:15px!important;background:linear-gradient(180deg,#fff,#f8fbff)!important;box-shadow:0 4px 13px rgba(32,70,125,.045)!important}
-.entry-date-wrap input{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:48px!important;min-height:48px!important;padding:8px 40px!important;text-align:center!important;text-align-last:center!important;font-size:16px!important;font-weight:750!important;letter-spacing:0!important}
-.entry-date-wrap input::-webkit-date-and-time-value{display:block!important;width:100%!important;min-width:100%!important;margin:0!important;padding:0!important;text-align:center!important}
-.entry-date-wrap input::-webkit-datetime-edit{display:block!important;width:100%!important;text-align:center!important}.entry-date-wrap input::-webkit-datetime-edit-fields-wrapper{display:flex!important;justify-content:center!important}
+.entry-date-wrap input{display:flex!important;align-items:center!important;justify-content:flex-start!important;width:100%!important;height:48px!important;min-height:48px!important;padding:8px 18px!important;text-align:left!important;text-align-last:left!important;font-size:16px!important;font-weight:750!important;letter-spacing:0!important}
+.entry-date-wrap input::-webkit-date-and-time-value{display:block!important;width:100%!important;min-width:100%!important;margin:0!important;padding:0!important;text-align:left!important}
+.entry-date-wrap input::-webkit-datetime-edit{display:block!important;width:100%!important;text-align:left!important}.entry-date-wrap input::-webkit-datetime-edit-fields-wrapper{display:flex!important;justify-content:flex-start!important}
 .modal-wrap .entry-select-button,.modal-wrap .entry-money-input{min-height:54px!important}
 .modal-wrap .entry-select-button{padding:7px 11px!important}
 .modal-wrap .entry-money-input input{min-height:52px!important;font-size:20px!important}
