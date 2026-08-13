@@ -1,7 +1,7 @@
 /* Force compact Bazar history cards and popup details. */
 'use strict';
 (()=>{
-  const itemTotal=i=>Number(i?.total ?? (Number(i?.quantity||0)*Number(i?.unit_price||0)));
+  const itemTotal=i=>Number(i?.entered_total ?? i?.total ?? (Number(i?.quantity||0)*Number(i?.unit_price||0)));
   const isFresh=i=>i?.category==='Vegetable'||i?.category==='কাঁচাবাজার';
   const person=id=>db.members.find(m=>m.id===id);
   const initials=name=>String(name||'M').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
