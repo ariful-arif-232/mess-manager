@@ -1,0 +1,4 @@
+/* Loaded last: make Profile use only the intended person icon. */
+#moreSheet .sheet-grid button[data-member-profile] > .member-profile-icon-final{display:grid!important;place-items:center!important;width:38px!important;height:38px!important;margin:0 auto 5px!important;font-size:0!important;line-height:0!important;color:#152b53!important;background:transparent!important;border:0!important;box-shadow:none!important}
+#moreSheet .sheet-grid button[data-member-profile] > .member-profile-icon-final svg{display:block!important;width:34px!important;height:34px!important;overflow:visible!important;color:inherit!important;stroke:currentColor!important;fill:none!important}
+html[data-theme="dark"] #moreSheet .sheet-grid button[data-member-profile] > .member-profile-icon-final{color:#72adff!important}
