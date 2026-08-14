@@ -17,18 +17,33 @@
   }
   const previousRenderPage=renderPage;renderPage=function(){if(state.page==='profile')return memberProfile($('#content'));return previousRenderPage();};
   const previousPageTitle=pageTitle;pageTitle=function(){return state.page==='profile'?'My Profile':previousPageTitle();};
+  const fixProfileMenuIcon=()=>{
+    if(profile?.role==='admin')return;
+    document.querySelectorAll('#moreSheet .sheet-grid button').forEach(btn=>{
+      const label=btn.querySelector('b')?.textContent?.trim();
+      if(label!=='Profile')return;
+      btn.dataset.memberProfile='1';
+      let holder=btn.querySelector('span');
+      if(!holder){holder=document.createElement('span');btn.prepend(holder);}
+      holder.className='member-profile-menu-icon';
+      if(!holder.querySelector('svg[data-profile-icon="1"]')) holder.innerHTML=profileIcon.replace('<svg ','<svg data-profile-icon="1" ');
+      btn.onclick=()=>{document.querySelector('#moreSheet')?.remove();state.page='profile';render();};
+    });
+  };
+  const observer=new MutationObserver(()=>fixProfileMenuIcon());
+  observer.observe(document.documentElement,{childList:true,subtree:true});
   document.addEventListener('click',e=>{
     const trigger=e.target.closest?.('#mobileMore');if(!trigger||profile?.role==='admin')return;
     setTimeout(()=>{
       const grid=document.querySelector('#moreSheet .sheet-grid');if(!grid)return;
-      let profileButton=grid.querySelector('[data-member-profile]');
-      if(!profileButton){profileButton=document.createElement('button');profileButton.type='button';profileButton.dataset.memberProfile='1';profileButton.onclick=()=>{document.querySelector('#moreSheet')?.remove();state.page='profile';render();};}
-      profileButton.innerHTML=`<span class="member-profile-menu-icon">${profileIcon}</span><b>Profile</b>`;
+      let profileButton=[...grid.querySelectorAll('button')].find(b=>b.querySelector('b')?.textContent?.trim()==='Profile')||grid.querySelector('[data-member-profile]');
+      if(!profileButton){profileButton=document.createElement('button');profileButton.type='button';profileButton.dataset.memberProfile='1';profileButton.innerHTML=`<span class="member-profile-menu-icon">${profileIcon}</span><b>Profile</b>`;}
       const activityButton=grid.querySelector('[data-member-activity]');
       const settingsButton=grid.querySelector('[data-member-settings]');
       if(activityButton)grid.appendChild(activityButton);
       if(settingsButton)grid.appendChild(settingsButton);
       grid.appendChild(profileButton);
+      fixProfileMenuIcon();
     },40);
   },true);
 })();
