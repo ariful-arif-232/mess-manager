@@ -1,4 +1,4 @@
-/* Final app polish: integer money, premium KPI icons and in-app logout confirmation. */
+/* Final app polish: integer money, premium KPI icons and stable in-app logout confirmation. */
 'use strict';
 (()=>{
   if(window.__mmFinalAppPolishLoaded)return;
@@ -100,65 +100,61 @@
 
   const auth=(typeof client!=='undefined'&&client?.auth)?client.auth:null;
   const rawSignOut=auth?.signOut?auth.signOut.bind(auth):null;
-  let activeLogoutRequest=null;
-  let returnFocus=null;
+  let pendingResolve=null;
+  let logoutOptions={scope:'local'};
 
-  function settleLogoutRequest(result){
-    const resolve=activeLogoutRequest?.resolve;
-    activeLogoutRequest=null;
+  function finishPending(result){
+    const resolve=pendingResolve;
+    pendingResolve=null;
     if(resolve)resolve(result);
   }
-  function closeLogoutDialog({cancelled=true,focus=true}={}){
+  function closeLogoutDialog(result={error:null,cancelled:true}){
     document.getElementById('mmLogoutDialog')?.remove();
     document.documentElement.classList.remove('mm-logout-open');
-    if(cancelled)settleLogoutRequest({error:null,cancelled:true});
-    if(focus&&returnFocus?.isConnected)requestAnimationFrame(()=>returnFocus.focus({preventScroll:true}));
-    returnFocus=null;
+    finishPending(result);
   }
-  async function confirmLogout(){
+  async function confirmLogout(event){
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
     const button=document.querySelector('#mmLogoutDialog [data-mm-logout-confirm]');
     if(!button||!rawSignOut)return;
     const old=button.textContent;
     button.disabled=true;
     button.textContent='Signing out…';
     try{
-      const result=await rawSignOut(activeLogoutRequest?.options||{scope:'local'});
+      const result=await rawSignOut(logoutOptions||{scope:'local'});
       if(result?.error)throw result.error;
-      const resolve=activeLogoutRequest?.resolve;
-      activeLogoutRequest=null;
       document.querySelector('#moreSheet')?.remove();
-      closeLogoutDialog({cancelled:false,focus:false});
-      if(resolve)resolve(result||{error:null});
+      closeLogoutDialog(result||{error:null});
     }catch(error){
       button.disabled=false;
       button.textContent=old;
       if(typeof notify==='function')notify(typeof friendlyError==='function'?friendlyError(error):(error?.message||'Unable to sign out.'));
     }
   }
+  function cancelLogout(event){
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
+    closeLogoutDialog({error:null,cancelled:true});
+  }
   function showLogoutDialog(trigger=null,options={scope:'local'},resolve=null){
     if(document.getElementById('mmLogoutDialog')){
-      if(resolve&&!activeLogoutRequest?.resolve)activeLogoutRequest={options,resolve};
+      if(resolve&&!pendingResolve)pendingResolve=resolve;
       return;
     }
-    returnFocus=trigger||document.activeElement;
-    activeLogoutRequest={options,resolve};
+    logoutOptions=options||{scope:'local'};
+    pendingResolve=resolve||null;
     document.body.insertAdjacentHTML('beforeend',`<div class="mm-logout-backdrop" id="mmLogoutDialog" role="presentation"><section class="mm-logout-dialog" role="dialog" aria-modal="true" aria-labelledby="mmLogoutTitle" aria-describedby="mmLogoutText"><button type="button" class="mm-logout-close" data-mm-logout-cancel aria-label="Close">×</button><div class="mm-logout-body"><div class="mm-logout-mark" aria-hidden="true"></div><span class="mm-logout-kicker">Mess Manager</span><h2 id="mmLogoutTitle">Sign out?</h2><p id="mmLogoutText">You’ll be signed out on this device. Your mess data will remain safe and unchanged.</p></div><div class="mm-logout-actions"><button type="button" class="mm-logout-stay" data-mm-logout-cancel>Stay signed in</button><button type="button" class="mm-logout-confirm" data-mm-logout-confirm>Sign out</button></div></section></div>`);
     document.documentElement.classList.add('mm-logout-open');
     const overlay=document.getElementById('mmLogoutDialog');
-    overlay.addEventListener('click',event=>{if(event.target===overlay)closeLogoutDialog();});
-    overlay.querySelectorAll('[data-mm-logout-cancel]').forEach(button=>button.addEventListener('click',()=>closeLogoutDialog()));
-    overlay.querySelector('[data-mm-logout-confirm]').addEventListener('click',confirmLogout);
+    overlay.addEventListener('click',event=>{if(event.target===overlay)cancelLogout(event);});
+    overlay.querySelectorAll('[data-mm-logout-cancel]').forEach(button=>button.addEventListener('click',cancelLogout,true));
+    overlay.querySelector('[data-mm-logout-confirm]').addEventListener('click',confirmLogout,true);
     requestAnimationFrame(()=>overlay.querySelector('[data-mm-logout-confirm]')?.focus({preventScroll:true}));
   }
-  function requestLogout(options={scope:'local'},trigger=null){
-    return new Promise(resolve=>showLogoutDialog(trigger,options,resolve));
-  }
-  window.requestMessLogout=(trigger=null)=>requestLogout({scope:'local'},trigger);
-
-  if(auth&&rawSignOut&&!auth.__mmPremiumSignOut){
-    auth.signOut=(options)=>requestLogout(options||{scope:'local'},null);
-    auth.__mmPremiumSignOut=true;
-  }
+  window.requestMessLogout=(trigger=null,options={scope:'local'})=>new Promise(resolve=>showLogoutDialog(trigger,options,resolve));
 
   document.addEventListener('click',event=>{
     const target=event.target instanceof Element?event.target:null;
@@ -169,7 +165,7 @@
     event.stopImmediatePropagation();
     showLogoutDialog(trigger,{scope:'local'},null);
   },true);
-  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.getElementById('mmLogoutDialog'))closeLogoutDialog();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.getElementById('mmLogoutDialog'))cancelLogout(event);});
 
   let frame=0;
   function polish(root=document.body){
