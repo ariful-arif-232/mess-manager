@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v63-voice-admin-polish';
+const CACHE = 'mess-manager-v64-admin-profile-responsive';
 const SHELL = [
   './',
   './index.html',
