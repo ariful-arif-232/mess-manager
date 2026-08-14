@@ -1,73 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mess Manager">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#06111f"/>
-      <stop offset="0.55" stop-color="#0b1d31"/>
-      <stop offset="1" stop-color="#06251f"/>
-    </linearGradient>
-    <linearGradient id="emerald" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#35e0a1"/>
-      <stop offset="0.55" stop-color="#0bb879"/>
-      <stop offset="1" stop-color="#078f63"/>
-    </linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffd85e"/>
-      <stop offset="1" stop-color="#f3a71c"/>
-    </linearGradient>
-    <linearGradient id="pot" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#d9e1ea"/>
-    </linearGradient>
-    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#000814" flood-opacity=".42"/>
-    </filter>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
-
-  <rect x="14" y="14" width="484" height="484" rx="112" fill="url(#bg)"/>
-  <rect x="18" y="18" width="476" height="476" rx="108" fill="none" stroke="#66f0c4" stroke-opacity=".35" stroke-width="3"/>
-  <circle cx="405" cy="104" r="82" fill="#16c98d" opacity=".08"/>
-  <circle cx="96" cy="424" r="110" fill="#3a8dff" opacity=".07"/>
-
-  <g filter="url(#shadow)">
-    <path d="M116 228V189L256 75l140 114v96" fill="none" stroke="url(#emerald)" stroke-width="31" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M369 166v-48h35v76" fill="url(#emerald)"/>
-
-    <path d="M128 224v90c0 74 57 132 128 132 49 0 91-27 113-67" fill="none" stroke="url(#emerald)" stroke-width="30" stroke-linecap="round"/>
-    <path d="M266 430c53 1 105-25 137-69 15-20 25-41 29-62-39 7-76 26-103 55-22 23-40 51-63 76z" fill="url(#emerald)"/>
-
-    <g>
-      <path d="M191 243h130l-10 93c-2 19-17 33-36 33h-38c-19 0-34-14-36-33z" fill="url(#pot)"/>
-      <rect x="181" y="229" width="150" height="22" rx="11" fill="#f4f7fb"/>
-      <path d="M217 214c8-20 25-31 39-31s31 11 39 31z" fill="#f4f7fb"/>
-      <rect x="246" y="171" width="20" height="18" rx="9" fill="#ffffff"/>
-      <path d="M231 150c-9-13 9-19 0-32M256 151c-9-13 9-19 0-32M281 150c-9-13 9-19 0-32" fill="none" stroke="#d7ecff" stroke-width="8" stroke-linecap="round"/>
-      <circle cx="256" cy="311" r="34" fill="url(#emerald)"/>
-      <path d="M239 311l11 11 24-27" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-    </g>
-
-    <g fill="url(#gold)">
-      <path d="M160 238h10v80h-10zM177 238h10v80h-10zM194 238h10v80h-10z"/>
-      <path d="M156 231h52v14c0 23-12 39-26 39s-26-16-26-39z"/>
-      <path d="M181 274h12l-6 74z"/>
-      <ellipse cx="351" cy="255" rx="20" ry="29"/>
-      <path d="M346 277h11l-4 70z"/>
-    </g>
-
-    <g transform="translate(340 341)">
-      <rect width="78" height="72" rx="18" fill="#f5f8fc"/>
-      <rect x="14" y="12" width="50" height="16" rx="5" fill="#0d2638"/>
-      <g fill="#0aa977">
-        <rect x="14" y="37" width="12" height="12" rx="3"/>
-        <rect x="33" y="37" width="12" height="12" rx="3"/>
-        <rect x="52" y="37" width="12" height="12" rx="3"/>
-        <rect x="14" y="54" width="12" height="12" rx="3"/>
-        <rect x="33" y="54" width="12" height="12" rx="3"/>
-        <rect x="52" y="54" width="12" height="12" rx="3"/>
-      </g>
-    </g>
-  </g>
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#061321"/><stop offset=".58" stop-color="#071827"/><stop offset="1" stop-color="#03120f"/></linearGradient>
+ <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#59ed55"/><stop offset=".48" stop-color="#18c85d"/><stop offset="1" stop-color="#05945b"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe06c"/><stop offset="1" stop-color="#f2a817"/></linearGradient>
+ <linearGradient id="white" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#dfe6ec"/></linearGradient>
+ <filter id="s" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#000" flood-opacity=".45"/></filter>
+</defs>
+<rect x="10" y="10" width="492" height="492" rx="105" fill="url(#bg)"/>
+<rect x="14" y="14" width="484" height="484" rx="101" fill="none" stroke="#35dc83" stroke-width="3" stroke-opacity=".7"/>
+<g filter="url(#s)">
+ <!-- balanced house -->
+ <path d="M111 213L256 91l145 122" fill="none" stroke="url(#g)" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
+ <path d="M126 203v105c0 64 48 113 112 121" fill="none" stroke="url(#g)" stroke-width="27" stroke-linecap="round"/>
+ <path d="M386 203v82" fill="none" stroke="url(#g)" stroke-width="27" stroke-linecap="round"/>
+ <path d="M365 168v-49h32v77" fill="url(#g)"/>
+ <!-- window -->
+ <g fill="url(#g)"><rect x="237" y="144" width="17" height="17" rx="4"/><rect x="260" y="144" width="17" height="17" rx="4"/><rect x="237" y="167" width="17" height="17" rx="4"/><rect x="260" y="167" width="17" height="17" rx="4"/></g>
+ <!-- steam -->
+ <path d="M238 211c-11-14 10-20 0-35M256 211c-11-14 10-20 0-35M274 211c-11-14 10-20 0-35" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+ <!-- fork -->
+ <g fill="url(#gold)"><rect x="161" y="236" width="7" height="50" rx="3"/><rect x="172" y="236" width="7" height="50" rx="3"/><rect x="183" y="236" width="7" height="50" rx="3"/><rect x="194" y="236" width="7" height="50" rx="3"/><path d="M160 273h42c0 19-8 29-17 33l-2 62h-12l-2-62c-6-4-9-8-9-33z"/></g>
+ <!-- spoon -->
+ <g fill="url(#gold)"><ellipse cx="346" cy="260" rx="18" ry="27"/><path d="M341 280h10l-3 87h-9z"/></g>
+ <!-- pot -->
+ <g><path d="M199 267h114l-8 76c-2 18-16 30-34 30h-30c-18 0-32-12-34-30z" fill="url(#white)"/><rect x="190" y="255" width="132" height="19" rx="10" fill="#f8fafc"/><path d="M220 246c7-17 21-26 36-26s29 9 36 26z" fill="#f8fafc"/><ellipse cx="256" cy="219" rx="9" ry="6" fill="#fff"/><circle cx="256" cy="319" r="30" fill="url(#g)"/><path d="M241 319l10 10 22-25" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></g>
+ <!-- leaf swoosh -->
+ <path d="M218 429c63 5 130-27 178-94 11-15 19-31 24-48-48 9-86 30-115 60-26 27-45 59-87 82z" fill="url(#g)"/>
+ <path d="M228 429c52 5 107-12 154-58" fill="none" stroke="#067a4c" stroke-width="4" stroke-linecap="round" opacity=".65"/>
+ <!-- calculator -->
+ <g transform="translate(341 335)"><rect width="67" height="65" rx="14" fill="#f7fafc"/><rect x="11" y="10" width="45" height="14" rx="4" fill="#08202b"/><g fill="#12ae62"><rect x="11" y="32" width="11" height="11" rx="3"/><rect x="28" y="32" width="11" height="11" rx="3"/><rect x="45" y="32" width="11" height="11" rx="3"/><rect x="11" y="48" width="11" height="11" rx="3"/><rect x="28" y="48" width="11" height="11" rx="3"/><rect x="45" y="48" width="11" height="11" rx="3"/></g></g>
+</g>
+<!-- brand text kept inside safe icon area -->
+<text x="256" y="462" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="31" font-weight="800" letter-spacing="1.2"><tspan fill="#32d55c">MESS</tspan><tspan fill="#f8fafc"> MANAGER</tspan></text>
+<text x="256" y="486" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="600" fill="#e8eef3">খাবার  •  হিসাব  •  মিল  •  সব এক সাথে</text>
 </svg>
