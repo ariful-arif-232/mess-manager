@@ -1,4 +1,4 @@
-/* Final app polish: display-only integer money, premium KPI icons and safe logout confirmation. */
+/* Final app polish: integer money, premium KPI icons and in-app logout confirmation. */
 'use strict';
 (()=>{
   if(window.__mmFinalAppPolishLoaded)return;
@@ -29,31 +29,34 @@
     html[data-theme="dark"] .mm-kpi-deposit{color:#68c9ff!important;background:linear-gradient(145deg,#174777,#103453)!important}
     html[data-theme="dark"] .mm-kpi-utility{color:#6ce0bd!important;background:linear-gradient(145deg,#174e56,#103a41)!important}
     html[data-theme="dark"] .mm-kpi-due{color:#ff9aa9!important;background:linear-gradient(145deg,#583044,#3e2232)!important}
-    html.logout-confirm-open,html.logout-confirm-open body{overflow:hidden!important}
-    .logout-confirm-overlay{position:fixed;inset:0;z-index:14000;display:grid;place-items:center;padding:24px;background:rgba(9,21,38,.54);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);animation:mmLogoutFade .18s ease-out}
-    .logout-confirm-card{width:min(420px,100%);position:relative;padding:31px 26px 24px;border:1px solid rgba(207,220,237,.95);border-radius:28px;background:linear-gradient(160deg,#fff,#f7faff);color:#17253b;text-align:center;box-shadow:0 30px 80px rgba(21,43,77,.26);animation:mmLogoutUp .22s cubic-bezier(.2,.8,.2,1)}
-    .logout-confirm-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border:1px solid #e0e8f2;border-radius:50%;background:#f1f5fa;color:#52647b;font-size:24px;line-height:1;cursor:pointer}
-    .logout-confirm-icon{width:64px;height:64px;margin:0 auto 18px;border-radius:20px;display:grid;place-items:center;color:#d94b63;background:linear-gradient(145deg,#fff0f3,#ffe2e8);border:1px solid #ffd0d8}
-    .logout-confirm-icon::before{content:"";width:30px;height:30px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10 M14 8l4 4-4 4 M18 12H9' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10 M14 8l4 4-4 4 M18 12H9' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
-    .logout-confirm-eyebrow{display:block;margin-bottom:8px;font:800 10px/1.2 Inter,sans-serif;letter-spacing:.16em;color:#7b8ba0}
-    .logout-confirm-card h2{margin:0 0 9px;font-size:25px;letter-spacing:-.03em}
-    .logout-confirm-card p{margin:0 auto 24px;max-width:330px;color:#68798f;font-size:13px;line-height:1.65}
-    .logout-confirm-actions{display:grid;grid-template-columns:1fr 1.25fr;gap:10px}
-    .logout-confirm-actions .btn{min-height:49px;border-radius:15px}
-    .logout-confirm-cancel{background:#edf2f8!important;color:#35465d!important;border:1px solid #e0e7ef!important}
-    .logout-confirm-submit{background:linear-gradient(135deg,#ec566c,#d63f58)!important;color:#fff!important;border:0!important;box-shadow:0 12px 24px rgba(213,62,86,.20)}
-    html[data-theme="dark"] .logout-confirm-overlay{background:rgba(0,7,15,.72)}
-    html[data-theme="dark"] .logout-confirm-card{border-color:#29445e;background:linear-gradient(160deg,#11263a,#0b1928);color:#f3f8ff;box-shadow:0 34px 90px rgba(0,0,0,.56)}
-    html[data-theme="dark"] .logout-confirm-close{border-color:#304b63;background:#152a3e;color:#d6e3f1}
-    html[data-theme="dark"] .logout-confirm-icon{color:#ff97a6;background:linear-gradient(145deg,#502a3d,#351d2c);border-color:#673347}
-    html[data-theme="dark"] .logout-confirm-eyebrow{color:#8299b1}
-    html[data-theme="dark"] .logout-confirm-card p{color:#9eb0c4}
-    html[data-theme="dark"] .logout-confirm-cancel{background:#142b40!important;color:#e5eef8!important;border-color:#304c65!important}
+
+    html.mm-logout-open,html.mm-logout-open body{overflow:hidden!important}
+    .mm-logout-backdrop{position:fixed;inset:0;z-index:16000;display:grid;place-items:center;padding:18px;background:rgba(8,18,32,.58);backdrop-filter:blur(18px) saturate(115%);-webkit-backdrop-filter:blur(18px) saturate(115%);animation:mmLogoutFade .16s ease-out}
+    .mm-logout-dialog{width:min(390px,calc(100vw - 36px));position:relative;overflow:hidden;border:1px solid rgba(213,223,237,.94);border-radius:28px;background:linear-gradient(165deg,rgba(255,255,255,.99),rgba(246,249,254,.99));color:#17243a;box-shadow:0 32px 90px rgba(13,30,55,.32);animation:mmLogoutRise .22s cubic-bezier(.2,.8,.2,1)}
+    .mm-logout-dialog::before{content:"";position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,#ff6578,#e94861 55%,#c93751)}
+    .mm-logout-body{padding:28px 25px 18px;text-align:center}
+    .mm-logout-mark{width:70px;height:70px;margin:2px auto 17px;border-radius:22px;display:grid;place-items:center;color:#e24a62;background:radial-gradient(circle at 35% 25%,#fff 0 12%,transparent 13%),linear-gradient(145deg,#fff0f3,#ffe1e7);border:1px solid #ffd0d8;box-shadow:0 12px 26px rgba(221,66,91,.12)}
+    .mm-logout-mark::before{content:"";width:31px;height:31px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10 M14 8l4 4-4 4 M18 12H9' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10 M14 8l4 4-4 4 M18 12H9' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
+    .mm-logout-kicker{display:block;margin-bottom:8px;font:800 10px/1.2 Inter,sans-serif;letter-spacing:.18em;color:#8290a3;text-transform:uppercase}
+    .mm-logout-dialog h2{margin:0;font-size:27px;line-height:1.08;letter-spacing:-.035em;color:inherit}
+    .mm-logout-dialog p{margin:11px auto 0;max-width:305px;color:#6f7d91;font-size:13px;line-height:1.6}
+    .mm-logout-actions{display:grid;grid-template-columns:1fr 1.08fr;gap:10px;padding:0 20px 21px}
+    .mm-logout-actions button{min-height:50px;border-radius:16px;font:800 13px/1 Inter,"Noto Sans Bengali",sans-serif;cursor:pointer}
+    .mm-logout-stay{border:1px solid #dce4ef;background:#eef3f8;color:#35465d}
+    .mm-logout-confirm{border:0;background:linear-gradient(135deg,#f05c72,#d94059);color:#fff;box-shadow:0 12px 24px rgba(211,58,83,.22)}
+    .mm-logout-actions button:disabled{opacity:.68;cursor:default}
+    .mm-logout-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border:1px solid #e1e8f0;border-radius:50%;background:rgba(241,245,250,.92);color:#5c6d83;font-size:22px;line-height:1;display:grid;place-items:center;cursor:pointer}
+    html[data-theme="dark"] .mm-logout-backdrop{background:rgba(0,7,15,.74)}
+    html[data-theme="dark"] .mm-logout-dialog{border-color:#2b455d;background:linear-gradient(165deg,#11263a,#0b1928);color:#f4f8fd;box-shadow:0 34px 96px rgba(0,0,0,.58)}
+    html[data-theme="dark"] .mm-logout-mark{color:#ff95a5;background:linear-gradient(145deg,#512a3d,#351d2c);border-color:#693548;box-shadow:none}
+    html[data-theme="dark"] .mm-logout-kicker{color:#8298af}
+    html[data-theme="dark"] .mm-logout-dialog p{color:#9db0c4}
+    html[data-theme="dark"] .mm-logout-stay{border-color:#304b63;background:#142a3f;color:#e7eff8}
+    html[data-theme="dark"] .mm-logout-close{border-color:#304b63;background:#142a3f;color:#d8e4ef}
     @keyframes mmLogoutFade{from{opacity:0}to{opacity:1}}
-    @keyframes mmLogoutUp{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
-    @keyframes mmLogoutSheet{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
-    @media(max-width:600px){.mm-kpi-icon{width:44px!important;height:44px!important;flex-basis:44px!important;border-radius:14px!important}.mm-kpi-icon::after{width:23px;height:23px}.logout-confirm-overlay{place-items:end center;padding:0}.logout-confirm-card{width:100%;border-radius:28px 28px 0 0;padding:30px 20px max(24px,calc(18px + env(safe-area-inset-bottom)));animation:mmLogoutSheet .25s cubic-bezier(.2,.8,.2,1)}.logout-confirm-actions{grid-template-columns:1fr}.logout-confirm-submit{order:-1}}
-    @media(prefers-reduced-motion:reduce){.logout-confirm-overlay,.logout-confirm-card{animation:none}}
+    @keyframes mmLogoutRise{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+    @media(max-width:600px){.mm-kpi-icon{width:44px!important;height:44px!important;flex-basis:44px!important;border-radius:14px!important}.mm-kpi-icon::after{width:23px;height:23px}.mm-logout-backdrop{padding:16px}.mm-logout-dialog{width:min(380px,calc(100vw - 32px));border-radius:26px}.mm-logout-body{padding:27px 21px 17px}.mm-logout-actions{grid-template-columns:1fr 1fr;padding:0 18px 19px}.mm-logout-dialog h2{font-size:25px}}
+    @media(prefers-reduced-motion:reduce){.mm-logout-backdrop,.mm-logout-dialog{animation:none}}
   `;
   document.head.appendChild(style);
 
@@ -80,15 +83,9 @@
   }
   window.normalizeMessMoney=normalizeCurrency;
 
-  const KPI_CLASS={
-    'মোট বাজার':'mm-kpi-bazar',
-    'মোট জমা':'mm-kpi-deposit',
-    'utility bills':'mm-kpi-utility',
-    'মোট due':'mm-kpi-due'
-  };
-  function enhanceDashboardIcons(root=document){
-    const scope=root?.querySelectorAll?root:document;
-    scope.querySelectorAll('#content .kpis .kpi').forEach(card=>{
+  const KPI_CLASS={'মোট বাজার':'mm-kpi-bazar','মোট জমা':'mm-kpi-deposit','utility bills':'mm-kpi-utility','মোট due':'mm-kpi-due'};
+  function enhanceDashboardIcons(){
+    document.querySelectorAll('#content .kpis .kpi').forEach(card=>{
       const label=(card.querySelector('.label')?.textContent||'').trim().replace(/\s+/g,' ');
       const cls=KPI_CLASS[label]||KPI_CLASS[label.toLowerCase()];
       if(!cls)return;
@@ -101,59 +98,78 @@
     });
   }
 
-  const LOGOUT_ID='logoutConfirmDialog';
-  let logoutReturnFocus=null;
-  function closeLogoutDialog(){
-    document.getElementById(LOGOUT_ID)?.remove();
-    document.documentElement.classList.remove('logout-confirm-open');
-    if(logoutReturnFocus?.isConnected)logoutReturnFocus.focus({preventScroll:true});
-    logoutReturnFocus=null;
+  const auth=(typeof client!=='undefined'&&client?.auth)?client.auth:null;
+  const rawSignOut=auth?.signOut?auth.signOut.bind(auth):null;
+  let activeLogoutRequest=null;
+  let returnFocus=null;
+
+  function settleLogoutRequest(result){
+    const resolve=activeLogoutRequest?.resolve;
+    activeLogoutRequest=null;
+    if(resolve)resolve(result);
   }
-  async function performLogout(button){
+  function closeLogoutDialog({cancelled=true,focus=true}={}){
+    document.getElementById('mmLogoutDialog')?.remove();
+    document.documentElement.classList.remove('mm-logout-open');
+    if(cancelled)settleLogoutRequest({error:null,cancelled:true});
+    if(focus&&returnFocus?.isConnected)requestAnimationFrame(()=>returnFocus.focus({preventScroll:true}));
+    returnFocus=null;
+  }
+  async function confirmLogout(){
+    const button=document.querySelector('#mmLogoutDialog [data-mm-logout-confirm]');
+    if(!button||!rawSignOut)return;
     const old=button.textContent;
     button.disabled=true;
-    button.textContent='Logging out…';
+    button.textContent='Signing out…';
     try{
-      if(!client?.auth?.signOut)throw new Error('Logout service is unavailable.');
-      const result=await client.auth.signOut({scope:'local'});
+      const result=await rawSignOut(activeLogoutRequest?.options||{scope:'local'});
       if(result?.error)throw result.error;
+      const resolve=activeLogoutRequest?.resolve;
+      activeLogoutRequest=null;
       document.querySelector('#moreSheet')?.remove();
-      closeLogoutDialog();
+      closeLogoutDialog({cancelled:false,focus:false});
+      if(resolve)resolve(result||{error:null});
     }catch(error){
       button.disabled=false;
       button.textContent=old;
-      if(typeof notify==='function')notify(typeof friendlyError==='function'?friendlyError(error):(error?.message||'Logout failed.'));
+      if(typeof notify==='function')notify(typeof friendlyError==='function'?friendlyError(error):(error?.message||'Unable to sign out.'));
     }
   }
-  function openLogoutDialog(trigger){
-    if(document.getElementById(LOGOUT_ID))return;
-    logoutReturnFocus=trigger||null;
-    document.body.insertAdjacentHTML('beforeend',`<div class="logout-confirm-overlay" id="${LOGOUT_ID}" role="presentation"><section class="logout-confirm-card" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle"><button type="button" class="logout-confirm-close" data-logout-cancel aria-label="Close">×</button><div class="logout-confirm-icon" aria-hidden="true"></div><span class="logout-confirm-eyebrow">SECURE SIGN OUT</span><h2 id="logoutConfirmTitle">Logout করবেন?</h2><p>Confirm করলে এই device থেকে sign out হবে। আবার ঢুকতে OTP verification লাগবে।</p><div class="logout-confirm-actions"><button type="button" class="btn logout-confirm-cancel" data-logout-cancel>Cancel</button><button type="button" class="btn danger logout-confirm-submit" data-logout-confirm>Confirm Logout</button></div></section></div>`);
-    document.documentElement.classList.add('logout-confirm-open');
-    const overlay=document.getElementById(LOGOUT_ID);
+  function showLogoutDialog(trigger=null,options={scope:'local'},resolve=null){
+    if(document.getElementById('mmLogoutDialog')){
+      if(resolve&&!activeLogoutRequest?.resolve)activeLogoutRequest={options,resolve};
+      return;
+    }
+    returnFocus=trigger||document.activeElement;
+    activeLogoutRequest={options,resolve};
+    document.body.insertAdjacentHTML('beforeend',`<div class="mm-logout-backdrop" id="mmLogoutDialog" role="presentation"><section class="mm-logout-dialog" role="dialog" aria-modal="true" aria-labelledby="mmLogoutTitle" aria-describedby="mmLogoutText"><button type="button" class="mm-logout-close" data-mm-logout-cancel aria-label="Close">×</button><div class="mm-logout-body"><div class="mm-logout-mark" aria-hidden="true"></div><span class="mm-logout-kicker">Mess Manager</span><h2 id="mmLogoutTitle">Sign out?</h2><p id="mmLogoutText">You’ll be signed out on this device. Your mess data will remain safe and unchanged.</p></div><div class="mm-logout-actions"><button type="button" class="mm-logout-stay" data-mm-logout-cancel>Stay signed in</button><button type="button" class="mm-logout-confirm" data-mm-logout-confirm>Sign out</button></div></section></div>`);
+    document.documentElement.classList.add('mm-logout-open');
+    const overlay=document.getElementById('mmLogoutDialog');
     overlay.addEventListener('click',event=>{if(event.target===overlay)closeLogoutDialog();});
-    overlay.querySelectorAll('[data-logout-cancel]').forEach(button=>button.addEventListener('click',closeLogoutDialog));
-    overlay.querySelector('[data-logout-confirm]').addEventListener('click',event=>performLogout(event.currentTarget));
-    requestAnimationFrame(()=>overlay.querySelector('[data-logout-confirm]')?.focus({preventScroll:true}));
+    overlay.querySelectorAll('[data-mm-logout-cancel]').forEach(button=>button.addEventListener('click',()=>closeLogoutDialog()));
+    overlay.querySelector('[data-mm-logout-confirm]').addEventListener('click',confirmLogout);
+    requestAnimationFrame(()=>overlay.querySelector('[data-mm-logout-confirm]')?.focus({preventScroll:true}));
   }
-  function stopAndConfirm(event,trigger){
-    if(!trigger||trigger.closest(`#${LOGOUT_ID}`))return;
-    event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();openLogoutDialog(trigger);
+  function requestLogout(options={scope:'local'},trigger=null){
+    return new Promise(resolve=>showLogoutDialog(trigger,options,resolve));
   }
-  function bindLogoutTriggers(root=document){
-    const scope=root?.querySelectorAll?root:document;
-    scope.querySelectorAll('#logout,#sheetLogout,.sheet-logout,[data-logout]').forEach(trigger=>{
-      if(trigger.dataset.mmLogoutConfirmBound==='1')return;
-      trigger.dataset.mmLogoutConfirmBound='1';
-      trigger.addEventListener('click',event=>stopAndConfirm(event,trigger),true);
-    });
+  window.requestMessLogout=(trigger=null)=>requestLogout({scope:'local'},trigger);
+
+  if(auth&&rawSignOut&&!auth.__mmPremiumSignOut){
+    auth.signOut=(options)=>requestLogout(options||{scope:'local'},null);
+    auth.__mmPremiumSignOut=true;
   }
+
   document.addEventListener('click',event=>{
     const target=event.target instanceof Element?event.target:null;
     const trigger=target?.closest('#logout,#sheetLogout,.sheet-logout,[data-logout]');
-    if(trigger)stopAndConfirm(event,trigger);
+    if(!trigger||trigger.closest('#mmLogoutDialog'))return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    showLogoutDialog(trigger,{scope:'local'},null);
   },true);
-  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.getElementById(LOGOUT_ID))closeLogoutDialog();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.getElementById('mmLogoutDialog'))closeLogoutDialog();});
 
   let frame=0;
   function polish(root=document.body){
@@ -161,8 +177,7 @@
     if(frame)return;
     frame=requestAnimationFrame(()=>{
       frame=0;
-      enhanceDashboardIcons(document);
-      bindLogoutTriggers(document);
+      enhanceDashboardIcons();
       normalizeCurrency(document.getElementById('content')||document.body);
     });
   }
