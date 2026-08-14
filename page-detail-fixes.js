@@ -11,7 +11,7 @@
     if (Number.isNaN(d.getTime())) return '';
     return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
   };
-  const utilityIcon = type => ({Gas:'🔥',WiFi:'⌁',Current:'⚡',Water:'◌'}[type] || '▦');
+  const utilityIcon = type => ({Gas:'🔥',WiFi:'📶',Current:'⚡',Water:'💧'}[type] || '🧾');
 
   window.utilities = function utilitiesDetailed(c){
     const controls = profile.role === 'admin';
