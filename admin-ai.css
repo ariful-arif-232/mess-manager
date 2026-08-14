@@ -3,7 +3,43 @@
 @media(max-width:900px){.ai-reference-page{min-height:calc(100dvh - 135px);padding-top:30px}.ai-reference-page>h2{font-size:29px}.ai-voice-stage{margin-top:56px}.ai-orb{width:154px;height:154px}.voice-label{margin-top:58px}.ai-reference-composer{margin-top:38px}}
 @media(max-width:600px){.ai-reference-page{min-height:calc(100dvh - 130px);padding:28px 2px 20px}.ai-reference-page>h2{font-size:27px}.ai-voice-stage{margin-top:52px}.ai-orb{width:142px;height:142px}.ai-mic-icon{font-size:54px}.voice-label{margin-top:54px;font-size:19px}.ai-reference-log{max-height:180px;margin-top:18px}.ai-reference-composer{margin-top:34px;grid-template-columns:38px 1fr auto;padding:7px 8px 7px 10px}.composer-mic{width:34px;height:34px;font-size:17px}.ai-reference-composer input{height:38px;font-size:14px}.ai-reference-composer button{height:40px;padding:0 18px;font-size:14px}.ai-bubble{max-width:94%;font-size:13px;padding:10px 12px}.ai-review-list>div{font-size:12px}}
 
-/* Keep a dedicated response area and anchor the composer near the bottom. */
-.ai-reference-log{flex:1;min-height:118px;max-height:280px}
-.ai-reference-composer{flex:0 0 auto;margin-top:16px;margin-bottom:8px}
-@media(max-width:600px){.ai-reference-page{min-height:calc(100dvh - 112px)}.ai-reference-log{flex:1;min-height:112px;max-height:250px;margin-top:18px}.ai-reference-composer{margin-top:14px;margin-bottom:74px}}
+/* Assistant page is viewport-locked: only the response log scrolls. */
+html.mm-assistant-page,html.mm-assistant-page body{height:100%;overflow:hidden!important;overscroll-behavior:none}
+html.mm-assistant-page #app,html.mm-assistant-page .layout{height:100dvh;min-height:0!important;overflow:hidden!important}
+html.mm-assistant-page .main{height:100dvh;min-height:0!important;display:flex;flex-direction:column;overflow:hidden!important;padding-bottom:calc(88px + env(safe-area-inset-bottom))!important}
+html.mm-assistant-page .topbar{flex:0 0 auto;margin-bottom:8px!important}
+html.mm-assistant-page #content{flex:1 1 auto;min-height:0!important;overflow:hidden!important;display:flex}
+html.mm-assistant-page .ai-reference-page{flex:1 1 auto;min-height:0!important;height:auto!important;width:100%;max-width:760px;padding:16px 8px 8px;overflow:hidden!important;display:grid;grid-template-rows:auto auto minmax(118px,1fr) auto;justify-items:center;align-items:start;row-gap:10px}
+html.mm-assistant-page .ai-reference-page>h2{font-size:25px;margin:0}
+html.mm-assistant-page .ai-voice-stage{margin-top:10px}
+html.mm-assistant-page .ai-orb{width:128px;height:128px}
+html.mm-assistant-page .ai-orb::before,html.mm-assistant-page .ai-orb::after,html.mm-assistant-page .ai-orb-rings{inset:-17px}
+html.mm-assistant-page .ai-orb::after{inset:-32px}
+html.mm-assistant-page .ai-mic-icon{font-size:48px}
+html.mm-assistant-page .voice-label{margin-top:34px;font-size:18px}
+html.mm-assistant-page .ai-reference-log{align-self:stretch;width:min(100%,640px);max-width:640px;min-height:118px!important;max-height:none!important;height:auto!important;margin:4px auto 0;padding:2px 3px 8px;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+html.mm-assistant-page .ai-reference-composer{align-self:end;width:min(100%,640px);margin:0 auto 2px;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;padding:7px 8px 7px 9px;border:1px solid rgba(214,224,238,.96);border-radius:22px;background:rgba(255,255,255,.98);box-shadow:0 12px 28px rgba(35,68,119,.10)}
+html.mm-assistant-page .composer-mic{width:38px;height:38px;border-radius:13px;background:linear-gradient(145deg,#eef4ff,#e3ecff);box-shadow:none;color:#386fe3;font-size:18px}
+html.mm-assistant-page .ai-reference-composer input{height:42px;font-size:14px;padding:0 5px}
+html.mm-assistant-page .ai-reference-composer button{height:42px;min-width:76px;padding:0 18px;border-radius:15px;font-size:14px}
+html[data-theme="dark"].mm-assistant-page .ai-reference-composer{background:rgba(13,29,45,.97);border-color:#29445e;box-shadow:0 12px 28px rgba(0,0,0,.22)}
+html[data-theme="dark"].mm-assistant-page .composer-mic{background:linear-gradient(145deg,#173d70,#102d52);color:#78aaff}
+html[data-theme="dark"].mm-assistant-page .ai-reference-composer input{color:#eef5ff}
+
+@media(max-width:600px){
+  html.mm-assistant-page .main{padding:8px 10px calc(82px + env(safe-area-inset-bottom))!important}
+  html.mm-assistant-page .topbar{margin-bottom:4px!important}
+  html.mm-assistant-page .ai-reference-page{padding:10px 2px 4px;grid-template-rows:auto auto minmax(132px,1fr) auto;row-gap:8px}
+  html.mm-assistant-page .ai-reference-page>h2{font-size:23px}
+  html.mm-assistant-page .ai-voice-stage{margin-top:8px}
+  html.mm-assistant-page .ai-orb{width:112px;height:112px}
+  html.mm-assistant-page .ai-orb::before,html.mm-assistant-page .ai-orb-rings{inset:-14px;box-shadow:0 0 0 11px rgba(87,135,238,.05),0 0 0 22px rgba(87,135,238,.025)}
+  html.mm-assistant-page .ai-orb::after{inset:-27px}
+  html.mm-assistant-page .ai-mic-icon{font-size:43px}
+  html.mm-assistant-page .voice-label{margin-top:29px;font-size:17px}
+  html.mm-assistant-page .ai-reference-log{min-height:132px!important;margin-top:0;padding-bottom:5px}
+  html.mm-assistant-page .ai-reference-composer{grid-template-columns:40px minmax(0,1fr) auto;padding:6px 7px 6px 8px;border-radius:20px}
+  html.mm-assistant-page .composer-mic{width:34px;height:34px;border-radius:11px;font-size:16px}
+  html.mm-assistant-page .ai-reference-composer input{height:38px;font-size:13px}
+  html.mm-assistant-page .ai-reference-composer button{height:38px;min-width:68px;padding:0 14px;font-size:13px;border-radius:13px}
+}
