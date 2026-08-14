@@ -1,4 +1,4 @@
-/* Deterministic auth transition, repeat-login recovery and guarded logout. */
+/* Deterministic auth transition and repeat-login recovery. */
 'use strict';
 (()=>{
  const $=s=>document.querySelector(s), sleep=ms=>new Promise(r=>setTimeout(r,ms)); let transitioning=false;
@@ -13,26 +13,9 @@
   catch(e){try{renderLogin()}catch{}notify(e?.message||'Something went wrong. Please try again.')}
   finally{transitioning=false;busy(b,false)}
  }
-
- /* Every direct signOut call is guarded. If the premium logout dialog is already open,
-    that dialog is the confirmation and we allow the real sign-out without a second prompt. */
- if(client?.auth?.signOut&&!client.auth.__mmGuardedSignOut){
-  const rawSignOut=client.auth.signOut.bind(client.auth);
-  const guarded=async(options)=>{
-   if(document.getElementById('logoutConfirmDialog'))return rawSignOut(options||{scope:'local'});
-   const ok=window.confirm('Logout করবেন?\n\nConfirm করলে এই device থেকে sign out হবে।');
-   if(!ok)return {error:null,cancelled:true};
-   return rawSignOut(options||{scope:'local'});
-  };
-  guarded.__mmOriginal=rawSignOut;
-  client.auth.signOut=guarded;
-  client.auth.__mmGuardedSignOut=true;
- }
-
  if(client?.auth?.onAuthStateChange){
   client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){transitioning=false;try{sessionStorage.removeItem('mm_admin_setup')}catch{}}});
  }
-
  document.addEventListener('click',async e=>{
   const a=e.target.closest('#verifyAdmin');if(a){e.preventDefault();e.stopImmediatePropagation();const s=JSON.parse(sessionStorage.getItem('mm_admin_setup')||'{}'),token=$('#adminCode')?.value.trim()||'';if(!s.email)return notify('আগে OTP পাঠান।');if(!/^\d{8}$/.test(token))return notify('8-digit OTP দিন।');return finish(a,'Verifying & creating…',async()=>{const helper=window.functionJson;if(typeof helper!=='function')throw Error('Admin verification service load হয়নি। Refresh করে আবার চেষ্টা করুন।');const v=await helper('verify-admin-otp',{email:s.email,token});if(!v.token_hash)throw Error('Verification session তৈরি হয়নি।');const d=assertResult(await client.auth.verifyOtp({token_hash:v.token_hash,type:'email'}));session=d?.session||(await client.auth.getSession()).data.session;if(!session)throw Error('Login session তৈরি হয়নি।');screen('Creating your mess…','Setting up your admin account and workspace.');const c=await client.rpc('create_admin_workspace',{p_name:s.name,p_mess_name:s.messName,p_email:s.email});if(c.error&&!String(c.error.message||'').includes('already linked'))throw c.error;sessionStorage.removeItem('mm_admin_setup')})}
   const b=e.target.closest('#verifyOtp');if(b){e.preventDefault();e.stopImmediatePropagation();const token=$('#otpCode')?.value.trim()||'',email=($('#otpEmail')?.value||'').trim().toLowerCase();if(!email)return notify('Email দিন।');if(!/^\d{8}$/.test(token))return notify('8-digit OTP দিন।');return finish(b,'Verifying…',async()=>{const d=assertResult(await client.auth.verifyOtp({email,token,type:'email'}));session=d?.session||(await client.auth.getSession()).data.session;if(!session)throw Error('Login session তৈরি হয়নি।');const c=await client.rpc('claim_member_by_email');if(c.error&&!String(c.error.message||'').includes('already'))throw c.error})}
