@@ -40,7 +40,10 @@ html[data-theme="dark"] .ai-review-list span{color:#9eb0c4!important}
 html[data-theme="dark"] .ai-review-list strong{color:#f1f6fc!important}
 html[data-theme="dark"] .statement-view:not(.statement-capture) .statement-status.advance{background:#123b31!important;color:#62dfb5!important;border:1px solid #28604e!important}html[data-theme="dark"] .statement-view:not(.statement-capture) .statement-status.due{background:#3d2224!important;color:#ff9f98!important;border:1px solid #693838!important}html[data-theme="dark"] .statement-view:not(.statement-capture) .statement-bazar-total{background:#142d43!important;color:#80b7ff!important;border:1px solid #315069!important}html[data-theme="dark"] .statement-view:not(.statement-capture) .statement-bazar-total :is(small,b){color:inherit!important}
 html[data-theme="dark"] .schedule-email-toggle{background:#102438!important;border-color:#304b63!important}html[data-theme="dark"] .schedule-email-toggle b{color:#eef5fc!important}html[data-theme="dark"] .schedule-email-toggle small{color:#9dafc3!important}
-html[data-theme="dark"] .modal-wrap{background:#07111d!important}
+html[data-theme="dark"] .modal-wrap{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;min-height:100dvh!important;background:#07111d!important}
+html[data-theme="dark"] .modal-wrap:has(.entry-form-pro)::before{content:"";position:fixed;inset:0;z-index:-1;background:#07111d!important;pointer-events:none}
+html[data-theme="dark"] .modal-wrap .modal:has(.entry-form-pro),html[data-theme="dark"] .modal-wrap .entry-form-pro,html[data-theme="dark"] .modal-wrap .entry-pro-form{background:#0d1d2d!important}
+html[data-theme="dark"] body:has(.modal-wrap .entry-form-pro),html[data-theme="dark"] body:has(.modal-wrap .entry-form-pro) :is(#app,.layout,.main){background:#07111d!important}
 html[data-theme="dark"] .top-chip,
 html[data-theme="dark"] .month-chip{background:#101f31!important;border-color:#30485f!important;color:#eaf2fc!important;box-shadow:0 8px 22px rgba(0,0,0,.18)!important}
 html[data-theme="dark"] .month-chip input,
