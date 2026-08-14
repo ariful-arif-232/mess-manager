@@ -18,5 +18,25 @@ html[data-theme="dark"] .clean-report-card,html[data-theme="dark"] .v3-report-ca
 html[data-theme="dark"] .chat-shell-pro{background:#0c1c2c!important;border-color:#29465f!important}html[data-theme="dark"] .chat-simple-head{background:linear-gradient(135deg,#142b41,#10302f)!important;border-color:#2d4a61!important}html[data-theme="dark"] .chat-simple-head h2{color:#f3f8ff!important}html[data-theme="dark"] .chat-messages-pro{background:linear-gradient(180deg,#0d1e2f,#091824)!important}html[data-theme="dark"] .chat-message-meta b{color:#b5c6d8!important}html[data-theme="dark"] .chat-message-meta time{color:#7f94aa!important}html[data-theme="dark"] .chat-bubble-pro{background:#142a3f!important;color:#eaf3fc!important;border-color:#304b63!important;box-shadow:none!important}html[data-theme="dark"] .chat-row-pro.mine .chat-bubble-pro{background:linear-gradient(135deg,#153b5e,#154454)!important;border-color:#2f6280!important}html[data-theme="dark"] .chat-bubble-pro p{color:#edf6ff!important}html[data-theme="dark"] .chat-compose-pro{background:#0b1a29!important;border-top:1px solid #29455c!important;box-shadow:0 -10px 28px rgba(0,0,0,.24)!important}
 html[data-theme="dark"] .utility-icon-pro{background:#15324a!important;color:#fff!important;border:1px solid #31516a!important;font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif!important;font-size:22px!important}
 
+/* Exact overrides for legacy mobile rules that force light controls. */
+html[data-theme="dark"] .top-chip,
+html[data-theme="dark"] .month-chip{background:#101f31!important;border-color:#30485f!important;color:#eaf2fc!important;box-shadow:0 8px 22px rgba(0,0,0,.18)!important}
+html[data-theme="dark"] .month-chip input,
+html[data-theme="dark"] #month{background:transparent!important;color:#eaf2fc!important;border-color:transparent!important;-webkit-text-fill-color:#eaf2fc!important;color-scheme:dark!important}
+html[data-theme="dark"] .top-chip :is(svg,.chip-icon){color:#9fb4ca!important;stroke:currentColor!important}
+html[data-theme="dark"] .activity-day{background:#0e2437!important;border-color:#2b4b63!important;box-shadow:none!important}
+html[data-theme="dark"] .activity-day-title{background:linear-gradient(135deg,#132b40,#102638)!important;border-color:#2b4b63!important;color:#eef5fc!important}
+html[data-theme="dark"] .activity-day-main strong{color:#f3f7fc!important}
+html[data-theme="dark"] .activity-day-main small,
+html[data-theme="dark"] .activity-day-side em{color:#a8b9ca!important}
+html[data-theme="dark"] .activity-day-side b{color:#79b7ff!important;background:#173b5a!important}
+html[data-theme="dark"] .activity-day-side i{color:#a9bfd3!important}
+html[data-theme="dark"] .activity-row{background:#0e2437!important;border-color:#2b4b63!important}
+html[data-theme="dark"] .activity-time{color:#9fc7f7!important}
+html[data-theme="dark"] .activity-actor,
+html[data-theme="dark"] .activity-sub{color:#9eafc1!important}
+html[data-theme="dark"] .activity-title{color:#edf4fb!important}
+html[data-theme="dark"] .activity-sub strong{color:#d9e5f0!important}
+
 /* Statement preview follows dark mode; PDF capture and printing remain white. */
 html[data-theme="dark"] .statement-view:not(.statement-capture){background:#07111d!important;color:#edf5ff!important}html[data-theme="dark"] .statement-view:not(.statement-capture) .statement-toolbar{background:rgba(10,25,40,.97)!important;border-color:#29455d!important}html[data-theme="dark"] .statement-view:not(.statement-capture) .statement-paper,html[data-theme="dark"] .statement-view:not(.statement-capture) .statement-page{background:#0e1f31!important;color:#edf5ff!important}html[data-theme="dark"] .statement-view:not(.statement-capture) :is(.statement-person,.statement-metric,.statement-breakdown-card,.statement-bazar-card){background:#13283c!important;color:#edf5ff!important;border-color:#304b63!important}html[data-theme="dark"] .statement-view:not(.statement-capture) :is(.statement-person h2,.statement-metric b,.statement-section-title h3,.statement-breakdown-card b,.statement-bazar-head h2,.statement-bazar-card-head strong,.statement-bazar-line .item b){color:#f2f7ff!important}html[data-theme="dark"] .statement-view:not(.statement-capture) :is(.statement-person p,.statement-metric small,.statement-section-title span,.statement-breakdown-card span,.statement-bazar-head p,.statement-bazar-line .item small){color:#9dafc3!important}html[data-theme="dark"] .statement-view:not(.statement-capture) .statement-bazar-card-head{background:#162d43!important;border-color:#304b63!important}html[data-theme="dark"] .statement-view:not(.statement-capture) .statement-fresh{background:#12372f!important}html[data-theme="dark"] .statement-view.statement-capture,html[data-theme="dark"] .statement-view.statement-capture :is(.statement-paper,.statement-page){background:#fff!important;color:#10213f!important}
