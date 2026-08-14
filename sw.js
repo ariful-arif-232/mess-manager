@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v60-runtime-reset-20260814-2312';
+const CACHE = 'mess-manager-v61-mobile-logout-root-fix';
 const SHELL = [
   './',
   './index.html',
