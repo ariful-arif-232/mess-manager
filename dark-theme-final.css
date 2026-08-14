@@ -20,6 +20,13 @@ html[data-theme="dark"] .utility-icon-pro{background:#15324a!important;color:#ff
 
 /* Exact overrides for legacy mobile rules that force light controls. */
 html[data-theme="dark"] .meal-all-card{background:linear-gradient(135deg,#132b40,#12332f)!important;border-color:#315169!important;box-shadow:none!important}html[data-theme="dark"] .meal-all-icon{background:#17344c!important}html[data-theme="dark"] .meal-all-copy b{color:#f0f6fd!important}html[data-theme="dark"] .meal-all-copy span{color:#9eb1c4!important}html[data-theme="dark"] .meal-all-button.done{background:#153b31!important;color:#66dfb8!important}
+html[data-theme="dark"] .meal-all-date{background:#0d2133!important;border-color:#315069!important;color:#eaf3fc!important}html[data-theme="dark"] .meal-all-date span{color:#9fb2c6!important}html[data-theme="dark"] .meal-all-date input{background:transparent!important;color:#edf5fd!important;-webkit-text-fill-color:#edf5fd!important;color-scheme:dark!important}
+html[data-theme="dark"] body:has(.ai-reference-page) .main{padding-top:calc(18px + env(safe-area-inset-top))!important}
+html[data-theme="dark"] .ai-reference-page>h2{color:#f1f6fc!important}
+html[data-theme="dark"] .ai-reference-composer{background:linear-gradient(135deg,#10263a,#0e2032)!important;border-color:#315069!important;box-shadow:0 16px 34px rgba(0,0,0,.3)!important}
+html[data-theme="dark"] .ai-reference-composer input{background:transparent!important;color:#eef5fd!important;border:0!important;-webkit-text-fill-color:#eef5fd!important;box-shadow:none!important}
+html[data-theme="dark"] .ai-reference-composer input::placeholder{color:#8599ae!important;-webkit-text-fill-color:#8599ae!important}
+html[data-theme="dark"] .composer-mic{background:#17344d!important;color:#79b5ff!important;box-shadow:none!important}
 html[data-theme="dark"] .top-chip,
 html[data-theme="dark"] .month-chip{background:#101f31!important;border-color:#30485f!important;color:#eaf2fc!important;box-shadow:0 8px 22px rgba(0,0,0,.18)!important}
 html[data-theme="dark"] .month-chip input,
