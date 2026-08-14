@@ -19,6 +19,7 @@ html[data-theme="dark"] .chat-shell-pro{background:#0c1c2c!important;border-colo
 html[data-theme="dark"] .utility-icon-pro{background:#15324a!important;color:#fff!important;border:1px solid #31516a!important;font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif!important;font-size:22px!important}
 
 /* Exact overrides for legacy mobile rules that force light controls. */
+html[data-theme="dark"] .meal-all-card{background:linear-gradient(135deg,#132b40,#12332f)!important;border-color:#315169!important;box-shadow:none!important}html[data-theme="dark"] .meal-all-icon{background:#17344c!important}html[data-theme="dark"] .meal-all-copy b{color:#f0f6fd!important}html[data-theme="dark"] .meal-all-copy span{color:#9eb1c4!important}html[data-theme="dark"] .meal-all-button.done{background:#153b31!important;color:#66dfb8!important}
 html[data-theme="dark"] .top-chip,
 html[data-theme="dark"] .month-chip{background:#101f31!important;border-color:#30485f!important;color:#eaf2fc!important;box-shadow:0 8px 22px rgba(0,0,0,.18)!important}
 html[data-theme="dark"] .month-chip input,
