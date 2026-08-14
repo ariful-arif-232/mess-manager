@@ -34,7 +34,6 @@
     $('#startReset').onclick=openReset;
   }
   function exportData(){
-    if(!window.XLSX)return notify('Excel service load হয়নি। Internet connection দেখে refresh করুন।');
     const name=id=>db.members.find(m=>m.id===id)?.name||'',clean=o=>Object.fromEntries(Object.entries(o).filter(([,v])=>typeof v!=='object'||v===null));
     const sheets={
       Summary:[{Mess:mess.name,'Export date':new Date().toLocaleString(),'Admin':profile.name,'Active members':activeMembers().length}],
@@ -47,8 +46,11 @@
       Settlements:(db.settlements||[]).map(x=>({...clean(x),member:name(x.member_id)})),
       Notices:(db.notices||[]).map(clean),Messages:(db.messages||[]).map(x=>({...clean(x),sender:name(x.sender_member_id)}))
     };
-    const wb=XLSX.utils.book_new();Object.entries(sheets).forEach(([sheet,rows])=>{const ws=XLSX.utils.json_to_sheet(rows.length?rows:[{Info:'No records'}]);ws['!cols']=Object.keys(rows[0]||{Info:''}).map(k=>({wch:Math.min(35,Math.max(12,k.length+4))}));XLSX.utils.book_append_sheet(wb,ws,sheet.slice(0,31))});
-    XLSX.writeFile(wb,`${String(mess.name||'mess').replace(/[^a-z0-9\u0980-\u09ff]+/gi,'-')}-backup-${today()}.xlsx`,{compression:true});notify('Excel backup downloaded.','success');
+    const xml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+    const cell=v=>`<Cell><Data ss:Type="${typeof v==='number'&&Number.isFinite(v)?'Number':'String'}">${xml(v)}</Data></Cell>`;
+    const worksheets=Object.entries(sheets).map(([sheet,data])=>{const rows=data.length?data:[{Info:'No records'}],headers=[...new Set(rows.flatMap(r=>Object.keys(r)))];return `<Worksheet ss:Name="${xml(sheet.slice(0,31))}"><Table><Row ss:StyleID="Header">${headers.map(cell).join('')}</Row>${rows.map(row=>`<Row>${headers.map(h=>cell(row[h]??'')).join('')}</Row>`).join('')}</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane></WorksheetOptions></Worksheet>`}).join('');
+    const workbook=`<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:x="urn:schemas-microsoft-com:office:excel"><Styles><Style ss:ID="Default"><Alignment ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="11"/></Style><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1769D2" ss:Pattern="Solid"/></Style></Styles>${worksheets}</Workbook>`;
+    const blob=new Blob([workbook],{type:'application/vnd.ms-excel;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${String(mess.name||'mess').replace(/[^a-z0-9\u0980-\u09ff]+/gi,'-')}-backup-${today()}.xls`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);notify('Excel backup downloaded.','success');
   }
   function openReset(){
     const email=session?.user?.email||profile?.email||'';
