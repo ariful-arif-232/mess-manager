@@ -61,14 +61,16 @@ set search_path = public, pg_temp
 as $$
 declare
   v_url text;
+  v_required text;
 begin
   if auth.uid() is null then
     raise exception 'Authentication required';
   end if;
 
+  v_required := '/storage/v1/object/public/member-avatars/' || auth.uid()::text || '/';
   if p_avatar_url is null
      or length(trim(p_avatar_url)) > 2048
-     or position('/storage/v1/object/public/member-avatars/' in trim(p_avatar_url)) = 0 then
+     or position(v_required in trim(p_avatar_url)) = 0 then
     raise exception 'Invalid avatar URL';
   end if;
 
