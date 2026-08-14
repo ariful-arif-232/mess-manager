@@ -10,8 +10,9 @@ html.mm-assistant-page .main{height:100dvh;min-height:0!important;display:flex;f
 html.mm-assistant-page .topbar{flex:0 0 auto;margin-bottom:8px!important}
 html.mm-assistant-page #content{flex:1 1 auto;min-height:0!important;overflow:hidden!important;display:flex}
 html.mm-assistant-page .ai-reference-page{flex:1 1 auto;min-height:0!important;height:auto!important;width:100%;max-width:760px;padding:20px 8px 8px;overflow:hidden!important;display:grid;grid-template-rows:auto auto minmax(96px,1fr) auto;justify-items:center;align-items:start;row-gap:12px}
-html.mm-assistant-page .ai-reference-page>h2{font-size:27px;margin:0}
-html.mm-assistant-page .ai-voice-stage{margin-top:28px}
+html.mm-assistant-page .ai-reference-page>h2{margin:0!important;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:40px;padding:7px 15px 7px 9px;border:1px solid rgba(66,108,194,.14);border-radius:999px;background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(241,246,255,.94));box-shadow:0 9px 24px rgba(34,68,123,.09),inset 0 1px 0 rgba(255,255,255,.96);color:#173566;font-size:16px;line-height:1;font-weight:820;letter-spacing:-.015em;text-align:center}
+html.mm-assistant-page .ai-reference-page>h2::before{content:"AI";width:26px;height:26px;display:grid;place-items:center;flex:0 0 26px;border-radius:9px;background:linear-gradient(145deg,#6591f7,#3f72e7);color:#fff;font:900 8px/1 Inter,sans-serif;letter-spacing:.08em;box-shadow:0 5px 13px rgba(62,111,226,.22),inset 0 1px 0 rgba(255,255,255,.34)}
+html.mm-assistant-page .ai-voice-stage{margin-top:24px}
 html.mm-assistant-page .ai-orb{width:142px;height:142px}
 html.mm-assistant-page .ai-orb::before,html.mm-assistant-page .ai-orb-rings{inset:-19px;box-shadow:0 0 0 13px rgba(87,135,238,.05),0 0 0 27px rgba(87,135,238,.028)}
 html.mm-assistant-page .ai-orb::after{inset:-38px}
@@ -22,6 +23,8 @@ html.mm-assistant-page .ai-reference-composer{align-self:end;width:min(100%,640p
 html.mm-assistant-page .composer-mic{width:38px;height:38px;border-radius:13px;background:linear-gradient(145deg,#eef4ff,#e3ecff);box-shadow:none;color:#386fe3;font-size:18px}
 html.mm-assistant-page .ai-reference-composer input{height:42px;font-size:14px;padding:0 5px}
 html.mm-assistant-page .ai-reference-composer button{height:42px;min-width:76px;padding:0 18px;border-radius:15px;font-size:14px}
+html[data-theme="dark"].mm-assistant-page .ai-reference-page>h2{border-color:#29445e;background:linear-gradient(145deg,rgba(20,42,62,.97),rgba(12,29,45,.96));color:#eef5ff;box-shadow:0 10px 26px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.05)}
+html[data-theme="dark"].mm-assistant-page .ai-reference-page>h2::before{background:linear-gradient(145deg,#5e8df4,#396bdc);box-shadow:0 5px 13px rgba(29,77,174,.32)}
 html[data-theme="dark"].mm-assistant-page .ai-reference-composer{background:rgba(13,29,45,.97);border-color:#29445e;box-shadow:0 12px 28px rgba(0,0,0,.22)}
 html[data-theme="dark"].mm-assistant-page .composer-mic{background:linear-gradient(145deg,#173d70,#102d52);color:#78aaff}
 html[data-theme="dark"].mm-assistant-page .ai-reference-composer input{color:#eef5ff}
@@ -30,8 +33,9 @@ html[data-theme="dark"].mm-assistant-page .ai-reference-composer input{color:#ee
   html.mm-assistant-page .main{padding:8px 10px calc(82px + env(safe-area-inset-bottom))!important}
   html.mm-assistant-page .topbar{margin-bottom:4px!important}
   html.mm-assistant-page .ai-reference-page{padding:20px 2px 4px;grid-template-rows:auto auto minmax(92px,1fr) auto;row-gap:10px}
-  html.mm-assistant-page .ai-reference-page>h2{font-size:26px}
-  html.mm-assistant-page .ai-voice-stage{margin-top:30px}
+  html.mm-assistant-page .ai-reference-page>h2{min-height:38px;padding:6px 13px 6px 8px;font-size:15px;gap:8px}
+  html.mm-assistant-page .ai-reference-page>h2::before{width:24px;height:24px;flex-basis:24px;border-radius:8px;font-size:7.5px}
+  html.mm-assistant-page .ai-voice-stage{margin-top:24px}
   html.mm-assistant-page .ai-orb{width:136px;height:136px}
   html.mm-assistant-page .ai-orb::before,html.mm-assistant-page .ai-orb-rings{inset:-18px;box-shadow:0 0 0 12px rgba(87,135,238,.05),0 0 0 25px rgba(87,135,238,.025)}
   html.mm-assistant-page .ai-orb::after{inset:-35px}
