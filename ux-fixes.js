@@ -36,6 +36,9 @@
 
   window.settlement = function settlementClean(c){const calc=calcMonth();c.innerHTML=`<div class="section-head"><div><span class="eyebrow">Monthly accounts</span><h2>${state.month} Settlement</h2></div>${profile.role==='admin'?'<button class="btn primary" id="saveSettlement">Save draft</button>':''}</div>${settlementTable(calc)}`;if($('#saveSettlement'))$('#saveSettlement').onclick=()=>saveSettlements(calc);};
 
+  const baseDeposits=window.deposits;
+  window.deposits=function depositsWithoutNote(c){baseDeposits(c);c.querySelectorAll('table tr').forEach(row=>row.children[3]?.remove());};
+
   const oldBazar=window.bazar;
   window.bazar=function bazarFix(c){oldBazar(c);c.querySelectorAll('.bazar-read-row').forEach(row=>{const left=row.children[0],right=row.children[1];if(left){const b=left.querySelector('b');if(b){const text=b.textContent.trim(),parts=text.split(/\s+/);if(parts.length>1&&parts.every(x=>x===parts[0]))b.textContent=parts[0];}}if(right){const spans=right.querySelectorAll('span'),b=right.querySelector('b');if(spans[0]&&b){const rate=spans[0].textContent.trim();const total=b.textContent.trim();right.innerHTML=`<div class="price-breakdown"><small>Rate</small><span>${esc(rate)}</span><small>Subtotal</small><strong>${esc(total)}</strong></div>`;}}});};
 
