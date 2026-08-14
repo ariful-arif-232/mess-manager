@@ -7,8 +7,13 @@
   .modal .field{min-width:0!important;margin:0!important}
   .modal .field label,.modal fieldset legend{font-weight:800!important;color:#667a9a!important;margin-bottom:7px!important}
   .modal input,.modal select,.modal textarea{box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;height:54px!important;border:1px solid #d9e3f1!important;border-radius:16px!important;padding:0 15px!important;background:#fff!important;font-size:17px!important;color:#102a55!important}
-  .modal input[type=date]{display:block!important;-webkit-appearance:none!important;appearance:none!important;text-align:left!important;padding-right:12px!important;overflow:hidden!important}
-  .modal input[type=date]::-webkit-date-and-time-value{text-align:left!important;min-width:0!important}
+
+  /* iOS-safe date/month alignment: center only the value, never force native internals to 100% width. */
+  .modal input[type=date],.modal input[type=month]{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;height:54px!important;box-sizing:border-box!important;-webkit-appearance:none!important;appearance:none!important;text-align:center!important;text-align-last:center!important;padding:0 15px!important;overflow:hidden!important;font-variant-numeric:tabular-nums!important}
+  .modal input[type=date]::-webkit-date-and-time-value,.modal input[type=month]::-webkit-date-and-time-value{min-width:0!important;width:auto!important;margin:0 auto!important;padding:0!important;text-align:center!important}
+  .modal input[type=date]::-webkit-datetime-edit,.modal input[type=month]::-webkit-datetime-edit{display:inline-flex!important;width:auto!important;min-width:0!important;margin:0 auto!important;padding:0!important}
+  .modal input[type=date]::-webkit-datetime-edit-fields-wrapper,.modal input[type=month]::-webkit-datetime-edit-fields-wrapper{display:inline-flex!important;width:auto!important;min-width:0!important;justify-content:center!important;padding:0!important}
+
   .modal textarea{height:auto!important;min-height:104px!important;padding-top:14px!important;resize:vertical}
   .modal fieldset.field{border:1px solid #dce5f1!important;border-radius:18px!important;padding:12px 14px!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
   .modal fieldset.field label{display:flex!important;align-items:center!important;gap:8px!important;margin:0!important;font-weight:700!important;color:#314765!important}
@@ -17,5 +22,10 @@
   .modal .actions .btn{width:100%!important;min-height:50px!important;border-radius:15px!important}
   .schedule-mail-box{margin-top:4px;padding:13px 14px;border-radius:16px;background:#f4f8ff;border:1px solid #dce8fa;color:#526987;font-size:13px;line-height:1.45}
   .schedule-mail-box b{display:block;color:#173a6c;margin-bottom:3px}
-  .schedule-email-toggle{display:flex!important;align-items:center!important;gap:10px!important;padding:10px 12px!important;border:1px solid #dce6f1!important;border-radius:14px!important;background:#f6f9fd!important}.schedule-email-toggle input{width:20px!important;height:20px!important;min-height:20px!important;flex:0 0 20px!important;margin:0!important;accent-color:#1777e8}.schedule-email-toggle span{min-width:0}.schedule-email-toggle b,.schedule-email-toggle small{display:block}.schedule-email-toggle b{font-size:12px;color:#17345b}.schedule-email-toggle small{margin-top:2px;font-size:9px;line-height:1.35;color:#7b8ba1}
+  .schedule-email-toggle{display:flex!important;align-items:center!important;gap:10px!important;padding:10px 12px!important;border:1px solid #dce6f1!important;border-radius:14px!important;background:#f6f9fd!important}
+  .schedule-email-toggle input{width:20px!important;height:20px!important;min-height:20px!important;flex:0 0 20px!important;margin:0!important;accent-color:#1777e8}
+  .schedule-email-toggle span{min-width:0}
+  .schedule-email-toggle b,.schedule-email-toggle small{display:block}
+  .schedule-email-toggle b{font-size:12px;color:#17345b}
+  .schedule-email-toggle small{margin-top:2px;font-size:9px;line-height:1.35;color:#7b8ba1}
 }
