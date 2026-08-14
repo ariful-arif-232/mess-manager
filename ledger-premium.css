@@ -1,0 +1,27 @@
+/* Premium ledger styling for Deposits and Bazar Schedule pages. */
+.premium-ledger-page .section-head{align-items:center!important;margin:24px 0 14px!important}
+.premium-ledger-page .section-head h2{font-size:24px!important;letter-spacing:-.03em!important}
+.premium-ledger-page .section-head .btn.primary{min-height:48px!important;border-radius:16px!important;padding:0 18px!important;box-shadow:0 10px 24px rgba(36,87,214,.22)!important}
+.premium-ledger-page .table-wrap{overflow:visible!important}
+.premium-ledger-page table{border:0!important;border-collapse:separate!important;border-spacing:0 10px!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+.premium-ledger-page thead th{padding:12px 14px!important;border:0!important;background:transparent!important;color:#71809a!important;font-size:11px!important;font-weight:850!important;letter-spacing:.08em!important;text-transform:uppercase!important}
+.premium-ledger-page tbody tr{filter:drop-shadow(0 8px 20px rgba(34,61,105,.07))}
+.premium-ledger-page tbody td{padding:16px 14px!important;border-top:1px solid #e3eaf3!important;border-bottom:1px solid #e3eaf3!important;background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%)!important;color:#1d2d49!important;font-size:14px!important;vertical-align:middle!important}
+.premium-ledger-page tbody td:first-child{border-left:1px solid #e3eaf3!important;border-radius:18px 0 0 18px!important;font-weight:750!important;color:#29405f!important}
+.premium-ledger-page tbody td:last-child{border-right:1px solid #e3eaf3!important;border-radius:0 18px 18px 0!important}
+.premium-ledger-page tbody tr:hover td{background:linear-gradient(180deg,#fff,#f7fbff)!important;border-color:#d5e3f2!important}
+.premium-ledger-page td .btn{min-height:38px!important;border-radius:12px!important;padding:8px 12px!important;font-size:12px!important;box-shadow:none!important}
+.premium-ledger-page td .btn:not(.danger){background:#eef4fb!important;color:#38506f!important;border:1px solid #dce7f4!important}
+.premium-ledger-page td .btn.danger{background:#fff1f2!important;color:#c83b45!important;border:1px solid #ffdadd!important}
+.premium-ledger-page td:last-child{white-space:nowrap!important}
+.premium-ledger-page td:last-child .actions{display:flex!important;gap:7px!important;flex-wrap:nowrap!important}
+.premium-ledger-page .pill,.premium-ledger-page td:nth-last-child(2){font-weight:750!important}
+html[data-theme="dark"] .premium-ledger-page thead th{color:#8297b1!important}
+html[data-theme="dark"] .premium-ledger-page tbody tr{filter:drop-shadow(0 10px 24px rgba(0,0,0,.18))}
+html[data-theme="dark"] .premium-ledger-page tbody td{background:linear-gradient(180deg,#102438 0%,#0d2032 100%)!important;color:#e7f0fb!important;border-color:#29465f!important}
+html[data-theme="dark"] .premium-ledger-page tbody td:first-child{color:#d8e7f7!important}
+html[data-theme="dark"] .premium-ledger-page tbody tr:hover td{background:linear-gradient(180deg,#132a40,#10253a)!important;border-color:#35546e!important}
+html[data-theme="dark"] .premium-ledger-page td .btn:not(.danger){background:#173047!important;color:#d8e7f7!important;border-color:#34516a!important}
+html[data-theme="dark"] .premium-ledger-page td .btn.danger{background:#3b2028!important;color:#ff9aa8!important;border-color:#6c3441!important}
+@media(max-width:700px){.premium-ledger-page .section-head{gap:10px!important}.premium-ledger-page .section-head h2{font-size:22px!important}.premium-ledger-page .section-head .btn.primary{min-height:46px!important;padding:0 15px!important;font-size:13px!important}.premium-ledger-page table{border-spacing:0 9px!important}.premium-ledger-page thead th{padding:10px 8px!important;font-size:9px!important;letter-spacing:.055em!important}.premium-ledger-page tbody td{padding:14px 9px!important;font-size:12.5px!important;line-height:1.35!important}.premium-ledger-page tbody td:first-child{border-radius:16px 0 0 16px!important}.premium-ledger-page tbody td:last-child{border-radius:0 16px 16px 0!important}.premium-ledger-page td .btn{min-height:34px!important;padding:7px 9px!important;font-size:11px!important}.premium-ledger-page td:last-child .actions{display:grid!important;grid-template-columns:1fr!important;gap:5px!important}}
+@media(max-width:430px){.premium-ledger-page .section-head{margin-top:20px!important}.premium-ledger-page .section-head h2{font-size:20px!important}.premium-ledger-page .section-head .btn.primary{min-height:44px!important;border-radius:14px!important;padding-inline:14px!important}.premium-ledger-page thead th{padding:9px 6px!important}.premium-ledger-page tbody td{padding:13px 7px!important;font-size:12px!important}.premium-ledger-page tbody td:first-child{padding-left:10px!important}.premium-ledger-page tbody td:last-child{padding-right:10px!important}}
