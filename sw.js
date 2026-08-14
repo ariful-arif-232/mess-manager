@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v65-dark-form-date-polish';
+const CACHE = 'mess-manager-v66-dark-form-date-polish';
 const SHELL = [
   './',
   './index.html',
