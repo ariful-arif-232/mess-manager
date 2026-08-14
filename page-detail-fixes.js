@@ -13,6 +13,15 @@
   };
   const utilityIcon = type => ({Gas:'🔥',WiFi:'📶',Current:'⚡',Water:'💧'}[type] || '🧾');
 
+  function syncScrollablePageMode(){
+    const root=document.documentElement;
+    root.classList.toggle('mm-chat-page', state?.page==='chat');
+    root.classList.toggle('mm-assistant-page', state?.page==='assistant');
+  }
+  function clearScrollablePageMode(){
+    document.documentElement.classList.remove('mm-chat-page','mm-assistant-page');
+  }
+
   window.utilities = function utilitiesDetailed(c){
     const controls = profile.role === 'admin';
     c.innerHTML = `<div class="section-head"><div><span class="eyebrow">Monthly shared costs</span><h2>Utility Bills</h2></div>${controls?'<button class="btn primary" data-add>+ Add Bill</button>':''}</div>
@@ -77,8 +86,14 @@
 
   const previousRenderPage = window.renderPage;
   window.renderPage = function renderPageWithDetailPolish(){
+    syncScrollablePageMode();
     if (state.page === 'chat') return window.chat($('#content'));
     if (state.page === 'utilities') return window.utilities($('#content'));
     return previousRenderPage();
   };
+
+  if(client?.auth?.onAuthStateChange){
+    client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT')clearScrollablePageMode();});
+  }
+  window.addEventListener('pageshow',()=>{if(!session)clearScrollablePageMode();else syncScrollablePageMode();});
 })();
