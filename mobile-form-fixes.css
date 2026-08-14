@@ -17,4 +17,5 @@
   .modal .actions .btn{width:100%!important;min-height:50px!important;border-radius:15px!important}
   .schedule-mail-box{margin-top:4px;padding:13px 14px;border-radius:16px;background:#f4f8ff;border:1px solid #dce8fa;color:#526987;font-size:13px;line-height:1.45}
   .schedule-mail-box b{display:block;color:#173a6c;margin-bottom:3px}
+  .schedule-email-toggle{display:flex!important;align-items:center!important;gap:10px!important;padding:10px 12px!important;border:1px solid #dce6f1!important;border-radius:14px!important;background:#f6f9fd!important}.schedule-email-toggle input{width:20px!important;height:20px!important;min-height:20px!important;flex:0 0 20px!important;margin:0!important;accent-color:#1777e8}.schedule-email-toggle span{min-width:0}.schedule-email-toggle b,.schedule-email-toggle small{display:block}.schedule-email-toggle b{font-size:12px;color:#17345b}.schedule-email-toggle small{margin-top:2px;font-size:9px;line-height:1.35;color:#7b8ba1}
 }
