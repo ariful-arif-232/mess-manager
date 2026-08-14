@@ -3,13 +3,22 @@
 (() => {
   const avatar = m => m.avatar_url ? `<img class="member-photo" src="${esc(m.avatar_url)}" alt=""/>` : `<span class="member-photo fallback">${esc((m.name||'M').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</span>`;
   const memberDetails = m => modal(`<div class="modal-title"><div><span class="eyebrow">Member profile</span><h2>${esc(m.name)}</h2></div><button class="icon-btn" data-close>×</button></div><div class="profile-popup"><div class="profile-photo">${avatar(m)}</div><div class="profile-info"><div><span>Role</span><b>${esc(m.role)}</b></div><div><span>Status</span><b>${m.active?'Active':'Inactive'}</b></div><div><span>Email</span><b>${esc(m.email||'Not added')}</b></div><div><span>Phone</span><b>${esc(m.phone||'Not added')}</b></div><div><span>Joined</span><b>${esc(m.join_date||'-')}</b></div></div></div>`);
+  const visibleMembers=()=>db.members.filter(m=>!m.deleted_at);
+
+  function confirmMemberDelete(m){
+    if(!m)return;
+    if(m.id===profile.id)return notify('নিজের admin account delete করা যাবে না।');
+    modal(`<div class="modal-title"><div><span class="eyebrow">Permanent member removal</span><h2>Delete ${esc(m.name)}?</h2></div><button class="icon-btn" data-close>×</button></div><div class="profile-popup"><div class="profile-photo">${avatar(m)}</div><div class="reset-summary"><b>Member list থেকে সরানো হবে</b><span>এই member আর login/active list-এ থাকবে না। আগের meal, bazar, deposit, bill ও statement history নিরাপদে রাখা হবে।</span></div><div class="actions gap-top"><button class="btn danger" id="confirmMemberDelete">Delete Member</button><button class="btn" type="button" data-cancel-delete>Cancel</button></div></div>`);
+    $('[data-close]').onclick=closeModal;$('[data-cancel-delete]').onclick=closeModal;
+    $('#confirmMemberDelete').onclick=async e=>{const b=e.currentTarget,old=b.textContent;b.disabled=true;b.textContent='Deleting…';try{const result=assertResult(await client.rpc('delete_mess_member',{p_member_id:m.id}));closeModal();await loadData();render();notify(`${result?.member_name||m.name} deleted. Previous হিসাব preserved.`,'success')}catch(err){notify(friendlyError(err));b.disabled=false;b.textContent=old}};
+  }
 
   window.members = function membersClean(c){
-    const controls=profile.role==='admin';
-    c.innerHTML=`<div class="section-head"><div><span class="eyebrow">Mess family</span><h2>সব Member</h2></div>${controls?'<button class="btn primary" data-add>+ Add Member</button>':''}</div><div class="member-clean-list">${db.members.map(m=>`<article class="member-clean-card"><button class="member-identity" data-view-member="${m.id}">${avatar(m)}<span><b>${esc(m.name)}</b><small>Tap to view profile</small></span></button>${controls?`<div class="member-admin-actions"><button class="btn" data-edit="${m.id}">Edit</button><button class="btn danger" data-toggle="${m.id}">${m.active?'Deactivate':'Activate'}</button></div>`:''}</article>`).join('')}</div>`;
+    const controls=profile.role==='admin',members=visibleMembers();
+    c.innerHTML=`<div class="section-head"><div><span class="eyebrow">Mess family</span><h2>সব Member</h2></div>${controls?'<button class="btn primary" data-add>+ Add Member</button>':''}</div><div class="member-clean-list">${members.map(m=>`<article class="member-clean-card"><button class="member-identity" data-view-member="${m.id}">${avatar(m)}<span><b>${esc(m.name)}</b><small>Tap to view profile</small></span></button>${controls?`<div class="member-admin-actions"><button class="btn" data-edit="${m.id}">Edit</button>${m.id===profile.id?'<span class="member-self-badge">Current admin</span>':`<button class="btn danger" data-delete-member="${m.id}">Delete</button>`}</div>`:''}</article>`).join('')}</div>`;
     c.querySelectorAll('[data-view-member]').forEach(b=>b.onclick=()=>{const m=db.members.find(x=>x.id===b.dataset.viewMember);memberDetails(m);$('[data-close]').onclick=closeModal;});
     if(!controls)return;
-    c.querySelector('[data-add]').onclick=()=>memberModal();c.querySelectorAll('[data-edit]').forEach(x=>x.onclick=()=>memberModal(x.dataset.edit));c.querySelectorAll('[data-toggle]').forEach(x=>x.onclick=()=>toggleMember(x.dataset.toggle));
+    c.querySelector('[data-add]').onclick=()=>memberModal();c.querySelectorAll('[data-edit]').forEach(x=>x.onclick=()=>memberModal(x.dataset.edit));c.querySelectorAll('[data-delete-member]').forEach(x=>x.onclick=()=>confirmMemberDelete(db.members.find(m=>m.id===x.dataset.deleteMember)));
   };
 
   window.memberModal = function memberModalPhoto(id){
