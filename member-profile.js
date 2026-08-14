@@ -6,6 +6,7 @@
   const personalBazar=()=>db.bazar.filter(x=>x.buyer_member_id===profile.id).reduce((s,x)=>s+Number(x.amount||0),0);
   const avatar=()=>profile.avatar_url?`<img src="${esc(profile.avatar_url)}" alt="${esc(profile.name)}">`:`<span>${esc((profile.name||'M').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</span>`;
   const pct=(a,b)=>b?Math.min(100,Math.max(0,(a/b)*100)):0;
+  const profileIcon=`<svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.25"></circle><path d="M5.5 19c.8-3.2 3.15-5 6.5-5s5.7 1.8 6.5 5"></path></svg>`;
 
   function memberProfile(c){
     const x=currentMemberCalc();
@@ -76,11 +77,21 @@
     if(!trigger||profile?.role==='admin')return;
     setTimeout(()=>{
       const grid=document.querySelector('#moreSheet .sheet-grid');
-      if(!grid||grid.querySelector('[data-member-profile]'))return;
-      const b=document.createElement('button');
-      b.type='button';b.dataset.memberProfile='1';b.innerHTML='<span>◉</span><b>Profile</b>';
-      b.onclick=()=>{document.querySelector('#moreSheet')?.remove();state.page='profile';render();};
-      grid.appendChild(b);
-    },0);
+      if(!grid)return;
+      let profileButton=grid.querySelector('[data-member-profile]');
+      if(!profileButton){
+        profileButton=document.createElement('button');
+        profileButton.type='button';
+        profileButton.dataset.memberProfile='1';
+        profileButton.innerHTML=`<span>${profileIcon}</span><b>Profile</b>`;
+        profileButton.onclick=()=>{document.querySelector('#moreSheet')?.remove();state.page='profile';render();};
+        grid.appendChild(profileButton);
+      }
+      const activityButton=grid.querySelector('[data-member-activity]');
+      const settingsButton=grid.querySelector('[data-member-settings]');
+      if(activityButton)grid.appendChild(activityButton);
+      if(settingsButton)grid.appendChild(settingsButton);
+      grid.appendChild(profileButton);
+    },10);
   },true);
 })();
