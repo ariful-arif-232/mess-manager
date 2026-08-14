@@ -1,14 +1,18 @@
-/* Mobile logout + polished schedule workflow. */
+/* Mobile logout integration + polished schedule workflow. */
 'use strict';
 (()=>{
   function closeFloatingUi(){document.querySelectorAll('#moreSheet,#choiceSheet,#modal,.sheet-backdrop,.modal-wrap').forEach(x=>x.remove());document.body.style.overflow='';}
-  document.addEventListener('click',async e=>{
+  document.addEventListener('click',e=>{
     const b=e.target.closest('#sheetLogout');
     if(!b)return;
-    e.preventDefault();e.stopImmediatePropagation();
-    closeFloatingUi();
-    state.page='dashboard';
-    try{await client.auth.signOut();}finally{session=null;profile=null;mess=null;closeFloatingUi();renderLogin();}
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    if(typeof window.requestMessLogout==='function'){
+      window.requestMessLogout(b);
+      return;
+    }
+    notify('Logout confirmation is loading. Please try again.');
   },true);
 
   const baseLoadData=window.loadData;
