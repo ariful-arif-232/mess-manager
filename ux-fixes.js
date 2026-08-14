@@ -8,9 +8,9 @@
   function confirmMemberDelete(m){
     if(!m)return;
     if(m.id===profile.id)return notify('নিজের admin account delete করা যাবে না।');
-    modal(`<div class="modal-title"><div><span class="eyebrow">Permanent member removal</span><h2>Delete ${esc(m.name)}?</h2></div><button class="icon-btn" data-close>×</button></div><div class="profile-popup"><div class="profile-photo">${avatar(m)}</div><div class="reset-summary"><b>Member list থেকে সরানো হবে</b><span>এই member আর login/active list-এ থাকবে না। আগের meal, bazar, deposit, bill ও statement history নিরাপদে রাখা হবে।</span></div><div class="actions gap-top"><button class="btn danger" id="confirmMemberDelete">Delete Member</button><button class="btn" type="button" data-cancel-delete>Cancel</button></div></div>`);
+    modal(`<div class="modal-title delete-member-title"><div><span class="eyebrow">Delete member</span><h2>Delete ${esc(m.name)}?</h2></div><button class="icon-btn" data-close aria-label="Close">×</button></div><div class="delete-member-confirm"><div class="delete-member-person">${avatar(m)}<div><b>${esc(m.name)}</b><span>এই member-কে list থেকে remove করবেন?</span></div></div><div class="actions gap-top"><button class="btn danger" id="confirmMemberDelete">Delete Member</button><button class="btn" type="button" data-cancel-delete>Cancel</button></div></div>`);
     $('[data-close]').onclick=closeModal;$('[data-cancel-delete]').onclick=closeModal;
-    $('#confirmMemberDelete').onclick=async e=>{const b=e.currentTarget,old=b.textContent;b.disabled=true;b.textContent='Deleting…';try{const result=assertResult(await client.rpc('delete_mess_member',{p_member_id:m.id}));closeModal();await loadData();render();notify(`${result?.member_name||m.name} deleted. Previous হিসাব preserved.`,'success')}catch(err){notify(friendlyError(err));b.disabled=false;b.textContent=old}};
+    $('#confirmMemberDelete').onclick=async e=>{const b=e.currentTarget,old=b.textContent;b.disabled=true;b.textContent='Deleting…';try{const result=assertResult(await client.rpc('delete_mess_member',{p_member_id:m.id}));closeModal();await loadData();render();notify(`${result?.member_name||m.name} deleted successfully.`,'success')}catch(err){notify(friendlyError(err));b.disabled=false;b.textContent=old}};
   }
 
   window.members = function membersClean(c){
