@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v61-mobile-logout-root-fix';
+const CACHE = 'mess-manager-v62-member-avatar-upload';
 const SHELL = [
   './',
   './index.html',
