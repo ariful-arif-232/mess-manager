@@ -6,8 +6,7 @@
   const personalBazar=()=>db.bazar.filter(x=>x.buyer_member_id===profile.id).reduce((s,x)=>s+Number(x.amount||0),0);
   const avatar=()=>profile.avatar_url?`<img src="${esc(profile.avatar_url)}" alt="${esc(profile.name)}">`:`<span>${esc((profile.name||'M').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</span>`;
   const pct=(a,b)=>b?Math.min(100,Math.max(0,(a/b)*100)):0;
-  const profileIcon=`<svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.25"></circle><path d="M5.5 19c.8-3.2 3.15-5 6.5-5s5.7 1.8 6.5 5"></path></svg>`;
-
+  const profileIcon=`<svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.25"></circle><path d="M5.2 19.2c.8-3.4 3.25-5.2 6.8-5.2s6 1.8 6.8 5.2"></path></svg>`;
   function memberProfile(c){
     const x=currentMemberCalc(),bazar=personalBazar();
     const mealDays=db.meals.filter(m=>m.memberId===profile.id&&m.on).length;
@@ -18,19 +17,18 @@
   }
   const previousRenderPage=renderPage;renderPage=function(){if(state.page==='profile')return memberProfile($('#content'));return previousRenderPage();};
   const previousPageTitle=pageTitle;pageTitle=function(){return state.page==='profile'?'My Profile':previousPageTitle();};
-
   document.addEventListener('click',e=>{
     const trigger=e.target.closest?.('#mobileMore');if(!trigger||profile?.role==='admin')return;
     setTimeout(()=>{
       const grid=document.querySelector('#moreSheet .sheet-grid');if(!grid)return;
       let profileButton=grid.querySelector('[data-member-profile]');
-      if(!profileButton){profileButton=document.createElement('button');profileButton.type='button';profileButton.dataset.memberProfile='1';profileButton.innerHTML=`<span>${profileIcon}</span><b>Profile</b>`;profileButton.onclick=()=>{document.querySelector('#moreSheet')?.remove();state.page='profile';render();};}
+      if(!profileButton){profileButton=document.createElement('button');profileButton.type='button';profileButton.dataset.memberProfile='1';profileButton.onclick=()=>{document.querySelector('#moreSheet')?.remove();state.page='profile';render();};}
+      profileButton.innerHTML=`<span class="member-profile-menu-icon">${profileIcon}</span><b>Profile</b>`;
       const activityButton=grid.querySelector('[data-member-activity]');
       const settingsButton=grid.querySelector('[data-member-settings]');
-      /* Last row must be exactly: Activity | Settings | Profile. */
       if(activityButton)grid.appendChild(activityButton);
       if(settingsButton)grid.appendChild(settingsButton);
       grid.appendChild(profileButton);
-    },30);
+    },40);
   },true);
 })();
