@@ -12,6 +12,8 @@
   const OPEN_PARAM = 'open';
   let lastSyncedEndpoint = '';
   let observerQueued = false;
+  let dispatchChannel = null;
+  let dispatchMemberId = '';
 
   const safeNotify = (message, type = 'error') => {
     if (typeof notify === 'function') notify(message, type);
@@ -157,10 +159,7 @@
     }
 
     if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey,
-      });
+      subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
     }
 
     await saveSubscription(subscription);
@@ -238,6 +237,7 @@
   const ensureCard = () => {
     observerQueued = false;
     injectStyle();
+    ensureDispatchChannel();
     const shell = document.querySelector('#content .chat-shell');
     if (!shell || shell.querySelector(`#${CARD_ID}`)) return;
 
@@ -266,6 +266,62 @@
     requestAnimationFrame(ensureCard);
   };
 
+  const dispatchMessagePush = async (messageId) => {
+    if (!messageId || typeof client === 'undefined' || !client) return;
+    try {
+      const result = await client.functions.invoke('chat-push', {
+        body: { action: 'dispatch-message', message_id: messageId },
+      });
+      if (result.error) throw result.error;
+      if (result.data?.error) throw new Error(result.data.error);
+    } catch (error) {
+      console.warn('Chat push dispatch failed; message was still saved normally.', error);
+    }
+  };
+
+  function ensureDispatchChannel() {
+    if (typeof client === 'undefined' || !client || typeof profile === 'undefined' || !profile?.id || !profile?.mess_id) return;
+    if (dispatchChannel && dispatchMemberId === profile.id) return;
+
+    if (dispatchChannel) {
+      try { client.removeChannel(dispatchChannel); } catch (_) {}
+      dispatchChannel = null;
+    }
+
+    dispatchMemberId = profile.id;
+    dispatchChannel = client
+      .channel(`chat-push-safe:${profile.mess_id}:${profile.id}:${Math.random().toString(36).slice(2, 8)}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'mess_messages',
+        filter: `mess_id=eq.${profile.mess_id}`,
+      }, payload => {
+        const row = payload?.new;
+        if (!row?.id) return;
+        if (row.sender_member_id === profile.id) {
+          dispatchMessagePush(row.id);
+          return;
+        }
+        if (document.visibilityState === 'visible' && typeof state !== 'undefined' && state.page !== 'chat') {
+          const sender = typeof memberName === 'function' ? memberName(row.sender_member_id) : 'Mess Chat';
+          const preview = String(row.body || '').trim().slice(0, 100);
+          if (preview) safeNotify(`${sender}: ${preview}`, 'success');
+        }
+      })
+      .subscribe(status => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') console.warn('Chat push realtime channel status:', status);
+      });
+  }
+
+  const stopDispatchChannel = () => {
+    if (dispatchChannel && typeof client !== 'undefined' && client) {
+      try { client.removeChannel(dispatchChannel); } catch (_) {}
+    }
+    dispatchChannel = null;
+    dispatchMemberId = '';
+  };
+
   const openChat = () => {
     try {
       if (typeof profile === 'undefined' || !profile || typeof go !== 'function') return false;
@@ -290,7 +346,7 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
+    navigator.serviceWorker.addEventListener('message', event => {
       if (event.data?.type === 'open-chat') openChat();
     });
   }
@@ -298,6 +354,7 @@
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       queueEnsureCard();
+      ensureDispatchChannel();
       const card = document.getElementById(CARD_ID);
       if (card) refreshCard(card);
       consumeOpenIntent();
@@ -305,8 +362,9 @@
   });
 
   if (typeof client !== 'undefined' && client?.auth) {
-    client.auth.onAuthStateChange((event) => {
+    client.auth.onAuthStateChange(event => {
       if (event === 'SIGNED_OUT') {
+        stopDispatchChannel();
         lastSyncedEndpoint = '';
         if (isPushSupported()) {
           serviceWorkerReady()
@@ -315,7 +373,7 @@
             .catch(() => {});
         }
       } else {
-        setTimeout(() => { queueEnsureCard(); consumeOpenIntent(); }, 0);
+        setTimeout(() => { queueEnsureCard(); ensureDispatchChannel(); consumeOpenIntent(); }, 0);
       }
     });
   }
@@ -325,6 +383,7 @@
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
+      ensureDispatchChannel();
       if (consumeOpenIntent() || attempts >= 80) clearInterval(timer);
     }, 250);
   });
