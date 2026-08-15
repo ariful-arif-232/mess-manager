@@ -1,0 +1,66 @@
+/* Google OAuth actions for the existing authentication cards. */
+.auth-oauth-divider{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  margin:12px 0 9px;
+  color:#8a98ab;
+  font-size:10px;
+  font-weight:650;
+}
+.auth-oauth-divider::before,
+.auth-oauth-divider::after{
+  content:"";
+  height:1px;
+  flex:1;
+  background:#e3e9f1;
+}
+.auth-oauth-divider span{padding:0 2px}
+.auth-google-btn{
+  min-height:43px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  border:1.4px solid #d9e1ec!important;
+  border-radius:11px!important;
+  background:#fff!important;
+  color:#27364d!important;
+  font-size:12.5px!important;
+  font-weight:750!important;
+  box-shadow:0 5px 14px rgba(35,56,86,.055)!important;
+  transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease,background .12s ease!important;
+}
+.auth-google-btn:hover{
+  border-color:#c4cfdd!important;
+  background:#fbfcfe!important;
+  box-shadow:0 7px 18px rgba(35,56,86,.08)!important;
+}
+.auth-google-btn:active{transform:scale(.988)}
+.auth-google-btn:focus-visible{outline:3px solid rgba(66,133,244,.18);outline-offset:2px}
+.auth-google-btn:disabled{opacity:.72!important}
+.auth-google-icon{width:18px;height:18px;display:block;flex:0 0 18px}
+.auth-google-spin{margin:0!important;width:17px!important;height:17px!important;border-color:#d7e2f5!important;border-top-color:#4285f4!important}
+
+/* The Google row makes the forms slightly taller. Keep the compact login cards
+   centered on normal phones and let only the card scroll on short displays. */
+@media(max-width:520px){
+  .auth-oauth-divider{margin:11px 0 8px}
+  .auth-google-btn{min-height:42px!important}
+}
+@media(max-height:740px){
+  .auth-oauth-divider{margin:8px 0 7px}
+  .auth-google-btn{min-height:38px!important}
+}
+@media(max-height:620px){
+  .auth-form-card{overscroll-behavior:contain}
+}
+
+/* Authentication is intentionally a light branded surface even when the signed-
+   in app was previously set to dark mode. Keep Google's required white control
+   legible instead of inheriting the generic dark .btn override. */
+html[data-theme="dark"] .auth-page .auth-google-btn{
+  background:#fff!important;
+  color:#27364d!important;
+  border-color:#d9e1ec!important;
+}
