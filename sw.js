@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v67-chat-push-safe';
+const CACHE = 'mess-manager-v68-chat-push-safe';
 const SHELL = [
   './',
   './index.html',
@@ -32,14 +32,21 @@ self.addEventListener('push', event => {
     ? `${payload.sender_name} sent a message`
     : 'Mess Manager Chat';
 
-  event.waitUntil(self.registration.showNotification(title, {
-    body: payload.body || 'New chat message',
-    icon: './icons/icon-192.png?v=20260814-borderless2',
-    badge: './icons/icon-192.png?v=20260814-borderless2',
-    tag: `mess-chat-${payload.message_id || Date.now()}`,
-    renotify: true,
-    data: { url: payload.url || './?open=chat' }
-  }));
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      const active = list.some(client => client.url.startsWith(self.registration.scope) && client.visibilityState === 'visible' && client.focused);
+      if (active) return;
+
+      return self.registration.showNotification(title, {
+        body: payload.body || 'New chat message',
+        icon: './icons/icon-192.png?v=20260814-borderless2',
+        badge: './icons/icon-192.png?v=20260814-borderless2',
+        tag: `mess-chat-${payload.message_id || Date.now()}`,
+        renotify: true,
+        data: { url: payload.url || './?open=chat' }
+      });
+    })
+  );
 });
 
 self.addEventListener('notificationclick', event => {
