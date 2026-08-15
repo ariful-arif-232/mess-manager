@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v75-reset-modal-compact';
+const CACHE = 'mess-manager-v76-google-auth';
 const SHELL = [
   './',
   './index.html',
