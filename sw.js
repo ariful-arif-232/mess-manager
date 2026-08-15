@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v73-short-page-nav-anchor';
+const CACHE = 'mess-manager-v74-secure-workspace-reset';
 const SHELL = [
   './',
   './index.html',
