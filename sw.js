@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v67-chat-push';
+const CACHE = 'mess-manager-v68-chat-push';
 const SHELL = [
   './',
   './index.html',
@@ -43,17 +43,17 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || './?open=chat', self.location.origin).href;
+  const target = new URL(event.notification.data?.url || './?open=chat', self.registration.scope).href;
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      const existing = list.find(client => client.url.startsWith(self.location.origin));
-      if (existing) {
-        existing.focus();
-        existing.postMessage({ type: 'open-chat' });
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async list => {
+      const scoped = list.find(client => client.url.startsWith(self.registration.scope));
+      if (scoped) {
+        await scoped.focus();
+        scoped.postMessage({ type: 'open-chat' });
         return;
       }
-      return clients.openWindow(target);
+      await clients.openWindow(target);
     })
   );
 });
