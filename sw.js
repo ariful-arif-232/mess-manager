@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v72-ios-keyboard-pan-fix';
+const CACHE = 'mess-manager-v73-short-page-nav-anchor';
 const SHELL = [
   './',
   './index.html',
