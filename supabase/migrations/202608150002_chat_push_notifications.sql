@@ -43,6 +43,7 @@ declare
   v_member_id uuid;
   v_mess_id uuid;
   v_id uuid;
+  v_existing record;
 begin
   if auth.uid() is null then
     raise exception 'Authentication required';
@@ -74,9 +75,30 @@ begin
     raise exception 'Invalid push auth key';
   end if;
 
-  -- A push endpoint identifies one browser profile. Reassigning the endpoint
-  -- on sign-in prevents a previous account on the same browser receiving chat.
-  delete from public.push_subscriptions where endpoint = p_endpoint;
+  select ps.id, ps.p256dh, ps.auth
+    into v_existing
+    from public.push_subscriptions ps
+   where ps.endpoint = p_endpoint
+   limit 1;
+
+  if v_existing.id is not null then
+    -- The same browser subscription may legitimately move between accounts
+    -- after sign-out/sign-in. Reassignment is allowed only when its secret
+    -- browser keys still match, so knowing an endpoint alone is insufficient.
+    if v_existing.p256dh <> p_p256dh or v_existing.auth <> p_auth then
+      raise exception 'Push subscription key mismatch';
+    end if;
+
+    update public.push_subscriptions
+       set mess_id = v_mess_id,
+           member_id = v_member_id,
+           user_agent = p_user_agent,
+           updated_at = now()
+     where id = v_existing.id
+     returning id into v_id;
+
+    return v_id;
+  end if;
 
   insert into public.push_subscriptions (
     mess_id, member_id, endpoint, p256dh, auth, user_agent
