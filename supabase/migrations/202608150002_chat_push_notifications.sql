@@ -23,38 +23,11 @@ create index push_subscriptions_mess_member_idx
 
 alter table public.push_subscriptions enable row level security;
 
-revoke all on public.push_subscriptions from anon;
-revoke insert, update on public.push_subscriptions from authenticated;
-grant select, delete on public.push_subscriptions to authenticated;
+-- Browser roles never read or write raw endpoint/key rows directly.
+-- The only browser access is through the security-definer RPCs below, which
+-- derive member/mess identity from auth.uid().
+revoke all on public.push_subscriptions from anon, authenticated;
 grant all on public.push_subscriptions to service_role;
-
-create policy "members read own push subscriptions"
-on public.push_subscriptions
-for select
-using (
-  exists (
-    select 1
-    from public.members m
-    where m.id = push_subscriptions.member_id
-      and m.mess_id = push_subscriptions.mess_id
-      and m.user_id = auth.uid()
-      and m.active = true
-  )
-);
-
-create policy "members delete own push subscriptions"
-on public.push_subscriptions
-for delete
-using (
-  exists (
-    select 1
-    from public.members m
-    where m.id = push_subscriptions.member_id
-      and m.mess_id = push_subscriptions.mess_id
-      and m.user_id = auth.uid()
-      and m.active = true
-  )
-);
 
 create or replace function public.save_push_subscription(
   p_endpoint text,
@@ -183,7 +156,7 @@ revoke all on public.push_vapid_config from anon, authenticated;
 grant all on public.push_vapid_config to service_role;
 
 comment on table public.push_subscriptions is
-  'Per-device Web Push subscriptions for Mess Chat.';
+  'Per-device Web Push subscriptions for Mess Chat; raw rows are service-role only.';
 comment on table public.chat_push_dispatches is
   'Server-only idempotency records for chat push fanout.';
 comment on table public.push_vapid_config is
