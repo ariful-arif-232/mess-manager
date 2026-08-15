@@ -1,0 +1,32 @@
+@media(max-width:900px){
+  html,body,#app,.layout{min-height:100%;height:auto;overflow-x:hidden;}
+
+  /* Do not let pages push the fixed nav upward. */
+  .mobilebar{bottom:calc(14px + env(safe-area-inset-bottom))!important;}
+
+  /* Keyboard mode: keep composer above keyboard, never resize the whole app upward. */
+  html.mm-chat-page .main,
+  html.mm-assistant-page .main{
+    height:auto!important;
+    min-height:100dvh!important;
+    overflow:visible!important;
+  }
+
+  html.mm-chat-page .chat-compose-pro,
+  html.mm-assistant-page .ai-reference-composer{
+    position:sticky!important;
+    bottom:calc(78px + env(safe-area-inset-bottom))!important;
+  }
+
+  html.mm-chat-page .mobilebar,
+  html.mm-assistant-page .mobilebar{
+    position:fixed!important;
+  }
+
+  /* Splash: fixed viewport, no iOS bottom blank area. */
+  .app-splash{
+    height:100dvh!important;
+    min-height:100dvh!important;
+    padding-bottom:env(safe-area-inset-bottom)!important;
+  }
+}
