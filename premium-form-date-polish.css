@@ -1,0 +1,348 @@
+/* Final premium form system for member, bazar, deposit, utility and schedule flows. */
+:root{
+  --mm-form-ink:#10284d;
+  --mm-form-muted:#6f819b;
+  --mm-form-border:#d9e4f2;
+  --mm-form-surface:#ffffff;
+  --mm-form-soft:#f7faff;
+  --mm-form-blue:#216ee7;
+  --mm-form-blue-2:#164eb9;
+  --mm-form-shadow:0 22px 64px rgba(17,45,87,.16);
+  --mm-control-shadow:0 7px 20px rgba(28,67,119,.055);
+}
+
+/* Scope the finishing layer only to the five entry experiences under review. */
+.modal-wrap .modal.mm-premium-modal{
+  color:var(--mm-form-ink)!important;
+  border:1px solid rgba(215,226,240,.92)!important;
+  background:linear-gradient(180deg,#fff 0%,#fbfdff 72%,#f7faff 100%)!important;
+  box-shadow:var(--mm-form-shadow)!important;
+}
+
+.modal-wrap .modal.mm-premium-modal:not(:has(#bazarForm)){
+  width:min(610px,calc(100% - 20px))!important;
+  margin:0 auto 10px!important;
+  border-radius:28px!important;
+}
+
+.mm-premium-modal .modal-title,
+.mm-premium-modal .entry-form-hero{
+  position:relative!important;
+  border-bottom:1px solid #e6edf6!important;
+  background:
+    radial-gradient(circle at 88% 12%,rgba(63,207,166,.12),transparent 31%),
+    radial-gradient(circle at 10% 0,rgba(57,124,238,.12),transparent 35%),
+    linear-gradient(135deg,#fbfdff,#f4f9ff 58%,#f4fcf9)!important;
+}
+
+.mm-premium-modal .modal-title h2,
+.mm-premium-modal .entry-form-hero h2{
+  color:#10264a!important;
+  letter-spacing:-.025em!important;
+}
+
+.mm-premium-modal .eyebrow,
+.mm-premium-modal .entry-form-hero>div>span{
+  color:#7e91aa!important;
+  letter-spacing:.15em!important;
+  font-weight:800!important;
+}
+
+.mm-premium-modal .icon-btn,
+.mm-premium-modal .entry-form-close{
+  border:1px solid #e4ebf4!important;
+  background:rgba(255,255,255,.88)!important;
+  color:#58708e!important;
+  box-shadow:0 5px 16px rgba(30,66,115,.07)!important;
+}
+
+.mm-premium-modal .icon-btn:active,
+.mm-premium-modal .entry-form-close:active{transform:scale(.96)}
+
+.mm-premium-modal .form-grid,
+.mm-premium-modal .entry-form-grid{gap:13px!important}
+
+.mm-premium-modal .field{min-width:0!important}
+.mm-premium-modal .field label{
+  display:flex!important;
+  align-items:center!important;
+  min-height:17px!important;
+  margin:0 0 6px!important;
+  color:#607593!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  letter-spacing:.01em!important;
+}
+
+.mm-premium-modal input:not([type=checkbox]):not([type=radio]),
+.mm-premium-modal select,
+.mm-premium-modal textarea,
+.mm-premium-modal .entry-select-button,
+.mm-premium-modal .entry-money-input,
+.mm-premium-modal .clean-select{
+  width:100%!important;
+  min-width:0!important;
+  border:1px solid var(--mm-form-border)!important;
+  border-radius:15px!important;
+  background:linear-gradient(180deg,#fff,#f9fbff)!important;
+  color:#10284d!important;
+  box-shadow:var(--mm-control-shadow)!important;
+  outline:none!important;
+  transition:border-color .16s ease,box-shadow .16s ease,background .16s ease,transform .16s ease!important;
+}
+
+.mm-premium-modal input:not([type=checkbox]):not([type=radio]),
+.mm-premium-modal select,
+.mm-premium-modal .entry-select-button,
+.mm-premium-modal .entry-money-input{min-height:52px!important}
+
+.mm-premium-modal textarea{min-height:96px!important;line-height:1.48!important}
+
+.mm-premium-modal input:focus,
+.mm-premium-modal select:focus,
+.mm-premium-modal textarea:focus,
+.mm-premium-modal .entry-select-button:focus,
+.mm-premium-modal .entry-money-input:focus-within,
+.mm-premium-modal .clean-select:focus{
+  border-color:#4d8ded!important;
+  background:#fff!important;
+  box-shadow:0 0 0 4px rgba(40,116,231,.105),0 9px 24px rgba(28,67,119,.075)!important;
+}
+
+/* Date control: compact, readable and consistent on iOS/Safari. */
+.mm-date-control{
+  position:relative!important;
+  display:flex!important;
+  align-items:center!important;
+  width:100%!important;
+  min-height:54px!important;
+  overflow:hidden!important;
+  border:1px solid #ceddf0!important;
+  border-radius:16px!important;
+  background:
+    radial-gradient(circle at 90% 10%,rgba(37,119,235,.065),transparent 32%),
+    linear-gradient(180deg,#fff,#f7faff)!important;
+  box-shadow:0 8px 22px rgba(28,67,119,.065),inset 0 1px rgba(255,255,255,.9)!important;
+  transition:border-color .16s ease,box-shadow .16s ease,background .16s ease!important;
+}
+
+.mm-date-control:focus-within{
+  border-color:#3c82eb!important;
+  background:#fff!important;
+  box-shadow:0 0 0 4px rgba(39,115,230,.11),0 10px 28px rgba(28,67,119,.09)!important;
+}
+
+.mm-date-control .mm-date-icon{
+  position:absolute!important;
+  left:13px!important;
+  top:50%!important;
+  z-index:2!important;
+  width:30px!important;
+  height:30px!important;
+  transform:translateY(-50%)!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid #d8e6f8!important;
+  border-radius:10px!important;
+  color:#236fd9!important;
+  background:linear-gradient(145deg,#edf5ff,#e5f0ff)!important;
+  pointer-events:none!important;
+  box-shadow:0 4px 10px rgba(35,111,217,.08)!important;
+}
+
+.mm-date-control .mm-date-icon::before{
+  content:"";
+  width:15px;
+  height:15px;
+  background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 3v3m10-3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm1.5 8h3m3 0h3m-9 3h3m3 0h3' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 3v3m10-3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm1.5 8h3m3 0h3m-9 3h3m3 0h3' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+.mm-date-control input[type=date],
+.mm-date-control input[type=month]{
+  position:relative!important;
+  z-index:1!important;
+  display:block!important;
+  width:100%!important;
+  height:52px!important;
+  min-height:52px!important;
+  margin:0!important;
+  padding:9px 44px 9px 54px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#142f58!important;
+  -webkit-text-fill-color:#142f58!important;
+  font-size:16px!important;
+  font-weight:800!important;
+  font-variant-numeric:tabular-nums!important;
+  text-align:left!important;
+  text-align-last:left!important;
+  box-shadow:none!important;
+  appearance:none!important;
+  -webkit-appearance:none!important;
+}
+
+.mm-date-control input[type=date]::-webkit-date-and-time-value,
+.mm-date-control input[type=month]::-webkit-date-and-time-value{
+  width:auto!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  text-align:left!important;
+}
+.mm-date-control input[type=date]::-webkit-datetime-edit,
+.mm-date-control input[type=month]::-webkit-datetime-edit,
+.mm-date-control input[type=date]::-webkit-datetime-edit-fields-wrapper,
+.mm-date-control input[type=month]::-webkit-datetime-edit-fields-wrapper{
+  display:inline-flex!important;
+  width:auto!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  justify-content:flex-start!important;
+}
+.mm-date-control input::-webkit-calendar-picker-indicator{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  margin:0!important;
+  opacity:0!important;
+  cursor:pointer!important;
+}
+
+/* Remove legacy decoration once the unified date control is active. */
+.mm-date-control.entry-date-wrap:before{display:none!important}
+.mm-date-control.entry-date-wrap{height:auto!important}
+.mm-date-control.entry-date-wrap input{height:52px!important;min-height:52px!important;padding:9px 44px 9px 54px!important}
+
+/* Member form */
+.mm-form-member .photo-picker{
+  display:grid!important;
+  grid-template-columns:auto auto 1fr!important;
+  align-items:center!important;
+  gap:12px!important;
+  margin-bottom:15px!important;
+  padding:12px!important;
+  border:1px solid #dfe8f3!important;
+  border-radius:18px!important;
+  background:linear-gradient(135deg,#f4f8ff,#f2fbf7)!important;
+  box-shadow:0 8px 24px rgba(28,67,119,.045)!important;
+}
+.mm-form-member .photo-picker .member-photo{width:48px!important;height:48px!important;border-radius:15px!important}
+.mm-form-member .photo-btn{min-height:42px!important;padding:9px 13px!important;border-radius:13px!important}
+.mm-form-member .photo-picker small{font-size:11px!important;line-height:1.35!important;color:#7a8ca4!important}
+
+/* Bazar meta card and item cards */
+.mm-form-bazar .final-bazar-meta{
+  gap:10px!important;
+  padding:11px!important;
+  border:1px solid #dfe8f3!important;
+  border-radius:18px!important;
+  background:linear-gradient(145deg,#f9fbff,#f5f9ff)!important;
+  box-shadow:0 8px 25px rgba(28,67,119,.045)!important;
+}
+.mm-form-bazar .bazar-form-item{
+  border-color:#dce6f2!important;
+  border-radius:17px!important;
+  box-shadow:0 7px 20px rgba(30,59,105,.045)!important;
+}
+.mm-form-bazar .final-items-title{margin-top:12px!important;padding-top:11px!important}
+.mm-form-bazar .final-bazar-footer{
+  border-top:1px solid #e4ebf4!important;
+  background:rgba(248,251,255,.96)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+  backdrop-filter:blur(16px)!important;
+}
+
+/* Deposit + utility share controls */
+.mm-form-deposit .entry-form-icon,
+.mm-form-utility .entry-form-icon{
+  border:1px solid rgba(216,228,243,.9)!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:0 8px 22px rgba(28,67,119,.08)!important;
+}
+.mm-form-utility .utility-share-card{
+  padding:12px!important;
+  border:1px solid #dce8f2!important;
+  border-radius:18px!important;
+  background:linear-gradient(145deg,#fbfdff,#f3faf7)!important;
+  box-shadow:0 7px 20px rgba(28,67,119,.035)!important;
+}
+.mm-form-utility .utility-member-option{border-radius:13px!important;box-shadow:none!important}
+
+/* Schedule */
+.mm-form-schedule .schedule-email-toggle{
+  margin-top:14px!important;
+  padding:11px 12px!important;
+  border:1px solid #dce7f4!important;
+  border-radius:15px!important;
+  background:linear-gradient(145deg,#f8fbff,#f4f9ff)!important;
+}
+
+/* Unified action hierarchy. */
+.mm-premium-modal .actions,
+.mm-premium-modal .entry-form-actions{
+  gap:10px!important;
+  margin-top:17px!important;
+}
+.mm-premium-modal .actions .btn,
+.mm-premium-modal .entry-form-actions .btn,
+.mm-form-bazar .final-bazar-footer .btn{
+  min-height:50px!important;
+  border-radius:15px!important;
+  font-size:13px!important;
+  font-weight:800!important;
+}
+.mm-premium-modal .btn.primary,
+.mm-form-bazar .final-bazar-footer .btn.primary{
+  border:0!important;
+  background:linear-gradient(135deg,#2579f2,#164db7)!important;
+  color:#fff!important;
+  box-shadow:0 10px 24px rgba(31,91,201,.20)!important;
+}
+.mm-premium-modal .btn:not(.primary):not(.danger){background:#edf3fa!important;color:#304c70!important;border-color:#e0e8f2!important}
+
+@media(max-width:760px){
+  .modal-wrap:has(.mm-premium-modal){padding:8px 0 0!important;align-items:flex-end!important}
+  .modal-wrap .modal.mm-premium-modal:not(:has(#bazarForm)){
+    width:calc(100% - 12px)!important;
+    max-height:94dvh!important;
+    margin:0 6px 6px!important;
+    border-radius:25px!important;
+    padding:18px 16px calc(18px + env(safe-area-inset-bottom))!important;
+  }
+  .mm-premium-modal .modal-title{margin:-18px -16px 14px!important;padding:17px 16px 14px!important;border-radius:25px 25px 0 0!important}
+  .mm-premium-modal .modal-title h2{font-size:23px!important;margin:0!important}
+  .mm-premium-modal .entry-form-hero{padding:16px!important}
+  .mm-premium-modal .entry-pro-form{padding:15px 16px calc(17px + env(safe-area-inset-bottom))!important}
+  .mm-premium-modal .entry-form-grid,.mm-premium-modal .form-grid{gap:12px!important}
+  .mm-premium-modal input:not([type=checkbox]):not([type=radio]),.mm-premium-modal select,.mm-premium-modal .entry-select-button,.mm-premium-modal .entry-money-input{min-height:50px!important;font-size:16px!important}
+  .mm-date-control{min-height:52px!important}
+  .mm-date-control input[type=date],.mm-date-control input[type=month],.mm-date-control.entry-date-wrap input{height:50px!important;min-height:50px!important;font-size:15px!important}
+  .mm-form-member .photo-picker{grid-template-columns:auto 1fr!important}.mm-form-member .photo-picker small{grid-column:1/-1!important;margin-top:-4px!important}
+  .mm-form-bazar .final-bazar-meta{gap:9px!important;padding:10px!important}
+  .mm-form-bazar .final-bazar-meta .field input,.mm-form-bazar .final-bazar-meta .field select{min-height:48px!important}
+}
+
+@media(max-width:600px){
+  /* Bazar keeps its long-form full-height editor, but the controls remain compact. */
+  .modal-wrap .modal.mm-form-bazar{width:100%!important;margin:0!important;border:0!important;border-radius:0!important}
+  .mm-form-bazar .final-bazar-modal-title{background:rgba(250,252,255,.96)!important;border-bottom:1px solid #e4ebf4!important;box-shadow:0 7px 24px rgba(27,55,98,.045)!important}
+  .mm-form-bazar .final-bazar-meta{grid-template-columns:1fr!important}
+}
+
+/* Dark-mode equivalent, intentionally loaded after the legacy dark stylesheet. */
+html[data-theme="dark"] .modal-wrap .modal.mm-premium-modal{background:linear-gradient(180deg,#0e2032,#0b1b2a)!important;border-color:#2d4961!important;color:#eef5ff!important;box-shadow:0 28px 75px rgba(0,0,0,.46)!important}
+html[data-theme="dark"] .mm-premium-modal .modal-title,html[data-theme="dark"] .mm-premium-modal .entry-form-hero{background:linear-gradient(135deg,#132a40,#10292e)!important;border-color:#2d4961!important}
+html[data-theme="dark"] .mm-premium-modal .modal-title h2,html[data-theme="dark"] .mm-premium-modal .entry-form-hero h2{color:#f2f7ff!important}
+html[data-theme="dark"] .mm-premium-modal .field label{color:#9cafc5!important}
+html[data-theme="dark"] .mm-premium-modal input:not([type=checkbox]):not([type=radio]),html[data-theme="dark"] .mm-premium-modal select,html[data-theme="dark"] .mm-premium-modal textarea,html[data-theme="dark"] .mm-premium-modal .entry-select-button,html[data-theme="dark"] .mm-premium-modal .entry-money-input,html[data-theme="dark"] .mm-premium-modal .clean-select{background:#102438!important;color:#eef5ff!important;border-color:#304c65!important;box-shadow:none!important}
+html[data-theme="dark"] .mm-date-control{background:linear-gradient(180deg,#12273b,#0f2133)!important;border-color:#35526d!important;box-shadow:0 8px 24px rgba(0,0,0,.18)!important}
+html[data-theme="dark"] .mm-date-control .mm-date-icon{background:linear-gradient(145deg,#173b59,#143149)!important;border-color:#355675!important;color:#79b5ff!important;box-shadow:none!important}
+html[data-theme="dark"] .mm-date-control input[type=date],html[data-theme="dark"] .mm-date-control input[type=month]{color:#f0f6ff!important;-webkit-text-fill-color:#f0f6ff!important;color-scheme:dark!important}
+html[data-theme="dark"] .mm-form-member .photo-picker,html[data-theme="dark"] .mm-form-bazar .final-bazar-meta,html[data-theme="dark"] .mm-form-utility .utility-share-card,html[data-theme="dark"] .mm-form-schedule .schedule-email-toggle{background:linear-gradient(145deg,#12283d,#102438)!important;border-color:#304b63!important;box-shadow:none!important}
+html[data-theme="dark"] .mm-form-bazar .final-bazar-footer{background:rgba(10,25,40,.96)!important;border-color:#29445b!important}
+html[data-theme="dark"] .mm-premium-modal .btn:not(.primary):not(.danger){background:#142b40!important;color:#e4edf8!important;border-color:#304d65!important}
