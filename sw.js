@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v69-chat-push-polish';
+const CACHE = 'mess-manager-v70-mobile-nav-root-fix';
 const SHELL = [
   './',
   './index.html',

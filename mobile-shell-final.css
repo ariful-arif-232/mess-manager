@@ -1,23 +1,39 @@
 /* Consolidated mobile shell normalization.
  * This is the final loaded mobile layer. Keep viewport/safe-area behavior here so
  * older page-specific rules cannot move the navigation, sheets or chat controls.
+ *
+ * IMPORTANT: do not add env(safe-area-inset-bottom) to the nav's bottom offset.
+ * The navigation card already clears the iPhone home indicator by its own height.
+ * Adding the safe area again is what created the large white strip on short and
+ * viewport-locked pages (Schedule, Chat and Voice Assistant).
  */
 :root{
-  --mm-nav-bottom:max(10px,calc(env(safe-area-inset-bottom) - 24px));
-  --mm-nav-extra:max(0px,calc(env(safe-area-inset-bottom) - 24px));
-  --mm-nav-reserve:calc(88px + var(--mm-nav-extra));
+  --mm-nav-reserve:88px;
 }
 
 @media (max-width:900px){
   html,body,#app,.layout{min-height:100%;overflow-x:hidden}
 
-  /* One physical navigation anchor for every page. Older styles added the full
-     safe-area inset to bottom, which lifted the bar ~50px on iPhone. */
-  .mobilebar{
+  /* Use a literal physical viewport anchor. Previous versions routed this through
+     max()/env() custom properties, while older styles still used
+     bottom:calc(10px + env(safe-area-inset-bottom)). On iOS PWA pages that left
+     roughly one extra safe-area below the bar. The high-specificity selector is
+     intentional because several legacy mobile layers also use !important. */
+  html body #app .mobilebar{
     position:fixed!important;
-    bottom:var(--mm-nav-bottom)!important;
+    bottom:10px!important;
+    inset-block-end:10px!important;
   }
   .main{padding-bottom:var(--mm-nav-reserve)!important}
+
+  /* Viewport-locked pages must use the same full physical viewport as Dashboard. */
+  html.mm-chat-page,
+  html.mm-chat-page body,
+  html.mm-assistant-page,
+  html.mm-assistant-page body{
+    height:100dvh!important;
+    min-height:100dvh!important;
+  }
 
   /* Bottom sheets extend through the iOS home-indicator area while keeping a
      small visible content inset. This removes the detached strip under More. */
@@ -27,9 +43,10 @@
   }
 
   /* Chat respects the status area and reserves only the real nav footprint. */
-  html[data-mm-page="chat"] .main{
+  html[data-mm-page="chat"] .main,
+  html.mm-chat-page .main{
     padding-top:max(8px,env(safe-area-inset-top))!important;
-    padding-bottom:calc(82px + var(--mm-nav-extra))!important;
+    padding-bottom:82px!important;
   }
   html[data-mm-page="chat"] .topbar{
     flex:0 0 auto!important;
@@ -147,7 +164,8 @@
   html.mm-chat-keyboard .chat-messages-pro{padding-bottom:88px!important}
 
   /* Voice Assistant uses the same navigation reserve and keyboard behavior. */
-  html[data-mm-page="assistant"] .main{padding-bottom:calc(82px + var(--mm-nav-extra))!important}
+  html[data-mm-page="assistant"] .main,
+  html.mm-assistant-page .main{padding-bottom:82px!important}
   html[data-mm-page="assistant"] .ai-reference-composer{margin-bottom:0!important}
   html.mm-assistant-keyboard .ai-reference-composer{
     position:fixed!important;
@@ -159,7 +177,10 @@
   }
   html.mm-assistant-keyboard .ai-reference-log{padding-bottom:76px!important}
 
-  html[data-mm-page="schedule"],html[data-mm-page="schedule"] body{overflow-x:hidden!important}
+  /* Schedule is intentionally short on many months, so it must not expose a
+     separate safe-area band below the fixed nav. */
+  html[data-mm-page="schedule"],
+  html[data-mm-page="schedule"] body{overflow-x:hidden!important}
 }
 
 @keyframes mmSendSpin{to{transform:rotate(360deg)}}
