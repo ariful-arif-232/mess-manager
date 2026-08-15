@@ -1,41 +1,56 @@
-/* Mobile shell state bridge. */
+/* Mobile shell state bridge. Keeps page mode, iOS visual viewport and keyboard offsets in one place. */
 'use strict';
 (() => {
+  if (window.__mmMobileShellFinalLoaded) return;
+  window.__mmMobileShellFinalLoaded = true;
+
+  const root = document.documentElement;
   const currentPage = () => {
     try { return typeof state !== 'undefined' ? String(state?.page || '') : ''; }
     catch (_) { return ''; }
   };
 
   const syncPageMode = () => {
-    const root = document.documentElement;
     const page = currentPage();
     root.dataset.mmPage = page;
+    root.classList.toggle('mm-chat-keyboard', page === 'chat' && root.classList.contains('mm-chat-keyboard'));
+    root.classList.toggle('mm-assistant-keyboard', page === 'assistant' && root.classList.contains('mm-assistant-keyboard'));
     if (page !== 'chat') root.classList.remove('mm-chat-keyboard');
     if (page !== 'assistant') root.classList.remove('mm-assistant-keyboard');
+  };
+
+  const updateViewportMetrics = () => {
+    const vv = window.visualViewport;
+    const visualHeight = vv?.height || window.innerHeight;
+    const offsetTop = vv?.offsetTop || 0;
+    const layoutHeight = window.innerHeight || document.documentElement.clientHeight || visualHeight;
+    const keyboardBottom = Math.max(0, layoutHeight - (visualHeight + offsetTop));
+
+    if (visualHeight) root.style.setProperty('--mm-visual-height', `${Math.round(visualHeight)}px`);
+    root.style.setProperty('--mm-keyboard-bottom', `${Math.round(keyboardBottom)}px`);
+  };
+
+  const syncKeyboardState = () => {
+    syncPageMode();
+    const active = document.activeElement;
+    const page = root.dataset.mmPage;
+    const chatFocused = page === 'chat' && !!active?.matches?.('.chat-compose-pro textarea');
+    const assistantFocused = page === 'assistant' && !!active?.matches?.('.ai-reference-composer input');
+
+    root.classList.toggle('mm-chat-keyboard', chatFocused);
+    root.classList.toggle('mm-assistant-keyboard', assistantFocused);
+    updateViewportMetrics();
   };
 
   const originalRenderPage = window.renderPage;
   if (typeof originalRenderPage === 'function') {
     window.renderPage = function mobileShellRenderPage() {
       syncPageMode();
-      return originalRenderPage.apply(this, arguments);
+      const result = originalRenderPage.apply(this, arguments);
+      requestAnimationFrame(syncKeyboardState);
+      return result;
     };
   }
-
-  const updateHeight = () => {
-    const height = window.visualViewport?.height || window.innerHeight;
-    if (height) document.documentElement.style.setProperty('--mm-visual-height', `${Math.round(height)}px`);
-  };
-
-  const syncKeyboardState = () => {
-    const root = document.documentElement;
-    const active = document.activeElement;
-    const chatFocused = root.dataset.mmPage === 'chat' && !!active?.matches?.('.chat-compose-pro textarea');
-    const assistantFocused = root.dataset.mmPage === 'assistant' && !!active?.matches?.('.ai-reference-composer input');
-    root.classList.toggle('mm-chat-keyboard', chatFocused);
-    root.classList.toggle('mm-assistant-keyboard', assistantFocused);
-    updateHeight();
-  };
 
   const restoreSendButton = (form, button, original) => {
     if (!form?.isConnected || !button?.isConnected) return;
@@ -70,12 +85,13 @@
   }, true);
 
   window.visualViewport?.addEventListener('resize', syncKeyboardState);
-  window.visualViewport?.addEventListener('scroll', updateHeight);
+  window.visualViewport?.addEventListener('scroll', syncKeyboardState);
   document.addEventListener('focusin', syncKeyboardState);
-  document.addEventListener('focusout', () => setTimeout(syncKeyboardState, 120));
+  document.addEventListener('focusout', () => setTimeout(syncKeyboardState, 140));
   window.addEventListener('resize', syncKeyboardState);
-  window.addEventListener('pageshow', () => { syncPageMode(); syncKeyboardState(); });
+  window.addEventListener('orientationchange', () => setTimeout(syncKeyboardState, 180));
+  window.addEventListener('pageshow', syncKeyboardState);
 
   syncPageMode();
-  updateHeight();
+  updateViewportMetrics();
 })();
