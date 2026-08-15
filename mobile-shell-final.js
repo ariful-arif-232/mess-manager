@@ -6,10 +6,89 @@
 
   const root = document.documentElement;
   const LOW_NAV_PAGES = new Set(['chat', 'assistant', 'schedule']);
+  const NAV_BOTTOM = 10;
+  const NAV_RESERVE = 88;
+  let safeAreaBottomCache = null;
+  let navMeasureFrame = 0;
 
   const currentPage = () => {
     try { return typeof state !== 'undefined' ? String(state?.page || '') : ''; }
     catch (_) { return ''; }
+  };
+
+  const readSafeAreaBottom = () => {
+    if (safeAreaBottomCache !== null) return safeAreaBottomCache;
+    if (!document.body) return 0;
+    const probe = document.createElement('div');
+    probe.setAttribute('aria-hidden', 'true');
+    probe.style.cssText = 'position:fixed;left:0;bottom:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom);';
+    document.body.appendChild(probe);
+    safeAreaBottomCache = Math.max(0, parseFloat(getComputedStyle(probe).paddingBottom) || 0);
+    probe.remove();
+    return safeAreaBottomCache;
+  };
+
+  const effectiveViewportBottom = () => {
+    const vv = window.visualViewport;
+    const visualBottom = vv ? Number(vv.offsetTop || 0) + Number(vv.height || 0) : 0;
+    let bottom = Math.max(Number(window.innerHeight || 0), visualBottom);
+
+    /* In an installed iOS PWA, screen.height can include the home-indicator band
+       while the layout/visual viewport reported to a viewport-locked page can be
+       shorter. Only use that extra band when the difference is plausibly a safe
+       area, never while a software keyboard is changing the viewport. */
+    const standalone = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
+    const screenHeight = Number(window.screen?.height || 0);
+    const safe = readSafeAreaBottom();
+    const maxSafeBand = Math.max(48, safe + 16);
+    if (standalone && screenHeight > bottom && screenHeight - bottom <= maxSafeBand) bottom = screenHeight;
+    return bottom;
+  };
+
+  const clearTargetNavOverrides = (nav, main) => {
+    if (nav?.dataset.mmBottomNavNormalized === '1') {
+      nav.style.removeProperty('position');
+      nav.style.removeProperty('bottom');
+      nav.style.removeProperty('inset-block-end');
+      delete nav.dataset.mmBottomNavNormalized;
+      delete nav.dataset.mmBottomCorrection;
+    }
+    if (main?.dataset.mmBottomNavNormalized === '1') {
+      main.style.removeProperty('padding-bottom');
+      delete main.dataset.mmBottomNavNormalized;
+    }
+  };
+
+  const measureAndCorrectTargetNav = (page, nav, main) => {
+    cancelAnimationFrame(navMeasureFrame);
+    navMeasureFrame = requestAnimationFrame(() => {
+      if (!nav?.isConnected || currentPage() !== page || !LOW_NAV_PAGES.has(page)) return;
+      const keyboardOpen = (page === 'chat' && root.classList.contains('mm-chat-keyboard')) ||
+        (page === 'assistant' && root.classList.contains('mm-assistant-keyboard'));
+      if (keyboardOpen) return;
+
+      const viewportBottom = effectiveViewportBottom();
+      const rect = nav.getBoundingClientRect();
+      if (!viewportBottom || !rect.height) return;
+
+      const visibleGap = viewportBottom - rect.bottom;
+      const safe = readSafeAreaBottom();
+      const maxCorrection = Math.max(36, safe + 2);
+      const correction = Math.max(0, Math.min(maxCorrection, visibleGap - NAV_BOTTOM));
+
+      /* This is the important fallback for iOS standalone pages. If a page-specific
+         100dvh/overflow context exposes one safe-area band below the fixed nav,
+         compensate only that measured band. Dashboard does not need this path. */
+      if (correction > 1) {
+        const correctedBottom = NAV_BOTTOM - correction;
+        nav.style.setProperty('bottom', `${correctedBottom}px`, 'important');
+        nav.style.setProperty('inset-block-end', `${correctedBottom}px`, 'important');
+        nav.dataset.mmBottomCorrection = String(Math.round(correction));
+        if (main) main.style.setProperty('padding-bottom', `${Math.max(52, NAV_RESERVE - correction)}px`, 'important');
+      } else {
+        nav.dataset.mmBottomCorrection = '0';
+      }
+    });
   };
 
   const syncTargetPageBottomNav = () => {
@@ -20,33 +99,24 @@
     const keyboardOpen = (page === 'chat' && root.classList.contains('mm-chat-keyboard')) ||
       (page === 'assistant' && root.classList.contains('mm-assistant-keyboard'));
 
+    if (!isTarget) {
+      clearTargetNavOverrides(nav, main);
+      return;
+    }
+
     if (nav) {
-      if (isTarget) {
-        /* These viewport-heavy pages were still inheriting the legacy
-           18px + safe-area bottom offset. Pin them to the same physical
-           10px bottom position as Dashboard. Inline !important is deliberate:
-           several legacy page styles are injected after the static CSS. */
-        nav.dataset.mmBottomNavNormalized = '1';
-        nav.style.setProperty('position', 'fixed', 'important');
-        nav.style.setProperty('bottom', '10px', 'important');
-      } else if (nav.dataset.mmBottomNavNormalized === '1') {
-        nav.style.removeProperty('position');
-        nav.style.removeProperty('bottom');
-        delete nav.dataset.mmBottomNavNormalized;
-      }
+      nav.dataset.mmBottomNavNormalized = '1';
+      nav.style.setProperty('position', 'fixed', 'important');
+      nav.style.setProperty('bottom', `${NAV_BOTTOM}px`, 'important');
+      nav.style.setProperty('inset-block-end', `${NAV_BOTTOM}px`, 'important');
     }
 
     if (main) {
-      if (isTarget) {
-        /* Removing the legacy safe-area reserve moves Chat/Assistant composers
-           down together with the navigation, so no new gap appears above it. */
-        main.dataset.mmBottomNavNormalized = '1';
-        main.style.setProperty('padding-bottom', keyboardOpen ? '8px' : '88px', 'important');
-      } else if (main.dataset.mmBottomNavNormalized === '1') {
-        main.style.removeProperty('padding-bottom');
-        delete main.dataset.mmBottomNavNormalized;
-      }
+      main.dataset.mmBottomNavNormalized = '1';
+      main.style.setProperty('padding-bottom', keyboardOpen ? '8px' : `${NAV_RESERVE}px`, 'important');
     }
+
+    if (!keyboardOpen && nav) measureAndCorrectTargetNav(page, nav, main);
   };
 
   const syncPageMode = () => {
@@ -130,8 +200,14 @@
   window.visualViewport?.addEventListener('scroll', syncKeyboardState);
   document.addEventListener('focusin', syncKeyboardState);
   document.addEventListener('focusout', () => setTimeout(syncKeyboardState, 140));
-  window.addEventListener('resize', syncKeyboardState);
-  window.addEventListener('orientationchange', () => setTimeout(syncKeyboardState, 180));
+  window.addEventListener('resize', () => {
+    safeAreaBottomCache = null;
+    syncKeyboardState();
+  });
+  window.addEventListener('orientationchange', () => {
+    safeAreaBottomCache = null;
+    setTimeout(syncKeyboardState, 180);
+  });
   window.addEventListener('pageshow', syncKeyboardState);
 
   const app = document.getElementById('app');
