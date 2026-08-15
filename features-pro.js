@@ -34,6 +34,16 @@
   async function saveNotice(memberId,title,body,type='general'){
     assertResult(await client.from('mess_notices').insert({mess_id:profile.mess_id,created_by:profile.id,target_member_id:memberId||null,title,body,notice_type:type}));
   }
+  async function dispatchChatPush(messageId){
+    if(!messageId)return;
+    try{
+      const r=await client.functions.invoke('chat-push',{body:{action:'dispatch-message',message_id:messageId}});
+      if(r.error)throw r.error;
+      if(r.data?.error)throw new Error(r.data.error);
+    }catch(error){
+      console.warn('Chat push dispatch failed; message was still saved normally.',error);
+    }
+  }
   function noticeModal(memberId){
     const m=db.members.find(x=>x.id===memberId);modal(`<div class="modal-title"><div><span class="eyebrow">Payment reminder</span><h2>Send notice</h2></div><button class="icon-btn" data-close>×</button></div><form id="noticeForm"><div class="field"><label>Member</label><input value="${esc(m?.name||'')}" readonly/></div><div class="field gap-top"><label>Message</label><textarea name="message" rows="5" required>আপনার এই মাসের মেসের বকেয়া/জমার হিসাব দেখে প্রয়োজনীয় টাকা জমা দেওয়ার অনুরোধ রইল।</textarea></div><label class="check-row"><input type="checkbox" name="email" ${m?.email?'checked':'disabled'}/> Email-এও পাঠান ${m?.email?`(${esc(m.email)})`:'— email নেই'}</label><div class="actions gap-top"><button class="btn primary">Send notice</button><button class="btn" type="button" data-close2>Cancel</button></div></form>`);$('[data-close]').onclick=closeModal;$('[data-close2]').onclick=closeModal;$('#noticeForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),message=f.get('message').trim();await run(async()=>{await saveNotice(memberId,'টাকা জমা দেওয়ার অনুরোধ',message,'deposit');if(f.get('email'))await sendMemberEmail(memberId,`${mess.name}: Deposit reminder`,message);closeModal();await loadData();},'Notice sent.');};
   }
@@ -50,7 +60,7 @@
     const messages=db.messages||[];
     c.innerHTML=`<div class="chat-shell"><div class="chat-head"><div><span class="eyebrow">Mess community</span><h2>Chat & খাবার আলোচনা</h2><p>Problem, বাজার, আগামীকালের খাবার—সবাই এখানে share করতে পারবে।</p></div></div>${(db.notices||[]).length?`<div class="notice-strip"><b>Latest notice</b><span>${esc(db.notices[0].title)} — ${esc(db.notices[0].body)}</span></div>`:''}<div class="chat-messages" id="chatMessages">${messages.map(m=>{const mine=m.sender_member_id===profile.id;return `<div class="chat-row ${mine?'mine':''}"><div class="chat-avatar">${esc(initials(memberName(m.sender_member_id)))}</div><div class="chat-bubble"><div><b>${esc(memberName(m.sender_member_id))}</b><time>${new Date(m.created_at).toLocaleString()}</time></div><p>${esc(m.body)}</p></div></div>`;}).join('')||'<div class="chat-empty">এখনও কোনো message নেই। প্রথম message লিখুন।</div>'}</div><form class="chat-compose" id="chatForm"><textarea name="body" rows="1" maxlength="2000" placeholder="Message লিখুন…" required></textarea><button class="btn primary" aria-label="Send">Send</button></form></div>`;
     $('#chatMessages').scrollTop=$('#chatMessages').scrollHeight;
-    $('#chatForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),body=f.get('body').trim();if(!body)return;await run(async()=>{assertResult(await client.from('mess_messages').insert({mess_id:profile.mess_id,sender_member_id:profile.id,body}));e.target.reset();await loadData();chatPage(c);});};
+    $('#chatForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),body=f.get('body').trim();if(!body)return;await run(async()=>{const inserted=await client.from('mess_messages').insert({mess_id:profile.mess_id,sender_member_id:profile.id,body}).select('id').single();assertResult(inserted);dispatchChatPush(inserted.data?.id);e.target.reset();await loadData();chatPage(c);});};
   };
 
   const oldRenderPage=renderPage;
