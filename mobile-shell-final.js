@@ -113,7 +113,10 @@
 
     if (main) {
       main.dataset.mmBottomNavNormalized = '1';
-      main.style.setProperty('padding-bottom', keyboardOpen ? '8px' : `${NAV_RESERVE}px`, 'important');
+      /* When the software keyboard is visible the visual viewport itself is the
+         available screen. Reserving even the old 8px shell padding here could
+         expose the iOS home-indicator band as a white strip below the composer. */
+      main.style.setProperty('padding-bottom', keyboardOpen ? '0px' : `${NAV_RESERVE}px`, 'important');
     }
 
     if (!keyboardOpen && nav) measureAndCorrectTargetNav(page, nav, main);
@@ -137,18 +140,26 @@
     const keyboardBottom = Math.max(0, layoutHeight - (visualHeight + offsetTop));
 
     if (visualHeight) root.style.setProperty('--mm-visual-height', `${Math.round(visualHeight)}px`);
+    root.style.setProperty('--mm-visual-offset-top', `${Math.round(offsetTop)}px`);
     root.style.setProperty('--mm-keyboard-bottom', `${Math.round(keyboardBottom)}px`);
   };
 
   const syncKeyboardState = () => {
-    syncPageMode();
     const active = document.activeElement;
-    const page = root.dataset.mmPage;
+    const page = currentPage();
+    root.dataset.mmPage = page;
+
     const chatFocused = page === 'chat' && !!active?.matches?.('.chat-compose-pro textarea');
     const assistantFocused = page === 'assistant' && !!active?.matches?.('.ai-reference-composer input');
 
     root.classList.toggle('mm-chat-keyboard', chatFocused);
     root.classList.toggle('mm-assistant-keyboard', assistantFocused);
+    if (page !== 'chat') root.classList.remove('mm-chat-keyboard');
+    if (page !== 'assistant') root.classList.remove('mm-assistant-keyboard');
+
+    /* Update the visual viewport before applying page sizing. On iOS this avoids
+       one frame where the old 100dvh height survives after the keyboard opens and
+       paints a white band beneath the focused composer. */
     updateViewportMetrics();
     syncTargetPageBottomNav();
   };

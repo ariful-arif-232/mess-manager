@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v70-mobile-nav-root-fix';
+const CACHE = 'mess-manager-v71-keyboard-notch-fix';
 const SHELL = [
   './',
   './index.html',
