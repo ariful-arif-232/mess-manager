@@ -8,11 +8,36 @@
   .modal .field label,.modal fieldset legend{font-weight:800!important;color:#667a9a!important;margin-bottom:7px!important}
   .modal input,.modal select,.modal textarea{box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;height:54px!important;border:1px solid #d9e3f1!important;border-radius:16px!important;padding:0 15px!important;background:#fff!important;font-size:17px!important;color:#102a55!important}
 
-  /* iOS-safe date/month alignment: center only the value, never force native internals to 100% width. */
+  /* Generic modal date/month controls remain iOS-safe. */
   .modal input[type=date],.modal input[type=month]{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;height:54px!important;box-sizing:border-box!important;-webkit-appearance:none!important;appearance:none!important;text-align:center!important;text-align-last:center!important;padding:0 15px!important;overflow:hidden!important;font-variant-numeric:tabular-nums!important}
   .modal input[type=date]::-webkit-date-and-time-value,.modal input[type=month]::-webkit-date-and-time-value{min-width:0!important;width:auto!important;margin:0 auto!important;padding:0!important;text-align:center!important}
   .modal input[type=date]::-webkit-datetime-edit,.modal input[type=month]::-webkit-datetime-edit{display:inline-flex!important;width:auto!important;min-width:0!important;margin:0 auto!important;padding:0!important}
   .modal input[type=date]::-webkit-datetime-edit-fields-wrapper,.modal input[type=month]::-webkit-datetime-edit-fields-wrapper{display:inline-flex!important;width:auto!important;min-width:0!important;justify-content:center!important;padding:0!important}
+
+  /* Reviewed entry flows only: compact professional date field without touching other pages. */
+  .modal:has(#memberForm) #memberForm input[type=date],
+  .modal:has(#bazarForm) #bazarForm input[type=date],
+  .modal:has(#scheduleProForm) #scheduleProForm input[type=date]{height:50px!important;min-height:50px!important;padding:0 14px!important;border-radius:14px!important;text-align:left!important;text-align-last:left!important;font-size:16px!important;font-weight:750!important;letter-spacing:0!important;box-shadow:0 4px 14px rgba(31,67,118,.045)!important}
+  .modal:has(#memberForm) #memberForm input[type=date]::-webkit-date-and-time-value,
+  .modal:has(#bazarForm) #bazarForm input[type=date]::-webkit-date-and-time-value,
+  .modal:has(#scheduleProForm) #scheduleProForm input[type=date]::-webkit-date-and-time-value{display:block!important;width:auto!important;min-width:0!important;margin:0!important;padding:0!important;text-align:left!important}
+  .modal:has(#memberForm) #memberForm input[type=date]::-webkit-datetime-edit,
+  .modal:has(#bazarForm) #bazarForm input[type=date]::-webkit-datetime-edit,
+  .modal:has(#scheduleProForm) #scheduleProForm input[type=date]::-webkit-datetime-edit{display:inline-flex!important;width:auto!important;min-width:0!important;margin:0!important;padding:0!important;text-align:left!important}
+  .modal:has(#memberForm) #memberForm input[type=date]::-webkit-datetime-edit-fields-wrapper,
+  .modal:has(#bazarForm) #bazarForm input[type=date]::-webkit-datetime-edit-fields-wrapper,
+  .modal:has(#scheduleProForm) #scheduleProForm input[type=date]::-webkit-datetime-edit-fields-wrapper{display:inline-flex!important;width:auto!important;min-width:0!important;justify-content:flex-start!important;padding:0!important}
+
+  /* Keep only the requested forms denser; unrelated modal layouts are untouched. */
+  .modal:has(#memberForm) #memberForm .form-grid,
+  .modal:has(#scheduleProForm) #scheduleProForm .form-grid{gap:11px!important}
+  .modal:has(#memberForm) #memberForm input,
+  .modal:has(#memberForm) #memberForm select,
+  .modal:has(#scheduleProForm) #scheduleProForm input,
+  .modal:has(#scheduleProForm) #scheduleProForm select{height:50px!important;min-height:50px!important;border-radius:14px!important;font-size:16px!important}
+  .modal:has(#memberForm) .photo-picker{margin:12px 0!important;padding:11px 12px!important;border-radius:15px!important}
+  .modal:has(#memberForm) .actions,
+  .modal:has(#scheduleProForm) .actions{margin-top:15px!important}
 
   .modal textarea{height:auto!important;min-height:104px!important;padding-top:14px!important;resize:vertical}
   .modal fieldset.field{border:1px solid #dce5f1!important;border-radius:18px!important;padding:12px 14px!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
