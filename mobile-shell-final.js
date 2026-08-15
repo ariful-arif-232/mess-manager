@@ -5,7 +5,11 @@
   window.__mmMobileShellFinalLoaded = true;
 
   const root = document.documentElement;
-  const LOW_NAV_PAGES = new Set(['chat', 'assistant', 'schedule']);
+  const NAV_PAGES = new Set([
+    'dashboard','members','meals','bazar','deposits','utilities','schedule',
+    'settlement','reports','activity','settings','chat','assistant'
+  ]);
+  const RESERVED_SHELL_PAGES = new Set(['chat', 'assistant', 'schedule']);
   const KEYBOARD_PAGES = new Set(['chat', 'assistant']);
   const NAV_BOTTOM = 10;
   const NAV_RESERVE = 88;
@@ -15,6 +19,7 @@
   let stableLayoutHeight = 0;
   let keyboardWasOpen = false;
   let restoreTimers = [];
+  let navRefreshTimers = [];
 
   const currentPage = () => {
     try { return typeof state !== 'undefined' ? String(state?.page || '') : ''; }
@@ -68,9 +73,23 @@
     const standalone = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
     const screenHeight = Number(window.screen?.height || 0);
     const safe = readSafeAreaBottom();
-    const maxSafeBand = Math.max(48, safe + 16);
+    const maxSafeBand = Math.max(56, safe + 22);
     if (standalone && screenHeight > bottom && screenHeight - bottom <= maxSafeBand) bottom = screenHeight;
     return bottom;
+  };
+
+  /* Short pages must still occupy the physical app viewport. Without this, some
+     iOS standalone sessions size the shell to its content height; a fixed nav can
+     then inherit that shorter containing block and leave a white band below it.
+     Keep this runtime-enforced because multiple legacy styles redefine .layout. */
+  const normalizeShellHeight = () => {
+    const app = document.getElementById('app');
+    const layout = document.querySelector('.layout');
+    [root, document.body, app, layout].forEach(node => {
+      if (!node) return;
+      node.style.setProperty('min-height', '100dvh', 'important');
+      node.style.setProperty('min-block-size', '100dvh', 'important');
+    });
   };
 
   const clearTargetNavOverrides = (nav, main) => {
@@ -94,7 +113,7 @@
   const measureAndCorrectTargetNav = (page, nav, main) => {
     cancelAnimationFrame(navMeasureFrame);
     navMeasureFrame = requestAnimationFrame(() => {
-      if (!nav?.isConnected || currentPage() !== page || !LOW_NAV_PAGES.has(page) || keyboardClassOpen(page)) return;
+      if (!nav?.isConnected || currentPage() !== page || !NAV_PAGES.has(page) || keyboardClassOpen(page)) return;
 
       const viewportBottom = effectiveViewportBottom();
       const rect = nav.getBoundingClientRect();
@@ -102,7 +121,10 @@
 
       const visibleGap = viewportBottom - rect.bottom;
       const safe = readSafeAreaBottom();
-      const maxCorrection = Math.max(36, safe + 2);
+      /* The normal correction is one iPhone safe-area band, but allow enough room
+         for a short-content containing block. Measurement is clamped so a genuine
+         viewport transition cannot throw the nav far off screen. */
+      const maxCorrection = Math.max(96, safe + 40);
       const correction = Math.max(0, Math.min(maxCorrection, visibleGap - NAV_BOTTOM));
 
       if (correction > 1) {
@@ -110,7 +132,9 @@
         nav.style.setProperty('bottom', `${correctedBottom}px`, 'important');
         nav.style.setProperty('inset-block-end', `${correctedBottom}px`, 'important');
         nav.dataset.mmBottomCorrection = String(Math.round(correction));
-        if (main) main.style.setProperty('padding-bottom', `${Math.max(52, NAV_RESERVE - correction)}px`, 'important');
+        if (RESERVED_SHELL_PAGES.has(page) && main) {
+          main.style.setProperty('padding-bottom', `${Math.max(52, NAV_RESERVE - correction)}px`, 'important');
+        }
       } else {
         nav.style.setProperty('bottom', `${NAV_BOTTOM}px`, 'important');
         nav.style.setProperty('inset-block-end', `${NAV_BOTTOM}px`, 'important');
@@ -123,14 +147,18 @@
     const page = currentPage();
     const nav = document.querySelector('.mobilebar');
     const main = document.querySelector('.main');
-    const isTarget = LOW_NAV_PAGES.has(page);
+    const isTracked = NAV_PAGES.has(page);
     const keyboardOpen = keyboardClassOpen(page);
 
-    if (!isTarget) {
+    normalizeShellHeight();
+
+    if (!isTracked) {
       clearTargetNavOverrides(nav, main);
       return;
     }
 
+    /* Apply the physical anchor inline on every app page. This deliberately
+       outranks the older runtime style that adds env(safe-area-inset-bottom). */
     if (nav) {
       nav.dataset.mmBottomNavNormalized = '1';
       nav.style.setProperty('position', 'fixed', 'important');
@@ -138,12 +166,30 @@
       nav.style.setProperty('inset-block-end', `${NAV_BOTTOM}px`, 'important');
     }
 
-    if (main) {
+    if (main && RESERVED_SHELL_PAGES.has(page)) {
       main.dataset.mmBottomNavNormalized = '1';
       main.style.setProperty('padding-bottom', keyboardOpen ? '0px' : `${NAV_RESERVE}px`, 'important');
+    } else if (main?.dataset.mmBottomNavNormalized === '1') {
+      main.style.removeProperty('padding-bottom');
+      delete main.dataset.mmBottomNavNormalized;
     }
 
     if (!keyboardOpen && nav) measureAndCorrectTargetNav(page, nav, main);
+  };
+
+  const clearNavRefreshTimers = () => {
+    navRefreshTimers.forEach(clearTimeout);
+    navRefreshTimers = [];
+  };
+
+  const scheduleNavRefresh = () => {
+    clearNavRefreshTimers();
+    [0, 80, 220, 520].forEach(delay => {
+      navRefreshTimers.push(setTimeout(() => {
+        normalizeShellHeight();
+        syncTargetPageBottomNav();
+      }, delay));
+    });
   };
 
   const syncPageMode = () => {
@@ -176,6 +222,7 @@
         safeAreaBottomCache = null;
         keepDocumentAtOrigin();
         updateViewportMetrics();
+        normalizeShellHeight();
         syncTargetPageBottomNav();
       }, delay));
     });
@@ -216,7 +263,7 @@
       syncPageMode();
       const result = originalRenderPage.apply(this, arguments);
       requestAnimationFrame(syncKeyboardState);
-      setTimeout(syncTargetPageBottomNav, 0);
+      scheduleNavRefresh();
       return result;
     };
   }
@@ -270,25 +317,33 @@
   window.addEventListener('resize', () => {
     safeAreaBottomCache = null;
     syncKeyboardState();
+    scheduleNavRefresh();
   });
   window.addEventListener('orientationchange', () => {
     safeAreaBottomCache = null;
     stableLayoutHeight = 0;
-    setTimeout(syncKeyboardState, 180);
+    setTimeout(() => {
+      syncKeyboardState();
+      scheduleNavRefresh();
+    }, 180);
   });
   window.addEventListener('pageshow', () => {
     stableLayoutHeight = 0;
     updateViewportMetrics();
     syncKeyboardState();
+    scheduleNavRefresh();
   });
 
   const app = document.getElementById('app');
   if (app && 'MutationObserver' in window) {
-    new MutationObserver(() => requestAnimationFrame(syncTargetPageBottomNav))
-      .observe(app, { childList: true, subtree: true });
+    new MutationObserver(() => {
+      requestAnimationFrame(syncTargetPageBottomNav);
+      scheduleNavRefresh();
+    }).observe(app, { childList: true, subtree: true });
   }
 
   syncPageMode();
   updateViewportMetrics();
-  requestAnimationFrame(syncTargetPageBottomNav);
+  normalizeShellHeight();
+  scheduleNavRefresh();
 })();
