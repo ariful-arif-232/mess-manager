@@ -5,9 +5,48 @@
   window.__mmMobileShellFinalLoaded = true;
 
   const root = document.documentElement;
+  const LOW_NAV_PAGES = new Set(['chat', 'assistant', 'schedule']);
+
   const currentPage = () => {
     try { return typeof state !== 'undefined' ? String(state?.page || '') : ''; }
     catch (_) { return ''; }
+  };
+
+  const syncTargetPageBottomNav = () => {
+    const page = currentPage();
+    const nav = document.querySelector('.mobilebar');
+    const main = document.querySelector('.main');
+    const isTarget = LOW_NAV_PAGES.has(page);
+    const keyboardOpen = (page === 'chat' && root.classList.contains('mm-chat-keyboard')) ||
+      (page === 'assistant' && root.classList.contains('mm-assistant-keyboard'));
+
+    if (nav) {
+      if (isTarget) {
+        /* These viewport-heavy pages were still inheriting the legacy
+           18px + safe-area bottom offset. Pin them to the same physical
+           10px bottom position as Dashboard. Inline !important is deliberate:
+           several legacy page styles are injected after the static CSS. */
+        nav.dataset.mmBottomNavNormalized = '1';
+        nav.style.setProperty('position', 'fixed', 'important');
+        nav.style.setProperty('bottom', '10px', 'important');
+      } else if (nav.dataset.mmBottomNavNormalized === '1') {
+        nav.style.removeProperty('position');
+        nav.style.removeProperty('bottom');
+        delete nav.dataset.mmBottomNavNormalized;
+      }
+    }
+
+    if (main) {
+      if (isTarget) {
+        /* Removing the legacy safe-area reserve moves Chat/Assistant composers
+           down together with the navigation, so no new gap appears above it. */
+        main.dataset.mmBottomNavNormalized = '1';
+        main.style.setProperty('padding-bottom', keyboardOpen ? '8px' : '88px', 'important');
+      } else if (main.dataset.mmBottomNavNormalized === '1') {
+        main.style.removeProperty('padding-bottom');
+        delete main.dataset.mmBottomNavNormalized;
+      }
+    }
   };
 
   const syncPageMode = () => {
@@ -17,6 +56,7 @@
     root.classList.toggle('mm-assistant-keyboard', page === 'assistant' && root.classList.contains('mm-assistant-keyboard'));
     if (page !== 'chat') root.classList.remove('mm-chat-keyboard');
     if (page !== 'assistant') root.classList.remove('mm-assistant-keyboard');
+    syncTargetPageBottomNav();
   };
 
   const updateViewportMetrics = () => {
@@ -40,6 +80,7 @@
     root.classList.toggle('mm-chat-keyboard', chatFocused);
     root.classList.toggle('mm-assistant-keyboard', assistantFocused);
     updateViewportMetrics();
+    syncTargetPageBottomNav();
   };
 
   const originalRenderPage = window.renderPage;
@@ -48,6 +89,7 @@
       syncPageMode();
       const result = originalRenderPage.apply(this, arguments);
       requestAnimationFrame(syncKeyboardState);
+      setTimeout(syncTargetPageBottomNav, 0);
       return result;
     };
   }
@@ -92,6 +134,13 @@
   window.addEventListener('orientationchange', () => setTimeout(syncKeyboardState, 180));
   window.addEventListener('pageshow', syncKeyboardState);
 
+  const app = document.getElementById('app');
+  if (app && 'MutationObserver' in window) {
+    new MutationObserver(() => requestAnimationFrame(syncTargetPageBottomNav))
+      .observe(app, { childList: true, subtree: true });
+  }
+
   syncPageMode();
   updateViewportMetrics();
+  requestAnimationFrame(syncTargetPageBottomNav);
 })();
