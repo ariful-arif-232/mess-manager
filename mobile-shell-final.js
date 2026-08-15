@@ -6,10 +6,15 @@
 
   const root = document.documentElement;
   const LOW_NAV_PAGES = new Set(['chat', 'assistant', 'schedule']);
+  const KEYBOARD_PAGES = new Set(['chat', 'assistant']);
   const NAV_BOTTOM = 10;
   const NAV_RESERVE = 88;
+  const KEYBOARD_THRESHOLD = 120;
   let safeAreaBottomCache = null;
   let navMeasureFrame = 0;
+  let stableLayoutHeight = 0;
+  let keyboardWasOpen = false;
+  let restoreTimers = [];
 
   const currentPage = () => {
     try { return typeof state !== 'undefined' ? String(state?.page || '') : ''; }
@@ -28,15 +33,38 @@
     return safeAreaBottomCache;
   };
 
+  const viewportSnapshot = () => {
+    const vv = window.visualViewport;
+    const visualHeight = Number(vv?.height || window.innerHeight || document.documentElement.clientHeight || 0);
+    const offsetTop = Number(vv?.offsetTop || 0);
+    const visualBottom = visualHeight + offsetTop;
+    const layoutCandidate = Math.max(
+      Number(window.innerHeight || 0),
+      Number(document.documentElement.clientHeight || 0),
+      visualBottom
+    );
+
+    if (!stableLayoutHeight || visualBottom >= stableLayoutHeight - 80 || layoutCandidate > stableLayoutHeight) {
+      stableLayoutHeight = layoutCandidate;
+    }
+
+    const keyboardBottom = Math.max(0, stableLayoutHeight - visualBottom);
+    return { visualHeight, offsetTop, visualBottom, keyboardBottom };
+  };
+
+  const updateViewportMetrics = () => {
+    const metrics = viewportSnapshot();
+    if (metrics.visualHeight) root.style.setProperty('--mm-visual-height', `${Math.round(metrics.visualHeight)}px`);
+    root.style.setProperty('--mm-visual-offset-top', `${Math.round(metrics.offsetTop)}px`);
+    root.style.setProperty('--mm-keyboard-bottom', `${Math.round(metrics.keyboardBottom)}px`);
+    return metrics;
+  };
+
   const effectiveViewportBottom = () => {
     const vv = window.visualViewport;
     const visualBottom = vv ? Number(vv.offsetTop || 0) + Number(vv.height || 0) : 0;
-    let bottom = Math.max(Number(window.innerHeight || 0), visualBottom);
+    let bottom = Math.max(Number(window.innerHeight || 0), visualBottom, stableLayoutHeight || 0);
 
-    /* In an installed iOS PWA, screen.height can include the home-indicator band
-       while the layout/visual viewport reported to a viewport-locked page can be
-       shorter. Only use that extra band when the difference is plausibly a safe
-       area, never while a software keyboard is changing the viewport. */
     const standalone = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
     const screenHeight = Number(window.screen?.height || 0);
     const safe = readSafeAreaBottom();
@@ -59,13 +87,14 @@
     }
   };
 
+  const keyboardClassOpen = page =>
+    (page === 'chat' && root.classList.contains('mm-chat-keyboard')) ||
+    (page === 'assistant' && root.classList.contains('mm-assistant-keyboard'));
+
   const measureAndCorrectTargetNav = (page, nav, main) => {
     cancelAnimationFrame(navMeasureFrame);
     navMeasureFrame = requestAnimationFrame(() => {
-      if (!nav?.isConnected || currentPage() !== page || !LOW_NAV_PAGES.has(page)) return;
-      const keyboardOpen = (page === 'chat' && root.classList.contains('mm-chat-keyboard')) ||
-        (page === 'assistant' && root.classList.contains('mm-assistant-keyboard'));
-      if (keyboardOpen) return;
+      if (!nav?.isConnected || currentPage() !== page || !LOW_NAV_PAGES.has(page) || keyboardClassOpen(page)) return;
 
       const viewportBottom = effectiveViewportBottom();
       const rect = nav.getBoundingClientRect();
@@ -76,9 +105,6 @@
       const maxCorrection = Math.max(36, safe + 2);
       const correction = Math.max(0, Math.min(maxCorrection, visibleGap - NAV_BOTTOM));
 
-      /* This is the important fallback for iOS standalone pages. If a page-specific
-         100dvh/overflow context exposes one safe-area band below the fixed nav,
-         compensate only that measured band. Dashboard does not need this path. */
       if (correction > 1) {
         const correctedBottom = NAV_BOTTOM - correction;
         nav.style.setProperty('bottom', `${correctedBottom}px`, 'important');
@@ -86,6 +112,8 @@
         nav.dataset.mmBottomCorrection = String(Math.round(correction));
         if (main) main.style.setProperty('padding-bottom', `${Math.max(52, NAV_RESERVE - correction)}px`, 'important');
       } else {
+        nav.style.setProperty('bottom', `${NAV_BOTTOM}px`, 'important');
+        nav.style.setProperty('inset-block-end', `${NAV_BOTTOM}px`, 'important');
         nav.dataset.mmBottomCorrection = '0';
       }
     });
@@ -96,8 +124,7 @@
     const nav = document.querySelector('.mobilebar');
     const main = document.querySelector('.main');
     const isTarget = LOW_NAV_PAGES.has(page);
-    const keyboardOpen = (page === 'chat' && root.classList.contains('mm-chat-keyboard')) ||
-      (page === 'assistant' && root.classList.contains('mm-assistant-keyboard'));
+    const keyboardOpen = keyboardClassOpen(page);
 
     if (!isTarget) {
       clearTargetNavOverrides(nav, main);
@@ -113,9 +140,6 @@
 
     if (main) {
       main.dataset.mmBottomNavNormalized = '1';
-      /* When the software keyboard is visible the visual viewport itself is the
-         available screen. Reserving even the old 8px shell padding here could
-         expose the iOS home-indicator band as a white strip below the composer. */
       main.style.setProperty('padding-bottom', keyboardOpen ? '0px' : `${NAV_RESERVE}px`, 'important');
     }
 
@@ -125,43 +149,65 @@
   const syncPageMode = () => {
     const page = currentPage();
     root.dataset.mmPage = page;
-    root.classList.toggle('mm-chat-keyboard', page === 'chat' && root.classList.contains('mm-chat-keyboard'));
-    root.classList.toggle('mm-assistant-keyboard', page === 'assistant' && root.classList.contains('mm-assistant-keyboard'));
     if (page !== 'chat') root.classList.remove('mm-chat-keyboard');
     if (page !== 'assistant') root.classList.remove('mm-assistant-keyboard');
     syncTargetPageBottomNav();
   };
 
-  const updateViewportMetrics = () => {
-    const vv = window.visualViewport;
-    const visualHeight = vv?.height || window.innerHeight;
-    const offsetTop = vv?.offsetTop || 0;
-    const layoutHeight = window.innerHeight || document.documentElement.clientHeight || visualHeight;
-    const keyboardBottom = Math.max(0, layoutHeight - (visualHeight + offsetTop));
+  const keepDocumentAtOrigin = () => {
+    const page = currentPage();
+    if (!KEYBOARD_PAGES.has(page)) return;
+    try {
+      document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+      if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
+    } catch (_) {}
+  };
 
-    if (visualHeight) root.style.setProperty('--mm-visual-height', `${Math.round(visualHeight)}px`);
-    root.style.setProperty('--mm-visual-offset-top', `${Math.round(offsetTop)}px`);
-    root.style.setProperty('--mm-keyboard-bottom', `${Math.round(keyboardBottom)}px`);
+  const clearRestoreTimers = () => {
+    restoreTimers.forEach(clearTimeout);
+    restoreTimers = [];
+  };
+
+  const schedulePostKeyboardRestore = () => {
+    clearRestoreTimers();
+    [0, 180, 420, 800].forEach(delay => {
+      restoreTimers.push(setTimeout(() => {
+        safeAreaBottomCache = null;
+        keepDocumentAtOrigin();
+        updateViewportMetrics();
+        syncTargetPageBottomNav();
+      }, delay));
+    });
   };
 
   const syncKeyboardState = () => {
-    const active = document.activeElement;
     const page = currentPage();
     root.dataset.mmPage = page;
-
+    const active = document.activeElement;
     const chatFocused = page === 'chat' && !!active?.matches?.('.chat-compose-pro textarea');
     const assistantFocused = page === 'assistant' && !!active?.matches?.('.ai-reference-composer input');
+    const focusedForKeyboard = chatFocused || assistantFocused;
 
-    root.classList.toggle('mm-chat-keyboard', chatFocused);
-    root.classList.toggle('mm-assistant-keyboard', assistantFocused);
+    const metrics = updateViewportMetrics();
+    const geometryKeyboardOpen = KEYBOARD_PAGES.has(page) && metrics.keyboardBottom >= KEYBOARD_THRESHOLD;
+    const keyboardOpen = focusedForKeyboard || geometryKeyboardOpen;
+
+    root.classList.toggle('mm-chat-keyboard', page === 'chat' && keyboardOpen);
+    root.classList.toggle('mm-assistant-keyboard', page === 'assistant' && keyboardOpen);
     if (page !== 'chat') root.classList.remove('mm-chat-keyboard');
     if (page !== 'assistant') root.classList.remove('mm-assistant-keyboard');
 
-    /* Update the visual viewport before applying page sizing. On iOS this avoids
-       one frame where the old 100dvh height survives after the keyboard opens and
-       paints a white band beneath the focused composer. */
-    updateViewportMetrics();
+    if (keyboardOpen) {
+      clearRestoreTimers();
+      keepDocumentAtOrigin();
+      requestAnimationFrame(keepDocumentAtOrigin);
+    }
+
     syncTargetPageBottomNav();
+
+    if (keyboardWasOpen && !keyboardOpen) schedulePostKeyboardRestore();
+    keyboardWasOpen = keyboardOpen;
   };
 
   const originalRenderPage = window.renderPage;
@@ -208,18 +254,33 @@
   }, true);
 
   window.visualViewport?.addEventListener('resize', syncKeyboardState);
-  window.visualViewport?.addEventListener('scroll', syncKeyboardState);
-  document.addEventListener('focusin', syncKeyboardState);
-  document.addEventListener('focusout', () => setTimeout(syncKeyboardState, 140));
+  window.visualViewport?.addEventListener('scroll', () => {
+    syncKeyboardState();
+    if (keyboardWasOpen) requestAnimationFrame(keepDocumentAtOrigin);
+  });
+  document.addEventListener('focusin', () => {
+    updateViewportMetrics();
+    syncKeyboardState();
+    requestAnimationFrame(keepDocumentAtOrigin);
+  });
+  document.addEventListener('focusout', () => {
+    setTimeout(syncKeyboardState, 80);
+    setTimeout(syncKeyboardState, 220);
+  });
   window.addEventListener('resize', () => {
     safeAreaBottomCache = null;
     syncKeyboardState();
   });
   window.addEventListener('orientationchange', () => {
     safeAreaBottomCache = null;
+    stableLayoutHeight = 0;
     setTimeout(syncKeyboardState, 180);
   });
-  window.addEventListener('pageshow', syncKeyboardState);
+  window.addEventListener('pageshow', () => {
+    stableLayoutHeight = 0;
+    updateViewportMetrics();
+    syncKeyboardState();
+  });
 
   const app = document.getElementById('app');
   if (app && 'MutationObserver' in window) {
