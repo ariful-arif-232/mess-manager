@@ -22,6 +22,19 @@
     document.documentElement.classList.remove('mm-chat-page','mm-assistant-page');
   }
 
+  async function dispatchInsertedChatMessage(messageId){
+    if(!messageId)return;
+    try{
+      const result=await client.functions.invoke('chat-push',{
+        body:{action:'dispatch-message',message_id:messageId},
+      });
+      if(result.error)throw result.error;
+      if(result.data?.error)throw new Error(result.data.error);
+    }catch(error){
+      console.warn('Chat push dispatch failed; message was still saved normally.',error);
+    }
+  }
+
   window.utilities = function utilitiesDetailed(c){
     const controls = profile.role === 'admin';
     c.innerHTML = `<div class="section-head"><div><span class="eyebrow">Monthly shared costs</span><h2>Utility Bills</h2></div>${controls?'<button class="btn primary" data-add>+ Add Bill</button>':''}</div>
@@ -76,7 +89,11 @@
       const body = new FormData(e.target).get('body').trim();
       if (!body) return;
       await run(async () => {
-        assertResult(await client.from('mess_messages').insert({mess_id:profile.mess_id,sender_member_id:profile.id,body}));
+        const inserted=assertResult(await client.from('mess_messages')
+          .insert({mess_id:profile.mess_id,sender_member_id:profile.id,body})
+          .select('id')
+          .single());
+        await dispatchInsertedChatMessage(inserted?.id);
         e.target.reset();
         await loadData();
         await window.chat(c);
