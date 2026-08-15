@@ -54,6 +54,7 @@ begin
     from public.members m
    where m.user_id = auth.uid()
      and m.active = true
+     and m.deleted_at is null
    limit 1;
 
   if v_member_id is null then
@@ -134,6 +135,7 @@ begin
     from public.members m
    where m.user_id = auth.uid()
      and m.active = true
+     and m.deleted_at is null
    limit 1;
 
   if v_member_id is null then
