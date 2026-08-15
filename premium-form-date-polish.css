@@ -1,0 +1,12 @@
+/* Premium unified modal/form polish */
+.entry-form-pro .field label,.modal .field label{font-size:12px!important;font-weight:800!important;letter-spacing:.02em;color:#637795!important;text-transform:none}
+.entry-date-wrap,.modal input[type=date],.modal input[type=month],.final-bazar-meta input[type=date]{border-radius:18px!important;border:1.5px solid #d8e4f3!important;background:linear-gradient(180deg,#fff,#f7faff)!important;min-height:60px!important;box-shadow:0 8px 22px rgba(24,62,110,.06)!important}
+.entry-date-wrap input,.modal input[type=date],.modal input[type=month]{font-weight:800!important;color:#17345d!important;font-size:17px!important}
+.entry-date-wrap:focus-within,.modal input[type=date]:focus,.modal input[type=month]:focus{border-color:#2675e8!important;box-shadow:0 0 0 5px rgba(38,117,232,.12)!important}
+.entry-pro-form input,.entry-select-button,.entry-money-input,.modal input,.modal select,.modal textarea{border-radius:18px!important;background:#fbfdff!important;border-color:#dbe6f3!important}
+.entry-pro-form .entry-form-grid,.modal .form-grid{gap:16px!important}
+.entry-form-actions .btn,.modal .actions .btn{border-radius:18px!important;font-weight:800!important}
+.entry-form-hero,.modal-title{background:linear-gradient(135deg,#f8fbff,#eef8f6)!important}
+.final-bazar-meta,.utility-share-card,.photo-picker{border-radius:22px!important}
+@media(max-width:600px){.entry-form-hero h2,.modal h2{font-size:23px!important}.entry-pro-form,.modal{padding-left:16px!important;padding-right:16px!important}.entry-date-wrap,.modal input[type=date],.modal input[type=month]{min-height:56px!important}.entry-date-wrap input{min-height:54px!important}}
+html[data-theme="dark"] .entry-date-wrap,html[data-theme="dark"] .modal input[type=date],html[data-theme="dark"] .modal input[type=month],html[data-theme="dark"] .entry-pro-form input{background:#101f31!important;border-color:#304a62!important;color:#edf5ff!important}
