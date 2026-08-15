@@ -2,6 +2,46 @@
 'use strict';
 (() => {
   const baseLoadData = loadData;
+  let chatRealtimeChannel = null;
+  let chatUnread = 0;
+
+  function chatReadKey(){
+    return profile ? `mm_chat_read:${profile.mess_id}:${profile.id}` : '';
+  }
+  function latestMessageStamp(){
+    const list=db.messages||[];
+    return list.length ? String(list[list.length-1].created_at||'') : '';
+  }
+  function renderUnreadBadges(){
+    document.querySelectorAll('.mm-chat-unread').forEach(x=>x.remove());
+    if(!chatUnread)return;
+    const text=chatUnread>99?'99+':String(chatUnread);
+    const targets=[document.querySelector('.nav [data-page="chat"]'),document.querySelector('#mobileMore'),document.querySelector('[data-sheet-page="chat"]')].filter(Boolean);
+    targets.forEach(target=>{const badge=document.createElement('span');badge.className='mm-chat-unread';badge.textContent=text;badge.setAttribute('aria-label',`${chatUnread} unread chat messages`);target.appendChild(badge);});
+  }
+  function syncUnreadFromMessages(){
+    if(!profile)return;
+    const key=chatReadKey(),messages=db.messages||[];
+    let lastRead='';
+    try{lastRead=localStorage.getItem(key)||'';}catch(_){/* ignore storage errors */}
+    if(!lastRead){
+      const initial=latestMessageStamp()||new Date().toISOString();
+      try{localStorage.setItem(key,initial);}catch(_){/* ignore storage errors */}
+      chatUnread=0;
+    }else{
+      const cutoff=Date.parse(lastRead)||0;
+      chatUnread=messages.filter(m=>m.sender_member_id!==profile.id&&(Date.parse(m.created_at)||0)>cutoff).length;
+    }
+    renderUnreadBadges();
+  }
+  function markChatRead(){
+    if(!profile)return;
+    const stamp=latestMessageStamp()||new Date().toISOString();
+    try{localStorage.setItem(chatReadKey(),stamp);}catch(_){/* ignore storage errors */}
+    chatUnread=0;
+    renderUnreadBadges();
+  }
+
   window.loadData = async function loadDataPlus(){
     await baseLoadData();
     const [messages, notices] = await Promise.all([
@@ -10,6 +50,7 @@
     ]);
     db.messages = messages.error ? [] : messages.data;
     db.notices = notices.error ? [] : notices.data;
+    syncUnreadFromMessages();
   };
 
   function splitAmount(u){ return Number(u.amount||0)/(u.memberIds.length||1); }
@@ -46,19 +87,127 @@
     c.querySelectorAll('[data-email]').forEach(b=>b.onclick=()=>{const x=calc.find(y=>y.member.id===b.dataset.email);run(()=>sendMemberEmail(x.member.id,`${mess.name}: ${state.month} monthly statement`,reportText(x)),'Statement emailed.');});
   };
 
+  function pushCapable(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;}
+  function isIOS(){return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
+  function isStandalone(){return window.matchMedia?.('(display-mode: standalone)').matches===true||navigator.standalone===true;}
+  function b64ToBytes(value){
+    const padding='='.repeat((4-value.length%4)%4),base64=(value+padding).replace(/-/g,'+').replace(/_/g,'/'),raw=atob(base64),out=new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
+    return out;
+  }
+  function notificationCard(){
+    return `<div class="mm-chat-notify-card" data-mm-notify-card><div class="mm-chat-notify-icon" aria-hidden="true"></div><div class="mm-chat-notify-copy"><div class="mm-chat-notify-title"><b>Message notifications</b><span class="mm-chat-notify-status off" data-mm-notify-status>Checking</span></div><p data-mm-notify-copy>Checking notification support on this device…</p></div><button class="mm-chat-notify-action" type="button" data-mm-notify-action disabled>Checking…</button></div>`;
+  }
+  function setNotificationUI({label='OFF',kind='off',copy='',button='Enable',action='enable',disabled=false,secondary=false}){
+    const card=document.querySelector('[data-mm-notify-card]');if(!card)return;
+    const status=card.querySelector('[data-mm-notify-status]'),text=card.querySelector('[data-mm-notify-copy]'),control=card.querySelector('[data-mm-notify-action]');
+    status.textContent=label;status.className=`mm-chat-notify-status ${kind}`;text.textContent=copy;control.textContent=button;control.dataset.action=action;control.disabled=disabled;control.classList.toggle('secondary',secondary);
+  }
+  async function refreshNotificationUI(){
+    if(!document.querySelector('[data-mm-notify-card]'))return;
+    if(!pushCapable())return setNotificationUI({label:'Unavailable',kind:'off',copy:'এই browser Web Push support করছে না।',button:'Unavailable',disabled:true});
+    if(isIOS()&&!isStandalone())return setNotificationUI({label:'Home Screen needed',kind:'warn',copy:'iPhone/iPad-এ notification পেতে আগে Share → Add to Home Screen দিয়ে app install করুন।',button:'Install first',disabled:true});
+    if(Notification.permission==='denied')return setNotificationUI({label:'Blocked',kind:'warn',copy:'Notification permission browser settings থেকে Allow করতে হবে।',button:'Blocked',disabled:true});
+    try{
+      const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
+      if(Notification.permission==='granted'&&sub)return setNotificationUI({label:'ON',kind:'on',copy:'এই device-এ নতুন Mess Chat message background-এও notify করবে।',button:'Turn off',action:'disable',secondary:true});
+      setNotificationUI({label:'OFF',kind:'off',copy:'নতুন chat message এলে website/PWA বন্ধ থাকলেও notification পেতে চালু করুন।',button:'Enable',action:'enable'});
+    }catch(error){console.warn('notification status failed',error);setNotificationUI({label:'Unavailable',kind:'warn',copy:'Notification service এখন প্রস্তুত নয়। পরে আবার চেষ্টা করুন।',button:'Retry',action:'enable'});}
+  }
+  async function enableChatNotifications(){
+    if(!pushCapable())throw Error('এই browser Web Push support করে না।');
+    if(isIOS()&&!isStandalone())throw Error('iPhone/iPad-এ আগে Add to Home Screen করুন।');
+    let permission=Notification.permission;
+    if(permission==='default')permission=await Notification.requestPermission();
+    if(permission!=='granted')throw Error('Notification permission Allow করা হয়নি।');
+    const reg=await navigator.serviceWorker.ready;
+    const keyResult=await client.functions.invoke('chat-push',{body:{action:'public-key'}});
+    if(keyResult.error)throw keyResult.error;if(keyResult.data?.error)throw Error(keyResult.data.error);
+    const publicKey=String(keyResult.data?.public_key||'');if(!publicKey)throw Error('Push service public key পাওয়া যায়নি।');
+    let subscription=await reg.pushManager.getSubscription();
+    if(!subscription)subscription=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(publicKey)});
+    const serialized=subscription.toJSON(),keys=serialized.keys||{};
+    const saved=await client.rpc('save_push_subscription',{p_endpoint:subscription.endpoint,p_p256dh:String(keys.p256dh||''),p_auth:String(keys.auth||''),p_user_agent:navigator.userAgent||''});
+    if(saved.error)throw saved.error;
+    return subscription;
+  }
+  async function disableChatNotifications(){
+    if(!pushCapable())return;
+    const reg=await navigator.serviceWorker.ready,subscription=await reg.pushManager.getSubscription();
+    if(!subscription)return;
+    const removed=await client.rpc('remove_push_subscription',{p_endpoint:subscription.endpoint});
+    if(removed.error)throw removed.error;
+    await subscription.unsubscribe();
+  }
+  function bindNotificationControls(){
+    const button=document.querySelector('[data-mm-notify-action]');if(!button)return;
+    button.onclick=async()=>{
+      if(button.disabled)return;
+      const action=button.dataset.action||'enable',old=button.textContent;button.disabled=true;button.textContent=action==='disable'?'Turning off…':'Enabling…';
+      try{if(action==='disable'){await disableChatNotifications();notify('Chat notifications turned off.','success');}else{await enableChatNotifications();notify('Chat notifications enabled.','success');}}catch(error){notify(friendlyError(error));}finally{button.textContent=old;await refreshNotificationUI();}
+    };
+    refreshNotificationUI();
+  }
+
+  async function sendChatMessage(body){
+    const result=await client.functions.invoke('chat-push',{body:{action:'send-message',message:body}});
+    if(result.error)throw result.error;if(result.data?.error)throw Error(result.data.error);return result.data;
+  }
+
   window.chat = async function chatPage(c){
     const messages=db.messages||[];
-    c.innerHTML=`<div class="chat-shell"><div class="chat-head"><div><span class="eyebrow">Mess community</span><h2>Chat & খাবার আলোচনা</h2><p>Problem, বাজার, আগামীকালের খাবার—সবাই এখানে share করতে পারবে।</p></div></div>${(db.notices||[]).length?`<div class="notice-strip"><b>Latest notice</b><span>${esc(db.notices[0].title)} — ${esc(db.notices[0].body)}</span></div>`:''}<div class="chat-messages" id="chatMessages">${messages.map(m=>{const mine=m.sender_member_id===profile.id;return `<div class="chat-row ${mine?'mine':''}"><div class="chat-avatar">${esc(initials(memberName(m.sender_member_id)))}</div><div class="chat-bubble"><div><b>${esc(memberName(m.sender_member_id))}</b><time>${new Date(m.created_at).toLocaleString()}</time></div><p>${esc(m.body)}</p></div></div>`;}).join('')||'<div class="chat-empty">এখনও কোনো message নেই। প্রথম message লিখুন।</div>'}</div><form class="chat-compose" id="chatForm"><textarea name="body" rows="1" maxlength="2000" placeholder="Message লিখুন…" required></textarea><button class="btn primary" aria-label="Send">Send</button></form></div>`;
-    $('#chatMessages').scrollTop=$('#chatMessages').scrollHeight;
-    $('#chatForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),body=f.get('body').trim();if(!body)return;await run(async()=>{assertResult(await client.from('mess_messages').insert({mess_id:profile.mess_id,sender_member_id:profile.id,body}));e.target.reset();await loadData();chatPage(c);});};
+    c.innerHTML=`<div class="chat-shell"><div class="chat-head"><div><span class="eyebrow">Mess community</span><h2>Chat & খাবার আলোচনা</h2><p>Problem, বাজার, আগামীকালের খাবার—সবাই এখানে share করতে পারবে।</p></div></div>${notificationCard()}${(db.notices||[]).length?`<div class="notice-strip"><b>Latest notice</b><span>${esc(db.notices[0].title)} — ${esc(db.notices[0].body)}</span></div>`:''}<div class="chat-messages" id="chatMessages">${messages.map(m=>{const mine=m.sender_member_id===profile.id;return `<div class="chat-row ${mine?'mine':''}"><div class="chat-avatar">${esc(initials(memberName(m.sender_member_id)))}</div><div class="chat-bubble"><div><b>${esc(memberName(m.sender_member_id))}</b><time>${new Date(m.created_at).toLocaleString()}</time></div><p>${esc(m.body)}</p></div></div>`;}).join('')||'<div class="chat-empty">এখনও কোনো message নেই। প্রথম message লিখুন।</div>'}</div><form class="chat-compose" id="chatForm"><textarea name="body" rows="1" maxlength="2000" placeholder="Message লিখুন…" required></textarea><button class="btn primary" aria-label="Send">Send</button></form></div>`;
+    markChatRead();
+    const list=$('#chatMessages');if(list)list.scrollTop=list.scrollHeight;
+    bindNotificationControls();
+    $('#chatForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),body=f.get('body').trim();if(!body)return;await run(async()=>{await sendChatMessage(body);e.target.reset();await loadData();await chatPage(c);});};
   };
+
+  async function handleIncomingMessage(payload){
+    const message=payload?.new;if(!message||!profile||message.mess_id!==profile.mess_id)return;
+    const messages=db.messages||(db.messages=[]);
+    if(!messages.some(x=>x.id===message.id))messages.push(message);
+    messages.sort((a,b)=>(Date.parse(a.created_at)||0)-(Date.parse(b.created_at)||0));
+    if(messages.length>200)messages.splice(0,messages.length-200);
+    if(message.sender_member_id===profile.id){if(state.page==='chat'&&document.visibilityState==='visible')markChatRead();return;}
+    if(state.page==='chat'&&document.visibilityState==='visible'){
+      markChatRead();
+      const content=$('#content');if(content)await chat(content);
+      return;
+    }
+    syncUnreadFromMessages();
+    if(document.visibilityState==='visible'){
+      const sender=memberName(message.sender_member_id),preview=String(message.body||'').slice(0,110);
+      notify(`${sender}: ${preview}`,'success');
+    }
+  }
 
   const oldRenderPage=renderPage;
-  window.renderPage=function renderPagePlus(){if(state.page==='chat')return chat($('#content'));return oldRenderPage();};
+  window.renderPage=function renderPagePlus(){
+    if(state.page==='chat')return chat($('#content'));
+    const result=oldRenderPage();requestAnimationFrame(renderUnreadBadges);return result;
+  };
 
   const oldSubscribe=subscribeRealtime;
-  window.subscribeRealtime=function subscribeRealtimePlus(){oldSubscribe();
-    if(!realtimeChannel)return;
-    // Existing channel handles core tables; chat refresh is also refreshed whenever the page is revisited.
+  window.subscribeRealtime=function subscribeRealtimePlus(){
+    oldSubscribe();
+    if(chatRealtimeChannel)client.removeChannel(chatRealtimeChannel);
+    if(!profile)return;
+    chatRealtimeChannel=client.channel(`mess-chat:${profile.mess_id}:${profile.id}`)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'mess_messages',filter:`mess_id=eq.${profile.mess_id}`},handleIncomingMessage)
+      .subscribe();
   };
+
+  function openChatFromIntent(){
+    if(!profile)return false;
+    const url=new URL(location.href);if(url.searchParams.get('open')!=='chat')return false;
+    url.searchParams.delete('open');history.replaceState(null,'',`${url.pathname}${url.search}${url.hash}`);go('chat');return true;
+  }
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.addEventListener('message',event=>{if(event.data?.type==='open-chat'){if(profile)go('chat');}});
+  }
+  document.addEventListener('click',event=>{if(event.target instanceof Element&&event.target.closest('#mobileMore'))setTimeout(renderUnreadBadges,0);});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.page==='chat')markChatRead();});
+  if(client)client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'&&chatRealtimeChannel){client.removeChannel(chatRealtimeChannel);chatRealtimeChannel=null;chatUnread=0;}});
+  window.addEventListener('load',()=>{let tries=0;const timer=setInterval(()=>{if(openChatFromIntent()||++tries>40)clearInterval(timer);},250);});
 })();
