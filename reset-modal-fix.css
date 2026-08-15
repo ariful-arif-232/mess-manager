@@ -1,0 +1,43 @@
+/* Reset workspace dialog: compact mobile layout. */
+.reset-modal > p{display:none!important}
+
+@media(max-width:900px){
+  .modal-wrap:has(.reset-modal){
+    align-items:center!important;
+    padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom))!important;
+  }
+  .modal-wrap:has(.reset-modal) .modal{
+    width:min(520px,100%)!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:calc(100dvh - 28px)!important;
+    margin:0!important;
+    padding:20px 16px 18px!important;
+    border-radius:26px!important;
+    overflow:auto!important;
+  }
+  .reset-modal{
+    width:100%!important;
+    max-width:none!important;
+    min-height:0!important;
+    margin:0!important;
+  }
+  .reset-lock{margin-bottom:10px!important}
+  .reset-modal>h2{margin:10px 0 14px!important}
+  .reset-summary{margin:12px 0 16px!important;padding:13px 14px!important}
+  .reset-modal>.btn{margin-top:9px!important;min-height:48px!important}
+  .reset-verify{margin-top:10px!important;padding-top:10px!important}
+}
+
+@media(max-width:420px){
+  .modal-wrap:has(.reset-modal){padding:10px!important}
+  .modal-wrap:has(.reset-modal) .modal{
+    width:100%!important;
+    max-height:calc(100dvh - 20px)!important;
+    padding:18px 14px calc(15px + env(safe-area-inset-bottom))!important;
+    border-radius:24px!important;
+  }
+  .reset-lock{width:56px!important;height:56px!important;border-radius:18px!important;font-size:28px!important}
+  .reset-modal>h2{font-size:28px!important;line-height:1.15!important;margin:8px 0 12px!important}
+  .reset-summary{margin:10px 0 14px!important}
+}
