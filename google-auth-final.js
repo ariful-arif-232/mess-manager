@@ -10,6 +10,7 @@
   const ERROR_KEY='mm_google_auth_return_error_v1';
   const TTL=20*60*1000;
   let resolving=false;
+  let returnErrorNotifiedAt=0;
 
   const readIntent=()=>{
     try{
@@ -38,13 +39,11 @@
   const saveReturnError=(kind,message,setup={})=>{
     try{sessionStorage.setItem(ERROR_KEY,JSON.stringify({kind,message,setup,at:Date.now()}))}catch(_){ }
   };
-  const takeReturnError=()=>{
-    try{
-      const value=JSON.parse(sessionStorage.getItem(ERROR_KEY)||'null');
-      sessionStorage.removeItem(ERROR_KEY);
-      return value;
-    }catch(_){sessionStorage.removeItem(ERROR_KEY);return null}
+  const readReturnError=()=>{
+    try{return JSON.parse(sessionStorage.getItem(ERROR_KEY)||'null')}
+    catch(_){sessionStorage.removeItem(ERROR_KEY);return null}
   };
+  const clearReturnError=()=>{try{sessionStorage.removeItem(ERROR_KEY)}catch(_){}};
 
   /* Existing admins should not have to type their old name/workspace merely to
      sign in again. For a genuinely new Google account the saved fields may be
@@ -81,14 +80,21 @@
   const previousRenderLogin=window.renderLogin;
   if(typeof previousRenderLogin==='function'){
     window.renderLogin=function googleReturnAwareLogin(){
-      const result=takeReturnError();
+      const result=readReturnError();
       if(result&&Date.now()-Number(result.at||0)<TTL){
         if(result.kind==='admin'&&typeof window.renderAdminSignup==='function')window.renderAdminSignup(result.setup||{});
         else if(typeof window.renderMemberLogin==='function')window.renderMemberLogin();
         else previousRenderLogin();
-        if(result.message)setTimeout(()=>notify(result.message),80);
+        /* signOut can emit more than one auth callback. Keep this state briefly so
+           a later callback cannot replace the intended form with the welcome page. */
+        setTimeout(clearReturnError,1500);
+        if(result.message&&Date.now()-returnErrorNotifiedAt>1200){
+          returnErrorNotifiedAt=Date.now();
+          setTimeout(()=>notify(result.message),80);
+        }
         return;
       }
+      clearReturnError();
       return previousRenderLogin();
     };
   }
