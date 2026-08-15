@@ -4,21 +4,12 @@
  *
  * IMPORTANT: do not add env(safe-area-inset-bottom) to the nav's bottom offset.
  * The navigation card already clears the iPhone home indicator by its own height.
- * Adding the safe area again is what created the large white strip on short and
- * viewport-locked pages (Schedule, Chat and Voice Assistant).
  */
-:root{
-  --mm-nav-reserve:88px;
-}
+:root{--mm-nav-reserve:88px}
 
 @media (max-width:900px){
   html,body,#app,.layout{min-height:100%;overflow-x:hidden}
 
-  /* Use a literal physical viewport anchor. Previous versions routed this through
-     max()/env() custom properties, while older styles still used
-     bottom:calc(10px + env(safe-area-inset-bottom)). On iOS PWA pages that left
-     roughly one extra safe-area below the bar. The high-specificity selector is
-     intentional because several legacy mobile layers also use !important. */
   html body #app .mobilebar{
     position:fixed!important;
     bottom:10px!important;
@@ -26,35 +17,56 @@
   }
   .main{padding-bottom:var(--mm-nav-reserve)!important}
 
-  /* Viewport-locked pages must use the same full physical viewport as Dashboard. */
+  /* Chat and Assistant are self-scrolling screens. Fixing body to the physical
+     viewport prevents iOS from panning the entire document when a bottom input
+     receives focus. That document pan was the reason the composer jumped to the
+     top of the screen and left a huge empty area above the keyboard. */
   html.mm-chat-page,
   html.mm-chat-page body,
   html.mm-assistant-page,
   html.mm-assistant-page body{
     height:100dvh!important;
     min-height:100dvh!important;
+    max-height:100dvh!important;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+  }
+  html.mm-chat-page body,
+  html.mm-assistant-page body{
+    position:fixed!important;
+    inset:0!important;
+    width:100%!important;
+    margin:0!important;
+  }
+  html.mm-chat-page #app,
+  html.mm-chat-page .layout,
+  html.mm-assistant-page #app,
+  html.mm-assistant-page .layout{
+    height:100dvh!important;
+    min-height:0!important;
+    max-height:100dvh!important;
+    overflow:hidden!important;
   }
 
-  /* Bottom sheets extend through the iOS home-indicator area while keeping a
-     small visible content inset. This removes the detached strip under More. */
   .action-sheet{
     margin-bottom:calc(-1 * env(safe-area-inset-bottom))!important;
     padding-bottom:calc(14px + env(safe-area-inset-bottom))!important;
   }
 
-  /* Chat respects the status area and reserves only the real nav footprint. */
   html[data-mm-page="chat"] .main,
   html.mm-chat-page .main{
+    height:100dvh!important;
+    min-height:0!important;
+    max-height:100dvh!important;
     padding-top:max(8px,env(safe-area-inset-top))!important;
     padding-bottom:82px!important;
+    overflow:hidden!important;
   }
   html[data-mm-page="chat"] .topbar{
     flex:0 0 auto!important;
     margin-top:0!important;
     margin-bottom:8px!important;
   }
-
-  /* Full-bleed premium chat surface. */
   html[data-mm-page="chat"] #content{
     width:calc(100% + 20px)!important;
     margin-left:-10px!important;
@@ -94,7 +106,6 @@
   }
   html[data-mm-page="chat"] .chat-bubble-pro p{font-size:13px!important;line-height:1.48!important;color:#1f304a!important}
 
-  /* Compact notification control. */
   html[data-mm-page="chat"] #mmChatNotificationCard{
     grid-template-columns:34px minmax(0,1fr) auto!important;
     gap:8px!important;align-items:center!important;
@@ -104,27 +115,17 @@
     box-shadow:0 5px 16px rgba(31,67,118,.045)!important;
     backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;
   }
-  html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-icon{
-    width:34px!important;height:34px!important;border-radius:11px!important;
-  }
+  html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-icon{width:34px!important;height:34px!important;border-radius:11px!important}
   html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-icon::before{width:18px!important;height:18px!important}
   html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-title{margin:0!important;gap:6px!important;flex-wrap:nowrap!important}
-  html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-title b{
-    font-size:11.5px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
-  }
+  html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-title b{font-size:11.5px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
   html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-copy p{display:none!important}
   html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-status{padding:4px 6px!important;font-size:8px!important}
-  html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-action{
-    grid-column:auto!important;width:auto!important;min-width:72px!important;min-height:32px!important;
-    padding:0 10px!important;border-radius:10px!important;
-  }
+  html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-action{grid-column:auto!important;width:auto!important;min-width:72px!important;min-height:32px!important;padding:0 10px!important;border-radius:10px!important}
   html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-action:not(:disabled){font-size:0!important}
-  html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-action:not(:disabled)::after{
-    content:"Turn on";font:800 10px/1 Inter,"Noto Sans Bengali",sans-serif!important;
-  }
+  html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-action:not(:disabled)::after{content:"Turn on";font:800 10px/1 Inter,"Noto Sans Bengali",sans-serif!important}
   html[data-mm-page="chat"] #mmChatNotificationCard .mm-push-action:not(:disabled)[data-action="disable"]::after{content:"Turn off"}
 
-  /* Normal composer sits directly above the lowered navigation. */
   html[data-mm-page="chat"] .chat-compose-pro{
     position:relative!important;bottom:auto!important;margin:0!important;
     padding:8px 10px 9px!important;gap:8px!important;
@@ -135,7 +136,7 @@
     min-height:46px!important;max-height:110px!important;padding:11px 13px!important;
     border:1px solid #d8e2ef!important;border-radius:16px!important;background:#fff!important;
     color:#1f304a!important;caret-color:#1d66d8!important;
-    box-shadow:inset 0 1px 2px rgba(31,57,101,.025)!important;font-size:13px!important;
+    box-shadow:inset 0 1px 2px rgba(31,57,101,.025)!important;font-size:16px!important;
   }
   html[data-mm-page="chat"] .chat-compose-pro .btn{
     position:relative!important;min-width:82px!important;min-height:46px!important;padding:0 15px!important;
@@ -144,104 +145,78 @@
   .mm-send-spinner{width:13px;height:13px;display:inline-block;border:2px solid rgba(255,255,255,.42);border-top-color:#fff;border-radius:50%;animation:mmSendSpin .7s linear infinite}
   .mm-submit-pending textarea{opacity:.82}
 
-  /* Keyboard mode: use the visual viewport as the page height instead of moving
-     a fixed composer upward by a calculated keyboard offset. iOS already exposes
-     the usable viewport above the keyboard; adding the offset a second time is
-     what recreated the white strip after focusing an input. */
+  /* Keyboard mode: keep the physical page at 100dvh and move only the composer
+     above the obscured keyboard area reported by VisualViewport. Do not shrink
+     html/body to visualViewport.height; doing that makes iOS pan the whole page. */
   html.mm-chat-keyboard .mobilebar,
   html.mm-assistant-keyboard .mobilebar{
     opacity:0!important;visibility:hidden!important;pointer-events:none!important;
     transform:translateY(calc(100% + 48px))!important;
   }
-  html.mm-chat-keyboard,
-  html.mm-chat-keyboard body,
-  html.mm-assistant-keyboard,
-  html.mm-assistant-keyboard body,
-  html.mm-chat-keyboard #app,
-  html.mm-chat-keyboard .layout,
-  html.mm-chat-keyboard .main,
-  html.mm-assistant-keyboard #app,
-  html.mm-assistant-keyboard .layout,
-  html.mm-assistant-keyboard .main{
-    height:var(--mm-visual-height,100dvh)!important;
-    min-height:0!important;
-    max-height:var(--mm-visual-height,100dvh)!important;
-    overflow:hidden!important;
-  }
   html.mm-chat-keyboard .main,
   html.mm-assistant-keyboard .main{padding-bottom:0!important}
+
   html.mm-chat-keyboard .chat-compose-pro{
-    position:relative!important;
-    left:auto!important;right:auto!important;bottom:auto!important;
-    width:auto!important;
-    z-index:3!important;
+    position:fixed!important;
+    left:0!important;right:0!important;
+    bottom:var(--mm-keyboard-bottom,0px)!important;
+    width:100%!important;
+    z-index:100!important;
     padding:8px 10px!important;
     border-top:1px solid #dfe7f1!important;
+    background:rgba(255,255,255,.995)!important;
     box-shadow:0 -10px 30px rgba(24,48,88,.12)!important;
   }
-  html.mm-chat-keyboard .chat-messages-pro{padding-bottom:12px!important}
+  html.mm-chat-keyboard .chat-messages-pro{padding-bottom:78px!important}
 
-  /* Voice Assistant uses the same navigation reserve and keyboard behavior. */
   html[data-mm-page="assistant"] .main,
-  html.mm-assistant-page .main{padding-bottom:82px!important}
+  html.mm-assistant-page .main{
+    height:100dvh!important;
+    min-height:0!important;
+    max-height:100dvh!important;
+    padding-bottom:82px!important;
+    overflow:hidden!important;
+  }
   html[data-mm-page="assistant"] .ai-reference-composer{margin-bottom:0!important}
 
-  /* Keep the title below the iPhone status/notch area. Because the microphone
-     stage follows the title in the same grid, the title, rings and mic move down
-     together and preserve their spacing instead of overlapping one another. */
+  /* Move the Assistant heading below the notch/status area. The microphone stage
+     remains in normal grid flow, so title + rings + mic move down together and do
+     not overlap. */
   html.mm-assistant-page .ai-reference-page{
-    padding-top:max(48px,calc(env(safe-area-inset-top) + 8px))!important;
+    padding-top:max(62px,calc(env(safe-area-inset-top) + 18px))!important;
   }
-
   html.mm-assistant-keyboard .ai-reference-page{
-    padding-top:max(18px,env(safe-area-inset-top))!important;
+    padding-top:max(22px,calc(env(safe-area-inset-top) + 4px))!important;
     grid-template-rows:auto auto minmax(48px,1fr) auto!important;
   }
   html.mm-assistant-keyboard .ai-reference-composer{
-    position:relative!important;
-    left:auto!important;right:auto!important;bottom:auto!important;
-    width:min(100%,640px)!important;max-width:640px!important;
+    position:fixed!important;
+    left:12px!important;right:12px!important;
+    bottom:calc(var(--mm-keyboard-bottom,0px) + 6px)!important;
+    width:auto!important;max-width:640px!important;
     margin:0 auto!important;
-    z-index:3!important;
+    z-index:100!important;
   }
-  html.mm-assistant-keyboard .ai-reference-log{padding-bottom:6px!important}
+  html.mm-assistant-keyboard .ai-reference-log{padding-bottom:72px!important}
 
-  /* Schedule is intentionally short on many months, so it must not expose a
-     separate safe-area band below the fixed nav. */
-  html[data-mm-page="schedule"],
-  html[data-mm-page="schedule"] body{overflow-x:hidden!important}
+  html[data-mm-page="schedule"],html[data-mm-page="schedule"] body{overflow-x:hidden!important}
 }
 
 @keyframes mmSendSpin{to{transform:rotate(360deg)}}
 
-/* Dark chat must be declared after the light mobile rules above. The previous
- * order left light outgoing bubbles and a white composer with white text. */
 html[data-theme="dark"][data-mm-page="chat"] #content{background:#07111d!important}
 html[data-theme="dark"][data-mm-page="chat"] .chat-shell-pro,
 html[data-theme="dark"][data-mm-page="chat"] .chat-messages-pro{background:linear-gradient(180deg,#0c1c2c,#091824)!important}
-html[data-theme="dark"][data-mm-page="chat"] #mmChatNotificationCard{
-  background:rgba(13,30,47,.96)!important;border-color:#29465f!important;box-shadow:0 6px 20px rgba(0,0,0,.18)!important
-}
+html[data-theme="dark"][data-mm-page="chat"] #mmChatNotificationCard{background:rgba(13,30,47,.96)!important;border-color:#29465f!important;box-shadow:0 6px 20px rgba(0,0,0,.18)!important}
 html[data-theme="dark"][data-mm-page="chat"] #mmChatNotificationCard .mm-push-title b{color:#eaf3fc!important}
 html[data-theme="dark"][data-mm-page="chat"] .chat-message-meta b{color:#b7c7d8!important}
 html[data-theme="dark"][data-mm-page="chat"] .chat-message-meta time{color:#8297ac!important}
 html[data-theme="dark"][data-mm-page="chat"] .chat-profile-avatar{border-color:#304b63!important;box-shadow:0 4px 12px rgba(0,0,0,.18)!important}
-html[data-theme="dark"][data-mm-page="chat"] .chat-bubble-pro{
-  background:#142a3f!important;color:#edf6ff!important;border-color:#304b63!important;box-shadow:none!important
-}
-html[data-theme="dark"][data-mm-page="chat"] .chat-row-pro.mine .chat-bubble-pro{
-  background:linear-gradient(145deg,#17436a,#155064)!important;border-color:#356b87!important
-}
+html[data-theme="dark"][data-mm-page="chat"] .chat-bubble-pro{background:#142a3f!important;color:#edf6ff!important;border-color:#304b63!important;box-shadow:none!important}
+html[data-theme="dark"][data-mm-page="chat"] .chat-row-pro.mine .chat-bubble-pro{background:linear-gradient(145deg,#17436a,#155064)!important;border-color:#356b87!important}
 html[data-theme="dark"][data-mm-page="chat"] .chat-bubble-pro p{color:#edf6ff!important}
-html[data-theme="dark"][data-mm-page="chat"] .chat-compose-pro{
-  background:#0b1a29!important;border-top-color:#29455c!important;box-shadow:0 -10px 28px rgba(0,0,0,.26)!important
-}
-html[data-theme="dark"][data-mm-page="chat"] .chat-compose-pro textarea{
-  background:#102438!important;color:#eef6ff!important;-webkit-text-fill-color:#eef6ff!important;
-  border-color:#304b63!important;caret-color:#79b5ff!important;box-shadow:none!important
-}
-html[data-theme="dark"][data-mm-page="chat"] .chat-compose-pro textarea::placeholder{
-  color:#8599ae!important;-webkit-text-fill-color:#8599ae!important;opacity:1!important
-}
+html[data-theme="dark"][data-mm-page="chat"] .chat-compose-pro{background:#0b1a29!important;border-top-color:#29455c!important;box-shadow:0 -10px 28px rgba(0,0,0,.26)!important}
+html[data-theme="dark"][data-mm-page="chat"] .chat-compose-pro textarea{background:#102438!important;color:#eef6ff!important;-webkit-text-fill-color:#eef6ff!important;border-color:#304b63!important;caret-color:#79b5ff!important;box-shadow:none!important}
+html[data-theme="dark"][data-mm-page="chat"] .chat-compose-pro textarea::placeholder{color:#8599ae!important;-webkit-text-fill-color:#8599ae!important;opacity:1!important}
 
 @media(prefers-reduced-motion:reduce){.mm-send-spinner{animation-duration:1.4s}}
