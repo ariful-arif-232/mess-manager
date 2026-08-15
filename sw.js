@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v71-keyboard-notch-fix';
+const CACHE = 'mess-manager-v72-ios-keyboard-pan-fix';
 const SHELL = [
   './',
   './index.html',
