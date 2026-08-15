@@ -1,12 +1,30 @@
-/* iOS standalone PWA splash must fill the entire visual viewport, including the home-indicator safe area. */
+/* iOS standalone PWA splash must fill the complete dynamic viewport, including
+ * the home-indicator region. Do not collapse the fixed splash back to height:auto:
+ * WebKit can then paint the document background below it during startup. */
+html:has(.app-splash),
+html:has(.app-splash) body,
+html:has(.app-splash) #app{
+  min-height:100dvh!important;
+  background:var(--splash-base,#f7f9ff)!important;
+  overflow:hidden!important;
+}
+
 .app-splash{
+  position:fixed!important;
   top:0!important;
   right:0!important;
   bottom:0!important;
   left:0!important;
   inset:0!important;
-  width:auto!important;
-  height:auto!important;
-  min-height:0!important;
+  width:100%!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
   max-height:none!important;
+  box-sizing:border-box!important;
+}
+
+html[data-theme="dark"]:has(.app-splash),
+html[data-theme="dark"]:has(.app-splash) body,
+html[data-theme="dark"]:has(.app-splash) #app{
+  background:#07111d!important;
 }
