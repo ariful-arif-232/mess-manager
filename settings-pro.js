@@ -31,6 +31,71 @@
   }
   document.addEventListener('click',e=>{const trigger=e.target.closest?.('#mobileMore');if(!trigger||profile?.role==='admin')return;setTimeout(()=>{const grid=document.querySelector('#moreSheet .sheet-grid');if(!grid||grid.querySelector('[data-member-settings]'))return;const b=document.createElement('button');b.type='button';b.dataset.memberSettings='1';b.innerHTML=`<span>${icon('moon')}</span><b>Settings</b>`;b.onclick=()=>{document.querySelector('#moreSheet')?.remove();state.page='settings';render();};grid.appendChild(b);},0);},true);
   function exportData(){notify('Excel backup is available to admins.','success')}
-  function openReset(){notify('Reset is available to verified admins only.');}
+
+  async function resetFunction(name,body,{auth=false}={}){
+    const current=(await client.auth.getSession()).data.session;
+    if(auth&&!current?.access_token)throw new Error('Admin sign-in required.');
+    const headers={'Content-Type':'application/json',apikey:cfg.supabaseAnonKey};
+    if(auth)headers.Authorization=`Bearer ${current.access_token}`;
+    const response=await fetch(`${cfg.supabaseUrl}/functions/v1/${name}`,{method:'POST',headers,body:JSON.stringify(body)});
+    let data={};
+    try{data=await response.json()}catch(_){ }
+    if(!response.ok)throw new Error(data.error||'Security verification failed.');
+    return data;
+  }
+
+  function openReset(){
+    if(profile?.role!=='admin')return notify('Admin access required.');
+    const email=String(session?.user?.email||'').trim().toLowerCase();
+    if(!email)return notify('Verified admin email is unavailable. Please sign in again.');
+
+    modal(`<div class="reset-modal"><div class="reset-lock">!</div><h2>Reset workspace?</h2><p>এই কাজটি ফিরিয়ে আনা যাবে না। বর্তমান verified admin account এবং Mess workspace ছাড়া সব data ও অন্য member account permanently delete হবে।</p><div class="reset-summary"><b>Deleted permanently</b><span>Members except you, meals, Bazar, deposits, utility bills, schedules, settlements, chat, notices and activity history.</span></div><div class="field"><label>Verified admin email</label><input value="${esc(email)}" readonly></div><button class="btn primary full" id="sendResetOtp" type="button">Send security OTP</button><div id="resetVerify" class="reset-verify hidden"><div class="field"><label>8-digit security OTP</label><input id="resetOtp" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="8" placeholder="Enter 8-digit OTP"></div><div class="field"><label>Type RESET to confirm</label><input id="resetWord" autocomplete="off" autocapitalize="characters" placeholder="RESET"></div><button class="btn danger full" id="confirmReset" type="button">Verify & reset everything</button></div><button class="btn full" data-close-reset type="button">Cancel</button></div>`);
+    $('[data-close-reset]').onclick=closeModal;
+
+    $('#sendResetOtp').onclick=async e=>{
+      const button=e.currentTarget,old=button.textContent;
+      button.disabled=true;button.textContent='Sending…';
+      try{
+        await resetFunction('request-admin-otp',{email,purpose:'reset'},{auth:true});
+        $('#resetVerify').classList.remove('hidden');
+        button.textContent='Resend security OTP';
+        $('#resetOtp').focus();
+        notify('8-digit security OTP sent to your admin email.','success');
+      }catch(err){
+        notify(friendlyError(err));
+        button.textContent=old;
+      }finally{button.disabled=false}
+    };
+
+    $('#confirmReset').onclick=async e=>{
+      const token=$('#resetOtp').value.trim();
+      const confirmation=$('#resetWord').value.trim().toUpperCase();
+      if(!/^\d{8}$/.test(token))return notify('8-digit security OTP দিন।');
+      if(confirmation!=='RESET')return notify('Confirm করতে RESET লিখুন।');
+
+      const button=e.currentTarget,old=button.textContent;
+      button.disabled=true;button.textContent='Verifying…';
+      try{
+        const verifiedOtp=await resetFunction('verify-admin-otp',{email,token});
+        if(!verifiedOtp?.token_hash)throw new Error('Security verification session তৈরি হয়নি।');
+        const verified=assertResult(await client.auth.verifyOtp({token_hash:verifiedOtp.token_hash,type:'email'}));
+        session=verified?.session||(await client.auth.getSession()).data.session;
+        if(!session)throw new Error('Fresh security session তৈরি হয়নি।');
+
+        button.textContent='Resetting…';
+        const result=assertResult(await client.rpc('reset_current_mess',{p_confirmation:'RESET',p_admin_email:email}));
+        closeModal();
+        await loadData();
+        state.page='dashboard';
+        render();
+        const memberCount=Number(result?.deleted_members||0);
+        const authCount=Number(result?.deleted_auth_users||0);
+        notify(`Workspace reset complete. ${Number(result?.deleted_records||0)} records and ${Math.max(memberCount,authCount)} member accounts removed.`,'success');
+      }catch(err){
+        notify(friendlyError(err));
+        button.disabled=false;button.textContent=old;
+      }
+    };
+  }
   window.settings=settingsPage;
 })();
