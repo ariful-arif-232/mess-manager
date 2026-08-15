@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v66-dark-form-date-polish';
+const CACHE = 'mess-manager-v67-chat-push-safe';
 const SHELL = [
   './',
   './index.html',
@@ -21,6 +21,42 @@ self.addEventListener('activate', event => {
     caches.keys()
       .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('push', event => {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch (_) {}
+
+  const title = payload.sender_name
+    ? `${payload.sender_name} sent a message`
+    : 'Mess Manager Chat';
+
+  event.waitUntil(self.registration.showNotification(title, {
+    body: payload.body || 'New chat message',
+    icon: './icons/icon-192.png?v=20260814-borderless2',
+    badge: './icons/icon-192.png?v=20260814-borderless2',
+    tag: `mess-chat-${payload.message_id || Date.now()}`,
+    renotify: true,
+    data: { url: payload.url || './?open=chat' }
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const scope = self.registration.scope;
+  const target = new URL(event.notification.data?.url || './?open=chat', scope).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async list => {
+      const existing = list.find(client => client.url.startsWith(scope));
+      if (existing) {
+        await existing.focus();
+        existing.postMessage({ type: 'open-chat' });
+        return;
+      }
+      await clients.openWindow(target);
+    })
   );
 });
 
