@@ -8,11 +8,42 @@
   .modal .field label,.modal fieldset legend{font-weight:800!important;color:#667a9a!important;margin-bottom:7px!important}
   .modal input,.modal select,.modal textarea{box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;height:54px!important;border:1px solid #d9e3f1!important;border-radius:16px!important;padding:0 15px!important;background:#fff!important;font-size:17px!important;color:#102a55!important}
 
-  /* iOS-safe date/month alignment: center only the value, never force native internals to 100% width. */
-  .modal input[type=date],.modal input[type=month]{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;height:54px!important;box-sizing:border-box!important;-webkit-appearance:none!important;appearance:none!important;text-align:center!important;text-align-last:center!important;padding:0 15px!important;overflow:hidden!important;font-variant-numeric:tabular-nums!important}
-  .modal input[type=date]::-webkit-date-and-time-value,.modal input[type=month]::-webkit-date-and-time-value{min-width:0!important;width:auto!important;margin:0 auto!important;padding:0!important;text-align:center!important}
-  .modal input[type=date]::-webkit-datetime-edit,.modal input[type=month]::-webkit-datetime-edit{display:inline-flex!important;width:auto!important;min-width:0!important;margin:0 auto!important;padding:0!important}
-  .modal input[type=date]::-webkit-datetime-edit-fields-wrapper,.modal input[type=month]::-webkit-datetime-edit-fields-wrapper{display:inline-flex!important;width:auto!important;min-width:0!important;justify-content:center!important;padding:0!important}
+  /* Only the reviewed entry flows receive date-control overrides. */
+  .modal:has(#memberForm) #memberForm .field:has(>input[type=date]),
+  .modal:has(#bazarForm) #bazarForm .field:has(>input[type=date]),
+  .modal:has(#scheduleProForm) #scheduleProForm .field:has(>input[type=date]){position:relative!important}
+  .modal:has(#memberForm) #memberForm .field:has(>input[type=date])::after,
+  .modal:has(#bazarForm) #bazarForm .field:has(>input[type=date])::after,
+  .modal:has(#scheduleProForm) #scheduleProForm .field:has(>input[type=date])::after{content:"";position:absolute!important;right:14px!important;bottom:16px!important;width:18px!important;height:18px!important;background:#2a70d6!important;pointer-events:none!important;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 3v3m10-3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 3v3m10-3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+  .modal:has(#memberForm) #memberForm input[type=date],
+  .modal:has(#bazarForm) #bazarForm input[type=date],
+  .modal:has(#scheduleProForm) #scheduleProForm input[type=date]{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;height:50px!important;min-height:50px!important;box-sizing:border-box!important;-webkit-appearance:none!important;appearance:none!important;padding:0 44px 0 14px!important;border-radius:14px!important;text-align:left!important;text-align-last:left!important;overflow:hidden!important;font-size:16px!important;font-weight:750!important;font-variant-numeric:tabular-nums!important;letter-spacing:0!important;box-shadow:0 4px 14px rgba(31,67,118,.045)!important}
+  .modal:has(#memberForm) #memberForm input[type=date]:focus,
+  .modal:has(#bazarForm) #bazarForm input[type=date]:focus,
+  .modal:has(#scheduleProForm) #scheduleProForm input[type=date]:focus{border-color:#4b8ee9!important;box-shadow:0 0 0 3px rgba(42,112,214,.10),0 5px 16px rgba(31,67,118,.055)!important;outline:none!important}
+  .modal:has(#memberForm) #memberForm input[type=date]::-webkit-date-and-time-value,
+  .modal:has(#bazarForm) #bazarForm input[type=date]::-webkit-date-and-time-value,
+  .modal:has(#scheduleProForm) #scheduleProForm input[type=date]::-webkit-date-and-time-value{display:block!important;width:auto!important;min-width:0!important;margin:0!important;padding:0!important;text-align:left!important}
+  .modal:has(#memberForm) #memberForm input[type=date]::-webkit-datetime-edit,
+  .modal:has(#bazarForm) #bazarForm input[type=date]::-webkit-datetime-edit,
+  .modal:has(#scheduleProForm) #scheduleProForm input[type=date]::-webkit-datetime-edit{display:inline-flex!important;width:auto!important;min-width:0!important;margin:0!important;padding:0!important;text-align:left!important}
+  .modal:has(#memberForm) #memberForm input[type=date]::-webkit-datetime-edit-fields-wrapper,
+  .modal:has(#bazarForm) #bazarForm input[type=date]::-webkit-datetime-edit-fields-wrapper,
+  .modal:has(#scheduleProForm) #scheduleProForm input[type=date]::-webkit-datetime-edit-fields-wrapper{display:inline-flex!important;width:auto!important;min-width:0!important;justify-content:flex-start!important;padding:0!important}
+  .modal:has(#memberForm) #memberForm input[type=date]::-webkit-calendar-picker-indicator,
+  .modal:has(#bazarForm) #bazarForm input[type=date]::-webkit-calendar-picker-indicator,
+  .modal:has(#scheduleProForm) #scheduleProForm input[type=date]::-webkit-calendar-picker-indicator{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;opacity:0!important;cursor:pointer!important}
+
+  /* Keep only the requested forms denser; unrelated modal layouts are untouched. */
+  .modal:has(#memberForm) #memberForm .form-grid,
+  .modal:has(#scheduleProForm) #scheduleProForm .form-grid{gap:11px!important}
+  .modal:has(#memberForm) #memberForm input,
+  .modal:has(#memberForm) #memberForm select,
+  .modal:has(#scheduleProForm) #scheduleProForm input,
+  .modal:has(#scheduleProForm) #scheduleProForm select{height:50px!important;min-height:50px!important;border-radius:14px!important;font-size:16px!important}
+  .modal:has(#memberForm) .photo-picker{margin:12px 0!important;padding:11px 12px!important;border-radius:15px!important}
+  .modal:has(#memberForm) .actions,
+  .modal:has(#scheduleProForm) .actions{margin-top:15px!important}
 
   .modal textarea{height:auto!important;min-height:104px!important;padding-top:14px!important;resize:vertical}
   .modal fieldset.field{border:1px solid #dce5f1!important;border-radius:18px!important;padding:12px 14px!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
@@ -28,4 +59,12 @@
   .schedule-email-toggle b,.schedule-email-toggle small{display:block}
   .schedule-email-toggle b{font-size:12px;color:#17345b}
   .schedule-email-toggle small{margin-top:2px;font-size:9px;line-height:1.35;color:#7b8ba1}
+
+  html[data-theme="dark"] .modal:has(#memberForm) .field label,
+  html[data-theme="dark"] .modal:has(#bazarForm) .field label,
+  html[data-theme="dark"] .modal:has(#scheduleProForm) .field label{color:#9db0c5!important}
+  html[data-theme="dark"] .modal:has(#scheduleProForm)>h2{color:#f5f8ff!important}
+  html[data-theme="dark"] .modal:has(#memberForm) #memberForm .field:has(>input[type=date])::after,
+  html[data-theme="dark"] .modal:has(#bazarForm) #bazarForm .field:has(>input[type=date])::after,
+  html[data-theme="dark"] .modal:has(#scheduleProForm) #scheduleProForm .field:has(>input[type=date])::after{background:#75afff!important}
 }
