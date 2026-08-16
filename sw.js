@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v78-multi-workspace';
+const CACHE = 'mess-manager-v79-dashboard-compact';
 const SHELL = [
   './',
   './index.html',
