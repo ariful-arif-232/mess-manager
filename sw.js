@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v88-auth-network-project-wide';
+const CACHE = 'mess-manager-v89-finance-allocation';
 const SHELL = [
   './',
   './index.html',

@@ -1,4 +1,4 @@
-/* Member-first deposit ledger with purpose notes. */
+/* Member-first deposit ledger with dedicated Bazar and Utility purposes. */
 'use strict';
 (()=>{
   if(window.__mmDepositLedgerLoaded)return;
@@ -6,10 +6,12 @@
 
   const PURPOSES=[
     {key:'Bazar',label:'Bazar',hint:'Bazar fund',icon:'basket'},
-    {key:'Gas',label:'Gas',hint:'Gas bill',icon:'flame'},
+    {key:'Gas',label:'Gas',hint:'Gas utility',icon:'flame'},
     {key:'Current',label:'Current',hint:'Electricity',icon:'bolt'},
     {key:'WiFi',label:'WiFi',hint:'Internet bill',icon:'wifi'},
-    {key:'Other',label:'Other',hint:'Custom note',icon:'note'}
+    {key:'Bua',label:'Bua Bill',hint:'Bua / maid bill',icon:'broom'},
+    {key:'Water',label:'Water',hint:'Water bill',icon:'drop'},
+    {key:'Other',label:'Other',hint:'Other utility',icon:'note'}
   ];
   const purposeKeys=new Set(PURPOSES.map(x=>x.key));
 
@@ -26,22 +28,26 @@
     ?`<img class="mm-deposit-avatar" src="${esc(member.avatar_url)}" alt="${esc(member.name||'Member')}"/>`
     :`<span class="mm-deposit-avatar mm-deposit-avatar-fallback" aria-hidden="true">${esc(initials(member?.name))}</span>`;
 
-  function parseNote(note){
-    const raw=String(note||'').trim();
-    if(!raw)return{purpose:'',custom:'',label:'No note'};
-    if(purposeKeys.has(raw))return{purpose:raw,custom:'',label:raw};
-    const other=raw.match(/^Other\s*:\s*(.*)$/i);
-    if(other)return{purpose:'Other',custom:String(other[1]||'').trim(),label:String(other[1]||'').trim()||'Other'};
-    return{purpose:'Other',custom:raw,label:raw};
+  function purposeOf(row){
+    if(typeof window.mmDepositPurposeOf==='function')return window.mmDepositPurposeOf(row);
+    const raw=String(row?.purpose||row?.note||'').trim();
+    if(purposeKeys.has(raw))return raw;
+    const lower=raw.toLowerCase();
+    if(lower==='gas')return'Gas';
+    if(['current','electricity','electric'].includes(lower))return'Current';
+    if(['wifi','wi-fi','internet'].includes(lower))return'WiFi';
+    if(['bua','bua bill','maid'].includes(lower))return'Bua';
+    if(lower==='water')return'Water';
+    if(lower==='other')return'Other';
+    return'Bazar';
   }
-  function noteClass(note){
-    const parsed=parseNote(note);
-    const key=(parsed.purpose||'none').toLowerCase();
-    return `mm-deposit-note mm-deposit-note-${key}`;
-  }
-  const noteIcon=note=>{
-    const purpose=parseNote(note).purpose;
-    return PURPOSES.find(x=>x.key===purpose)?.icon||'note';
+  const purposeMeta=row=>PURPOSES.find(x=>x.key===purposeOf(row))||PURPOSES[0];
+  const purposeClass=row=>`mm-deposit-note mm-deposit-note-${purposeOf(row).toLowerCase()}`;
+  const totalOf=rows=>rows.reduce((sum,row)=>sum+Number(row.amount||0),0);
+  const splitTotals=rows=>{
+    const bazar=totalOf(rows.filter(row=>purposeOf(row)==='Bazar'));
+    const utility=totalOf(rows.filter(row=>purposeOf(row)!=='Bazar'));
+    return{bazar,utility,total:bazar+utility};
   };
 
   function visibleMembers(){
@@ -54,7 +60,7 @@
 
   function memberCard(member){
     const rows=depositsFor(member.id);
-    const total=rows.reduce((sum,row)=>sum+Number(row.amount||0),0);
+    const totals=splitTotals(rows);
     const latest=rows[0]?.date;
     return `<button type="button" class="mm-deposit-member-card" data-deposit-member="${esc(member.id)}">
       <span class="mm-deposit-member-main">
@@ -66,7 +72,7 @@
       </span>
       <span class="mm-deposit-member-total">
         <small>Total deposit</small>
-        <strong>${money(total)}</strong>
+        <strong>${money(totals.total)}</strong>
         <span class="mm-deposit-tap">Tap to view <i aria-hidden="true">›</i></span>
       </span>
     </button>`;
@@ -75,19 +81,19 @@
   function renderDeposits(c){
     const controls=profile.role==='admin';
     const members=visibleMembers();
-    const grandTotal=db.deposits.reduce((sum,row)=>sum+Number(row.amount||0),0);
+    const totals=splitTotals(db.deposits);
     c.innerHTML=`<section class="mm-deposit-page-head">
       <div>
         <span class="eyebrow">${esc(state.month)} overview</span>
         <h2>Member Deposits</h2>
-        <p>Member-wise total দেখুন, তারপর Tap to view করে date, amount ও note দেখুন।</p>
+        <p>Bazar এবং Utility deposit আলাদা fund হিসেবে track হবে। Member card tap করলে purpose-wise history দেখবেন।</p>
       </div>
       ${controls?'<button type="button" class="btn primary mm-deposit-add" data-deposit-add><span aria-hidden="true">+</span> Add Deposit</button>':''}
     </section>
     <section class="mm-deposit-overview" aria-label="Deposit overview">
-      <div><span>Monthly total</span><strong>${money(grandTotal)}</strong></div>
+      <div><span>Bazar Deposit</span><strong>${money(totals.bazar)}</strong></div>
+      <div><span>Utility Deposit</span><strong>${money(totals.utility)}</strong></div>
       <div><span>Entries</span><strong>${db.deposits.length}</strong></div>
-      <div><span>Members</span><strong>${members.length}</strong></div>
     </section>
     <div class="mm-deposit-member-grid">
       ${members.length?members.map(memberCard).join(''):'<div class="mm-deposit-empty">No members available.</div>'}
@@ -100,11 +106,11 @@
   function closeLayer(id){document.getElementById(id)?.remove();}
 
   function transactionRow(row,controls){
-    const note=parseNote(row.note);
+    const meta=purposeMeta(row);
     return `<article class="mm-deposit-entry-row">
       <div class="mm-deposit-entry-date">
         <span class="mm-deposit-entry-calendar" aria-hidden="true"></span>
-        <div><strong>${esc(fmtDate(row.date))}</strong><span class="${noteClass(row.note)}"><i class="mm-deposit-purpose-icon mm-deposit-purpose-${esc(noteIcon(row.note))}" aria-hidden="true"></i>${esc(note.label)}</span></div>
+        <div><strong>${esc(fmtDate(row.date))}</strong><span class="${purposeClass(row)}"><i class="mm-deposit-purpose-icon mm-deposit-purpose-${meta.icon}" aria-hidden="true"></i>${esc(meta.label)}</span></div>
       </div>
       <div class="mm-deposit-entry-side">
         <strong class="mm-deposit-entry-amount">${money(row.amount)}</strong>
@@ -118,7 +124,7 @@
     if(!member)return;
     closeLayer('mmDepositLedgerSheet');
     const rows=depositsFor(memberId);
-    const total=rows.reduce((sum,row)=>sum+Number(row.amount||0),0);
+    const totals=splitTotals(rows);
     const controls=profile.role==='admin';
     document.body.insertAdjacentHTML('beforeend',`<div class="mm-deposit-layer" id="mmDepositLedgerSheet" role="presentation">
       <section class="mm-deposit-sheet" role="dialog" aria-modal="true" aria-label="${esc(member.name||'Member')} deposits">
@@ -127,7 +133,11 @@
           <div class="mm-deposit-sheet-person">${avatarMarkup(member)}<div><small>Deposit history</small><h3>${esc(member.name||'Member')}</h3></div></div>
           <button type="button" class="mm-deposit-close" data-deposit-sheet-close aria-label="Close">×</button>
         </header>
-        <div class="mm-deposit-sheet-summary"><div><span>This month</span><strong>${money(total)}</strong></div><div><span>Transactions</span><strong>${rows.length}</strong></div></div>
+        <div class="mm-deposit-sheet-summary">
+          <div><span>Bazar Deposit</span><strong>${money(totals.bazar)}</strong></div>
+          <div><span>Utility Deposit</span><strong>${money(totals.utility)}</strong></div>
+          <div><span>Transactions</span><strong>${rows.length}</strong></div>
+        </div>
         <div class="mm-deposit-entry-list">${rows.length?rows.map(row=>transactionRow(row,controls)).join(''):'<div class="mm-deposit-empty mm-deposit-empty-sheet">No deposit added for this member this month.</div>'}</div>
         ${controls?`<button type="button" class="btn primary mm-deposit-sheet-add" data-deposit-sheet-add>+ Add for ${esc(member.name||'Member')}</button>`:''}
       </section>
@@ -140,10 +150,9 @@
     layer?.querySelectorAll('[data-deposit-delete]').forEach(btn=>btn.addEventListener('click',()=>openDeleteConfirm(btn.dataset.depositDelete,memberId)));
   }
 
-  function purposeButtonLabel(purpose,custom){
-    if(!purpose)return'Select purpose / note';
-    if(purpose==='Other'&&custom)return custom;
-    return purpose;
+  function purposeButtonLabel(purpose){
+    if(!purpose)return'Select purpose';
+    return PURPOSES.find(x=>x.key===purpose)?.label||purpose;
   }
 
   function openPurposePicker(selected,onPick){
@@ -151,7 +160,7 @@
     document.body.insertAdjacentHTML('beforeend',`<div class="mm-deposit-purpose-layer" id="mmDepositPurposeSheet">
       <section class="mm-deposit-purpose-sheet" role="dialog" aria-modal="true" aria-label="Choose deposit purpose">
         <div class="mm-deposit-sheet-handle" aria-hidden="true"></div>
-        <header><div><small>Deposit note</small><h3>What is this money for?</h3></div><button type="button" class="mm-deposit-close" data-purpose-close aria-label="Close">×</button></header>
+        <header><div><small>Purpose</small><h3>Select purpose</h3></div><button type="button" class="mm-deposit-close" data-purpose-close aria-label="Close">×</button></header>
         <div class="mm-deposit-purpose-grid">${PURPOSES.map(item=>`<button type="button" class="mm-deposit-purpose-option ${selected===item.key?'selected':''}" data-purpose="${item.key}"><i class="mm-deposit-purpose-icon mm-deposit-purpose-${item.icon}" aria-hidden="true"></i><span><strong>${item.label}</strong><small>${item.hint}</small></span><b aria-hidden="true">✓</b></button>`).join('')}</div>
       </section>
     </div>`);
@@ -165,20 +174,17 @@
   function openDepositEditor(id=null,preferredMemberId=null){
     if(profile.role!=='admin')return;
     const existing=id?db.deposits.find(row=>row.id===id):null;
-    const parsed=parseNote(existing?.note);
     const defaultMember=existing?.memberId||preferredMemberId||activeMembers()[0]?.id||'';
-    const selectedPurpose=parsed.purpose;
-    const customNote=parsed.custom;
+    const selectedPurpose=existing?purposeOf(existing):'';
     closeModal();
-    modal(`<div class="mm-deposit-editor-head"><div><span class="eyebrow">${id?'Update entry':'New entry'}</span><h2>${id?'Edit':'Add'} Deposit</h2><p>Member, amount এবং purpose/note একসাথে save হবে।</p></div><button type="button" class="mm-deposit-close" data-close aria-label="Close">×</button></div>
+    modal(`<div class="mm-deposit-editor-head"><div><span class="eyebrow">${id?'Update entry':'New entry'}</span><h2>${id?'Edit':'Add'} Deposit</h2></div><button type="button" class="mm-deposit-close" data-close aria-label="Close">×</button></div>
       <form id="mmDepositForm" class="mm-deposit-editor-form">
         <div class="mm-deposit-field-grid">
           <label class="mm-deposit-field"><span>Member</span><select name="member_id" required>${activeMembers().map(member=>`<option value="${esc(member.id)}" ${member.id===defaultMember?'selected':''}>${esc(member.name)}</option>`).join('')}</select></label>
           <label class="mm-deposit-field"><span>Date</span><input name="deposit_date" type="date" value="${esc(existing?.date||today())}" required></label>
         </div>
         <label class="mm-deposit-field mm-deposit-amount-field"><span>Amount</span><div class="mm-deposit-amount-input"><b aria-hidden="true">৳</b><input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" value="${esc(existing?.amount??'')}" placeholder="0" required></div></label>
-        <div class="mm-deposit-field"><span>Purpose / Note</span><button type="button" class="mm-deposit-note-picker" id="mmDepositNotePicker"><i class="mm-deposit-purpose-icon mm-deposit-purpose-${esc(PURPOSES.find(x=>x.key===selectedPurpose)?.icon||'note')}" aria-hidden="true"></i><span><small>Tap to choose</small><strong data-note-label>${esc(purposeButtonLabel(selectedPurpose,customNote))}</strong></span><b aria-hidden="true">›</b></button><input type="hidden" name="purpose" value="${esc(selectedPurpose)}"></div>
-        <label class="mm-deposit-field mm-deposit-other-wrap ${selectedPurpose==='Other'?'':'hidden'}" data-other-wrap><span>Other note</span><input name="other_note" value="${esc(customNote)}" maxlength="120" placeholder="e.g. Cleaning, repair, advance"></label>
+        <div class="mm-deposit-field"><span>Purpose</span><button type="button" class="mm-deposit-note-picker" id="mmDepositNotePicker"><i class="mm-deposit-purpose-icon mm-deposit-purpose-${esc(PURPOSES.find(x=>x.key===selectedPurpose)?.icon||'note')}" aria-hidden="true"></i><span><small>Select purpose</small><strong data-purpose-label>${esc(purposeButtonLabel(selectedPurpose))}</strong></span><b aria-hidden="true">›</b></button><input type="hidden" name="purpose" value="${esc(selectedPurpose)}"></div>
         <div class="mm-deposit-editor-actions"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary">${id?'Save Changes':'Add Deposit'}</button></div>
       </form>`);
     const wrap=document.getElementById('modal');
@@ -188,34 +194,28 @@
     const form=document.getElementById('mmDepositForm');
     const picker=document.getElementById('mmDepositNotePicker');
     const hidden=form?.querySelector('[name=purpose]');
-    const otherWrap=form?.querySelector('[data-other-wrap]');
-    const otherInput=form?.querySelector('[name=other_note]');
-    const label=form?.querySelector('[data-note-label]');
+    const label=form?.querySelector('[data-purpose-label]');
 
     form?.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',closeModal));
     picker?.addEventListener('click',()=>openPurposePicker(hidden?.value||'',purpose=>{
       if(hidden)hidden.value=purpose;
-      otherWrap?.classList.toggle('hidden',purpose!=='Other');
-      if(label)label.textContent=purposeButtonLabel(purpose,purpose==='Other'?(otherInput?.value||''):'');
+      if(label)label.textContent=purposeButtonLabel(purpose);
       const icon=picker.querySelector('.mm-deposit-purpose-icon');
-      if(icon){icon.className=`mm-deposit-purpose-icon mm-deposit-purpose-${PURPOSES.find(x=>x.key===purpose)?.icon||'note'}`;}
-      if(purpose==='Other')setTimeout(()=>otherInput?.focus(),100);
+      if(icon)icon.className=`mm-deposit-purpose-icon mm-deposit-purpose-${PURPOSES.find(x=>x.key===purpose)?.icon||'note'}`;
     }));
-    otherInput?.addEventListener('input',()=>{if(hidden?.value==='Other'&&label)label.textContent=otherInput.value.trim()||'Other';});
 
     form?.addEventListener('submit',async event=>{
       event.preventDefault();
       const fd=new FormData(form);
       const purpose=String(fd.get('purpose')||'').trim();
-      if(!purpose&&!id){notify('Please select a purpose / note.');return;}
-      const custom=String(fd.get('other_note')||'').trim();
-      const note=purpose==='Other'?(custom?`Other: ${custom}`:'Other'):purpose;
+      if(!purposeKeys.has(purpose)){notify('Please select a purpose.');return;}
       const payload={
         mess_id:profile.mess_id,
         member_id:String(fd.get('member_id')||''),
         deposit_date:String(fd.get('deposit_date')||''),
         amount:Number(fd.get('amount')||0),
-        note
+        purpose,
+        note:purpose
       };
       if(!payload.member_id||!payload.deposit_date||!(payload.amount>0)){notify('Member, date and valid amount are required.');return;}
       await persist('deposits',id,payload,'deposit');
@@ -226,7 +226,7 @@
     closeLayer('mmDepositDeleteConfirm');
     const row=db.deposits.find(x=>x.id===id);
     if(!row)return;
-    document.body.insertAdjacentHTML('beforeend',`<div class="mm-deposit-confirm-layer" id="mmDepositDeleteConfirm"><section class="mm-deposit-confirm" role="alertdialog" aria-modal="true"><span class="mm-deposit-confirm-icon" aria-hidden="true"></span><h3>Delete this deposit?</h3><p>${esc(fmtDate(row.date))} · ${money(row.amount)}${row.note?` · ${esc(parseNote(row.note).label)}`:''}</p><div><button type="button" class="btn" data-delete-cancel>Cancel</button><button type="button" class="btn danger" data-delete-confirm>Delete</button></div></section></div>`);
+    document.body.insertAdjacentHTML('beforeend',`<div class="mm-deposit-confirm-layer" id="mmDepositDeleteConfirm"><section class="mm-deposit-confirm" role="alertdialog" aria-modal="true"><span class="mm-deposit-confirm-icon" aria-hidden="true"></span><h3>Delete this deposit?</h3><p>${esc(fmtDate(row.date))} · ${money(row.amount)} · ${esc(purposeMeta(row).label)}</p><div><button type="button" class="btn" data-delete-cancel>Cancel</button><button type="button" class="btn danger" data-delete-confirm>Delete</button></div></section></div>`);
     const layer=document.getElementById('mmDepositDeleteConfirm');
     layer?.querySelector('[data-delete-cancel]')?.addEventListener('click',()=>closeLayer('mmDepositDeleteConfirm'));
     layer?.querySelector('[data-delete-confirm]')?.addEventListener('click',async()=>{
