@@ -10,9 +10,49 @@
     height:auto!important;
     min-height:0!important;
     max-height:92dvh!important;
+    padding-top:14px!important;
     background:#0d1d2d!important;
     border-radius:28px 28px 0 0!important;
     overflow-y:auto!important;
+  }
+
+  /* Dark-theme legacy .modal-title rules were expanding the green title hero.
+     Keep Add Bazar's title identical to the compact light-mode sheet. */
+  html[data-theme="dark"] .modal-wrap:has(#bazarForm) .final-bazar-modal-title.bazar-v2-title{
+    position:sticky!important;
+    top:0!important;
+    z-index:20!important;
+    width:auto!important;
+    height:66px!important;
+    min-height:66px!important;
+    max-height:66px!important;
+    margin:-14px -14px 10px!important;
+    padding:10px 14px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    overflow:hidden!important;
+    border-radius:28px 28px 0 0!important;
+    background:linear-gradient(135deg,#132a40,#102a2d)!important;
+    box-sizing:border-box!important;
+  }
+  html[data-theme="dark"] .modal-wrap:has(#bazarForm) .final-bazar-modal-title.bazar-v2-title::before,
+  html[data-theme="dark"] .modal-wrap:has(#bazarForm) .final-bazar-modal-title.bazar-v2-title::after{
+    display:none!important;
+    content:none!important;
+  }
+  html[data-theme="dark"] .modal-wrap:has(#bazarForm) .final-bazar-modal-title.bazar-v2-title h2{
+    margin:0!important;
+    padding:0!important;
+    line-height:1.05!important;
+    font-size:22px!important;
+  }
+  html[data-theme="dark"] .modal-wrap:has(#bazarForm) .final-bazar-modal-title.bazar-v2-title .icon-btn{
+    width:42px!important;
+    height:42px!important;
+    min-height:42px!important;
+    flex:0 0 42px!important;
+    margin:0!important;
   }
 }
 
