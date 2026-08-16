@@ -77,6 +77,20 @@
   z-index:2!important;
 }
 
+/* Keep the modal title clean and slightly higher. */
+.mm-deposit-editor-head .eyebrow{
+  display:none!important;
+}
+.mm-deposit-editor-head{
+  align-items:center!important;
+  margin-bottom:8px!important;
+}
+.mm-deposit-editor-head h2{
+  margin:0!important;
+  line-height:1.05!important;
+  transform:translateY(-2px)!important;
+}
+
 html[data-theme="dark"] .mm-deposit-date-shell{
   background:#102439!important;
   border-color:#29445d!important;
@@ -89,6 +103,8 @@ html[data-theme="dark"] .mm-deposit-date-shell input[type="date"]{
   .mm-deposit-field-grid{gap:8px!important}
   .mm-deposit-date-shell{height:43px!important;min-height:43px!important}
   .mm-deposit-date-shell input[type="date"]{height:41px!important;min-height:41px!important;font-size:13.5px!important;padding-inline:7px!important}
+  .mm-deposit-editor-head{margin-bottom:7px!important}
+  .mm-deposit-editor-head h2{transform:translateY(-3px)!important}
 }
 
 @media(max-width:360px){
