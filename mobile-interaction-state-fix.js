@@ -80,7 +80,7 @@
     const current=page();
     const keyboardPage=current==='chat'||current==='assistant';
 
-    root.dataset.mmPage=current;
+    if(root.dataset.mmPage!==current)root.dataset.mmPage=current;
     root.classList.toggle('mm-chat-page',current==='chat');
     root.classList.toggle('mm-assistant-page',current==='assistant');
 
