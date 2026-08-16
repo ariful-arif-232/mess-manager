@@ -15,7 +15,6 @@
       {key:'Other',label:'Other',icon:'▦'}
     ];
   const typeMeta=key=>TYPES.find(x=>x.key===key)||{key,label:key,icon:'▦'};
-  const memberById=id=>db.members.find(member=>member.id===id)||null;
   const sum=(rows,getter=row=>row?.amount)=>rows.reduce((total,row)=>total+Number(getter(row)||0),0);
   const purposeOf=row=>typeof window.mmDepositPurposeOf==='function'?window.mmDepositPurposeOf(row):String(row?.purpose||row?.note||'Bazar');
   const initials=name=>String(name||'M').trim().split(/\s+/).slice(0,2).map(part=>part[0]||'').join('').toUpperCase()||'M';
@@ -55,15 +54,15 @@
       });
       categories.forEach(item=>{
         item.balance=item.deposit-item.bill;
-        item.due=Math.max(0,item.bill-item.deposit);
-        item.advance=Math.max(0,item.deposit-item.bill);
+        item.due=Math.max(0,-item.balance);
+        item.advance=Math.max(0,item.balance);
       });
       return{
         row,
         member:row.member,
         categories,
         bazarBalance:Number(row.foodDeposit||0)-Number(row.food||0),
-        totalDue:sum(categories,item=>item.due)
+        totalDue:Math.max(0,-Number(row.balance||0))
       };
     });
     const due=sum(memberBreakdowns,item=>item.totalDue);
@@ -151,9 +150,12 @@
   function openDueMember(data,memberId){
     const item=data.memberBreakdowns.find(row=>row.member.id===memberId);
     if(!item)return;
-    const dueCategories=item.categories.filter(category=>category.due>0.001);
-    const body=dueCategories.length?dueCategories.map(category=>`<div class="mm-dash-detail-row mm-dash-due-category"><span class="mm-dash-type-icon" aria-hidden="true">${category.icon}</span><div><b>${esc(category.label)}</b><small>Bill ${money(category.bill)} · Deposit ${money(category.deposit)}</small></div><strong>${money(category.due)}</strong></div>`).join(''):'<div class="mm-dash-empty">No category due.</div>';
-    const layer=sheet({kind:'due',kicker:'Due breakdown',title:item.member.name,back:true,body:`<div class="mm-dash-list">${body}</div><div class="mm-dash-total-line is-due"><span>Total Due</span><strong>${money(item.totalDue)}</strong></div>`});
+    const activeCategories=item.categories.filter(category=>Math.abs(category.balance)>0.001||category.bill>0||category.deposit>0);
+    const body=activeCategories.length?activeCategories.map(category=>{
+      const due=category.balance<0;
+      return `<div class="mm-dash-detail-row mm-dash-balance-category ${due?'is-due':'is-advance'}"><span class="mm-dash-type-icon" aria-hidden="true">${category.icon}</span><div><b>${esc(category.label)}</b><small>Bill ${money(category.bill)} · Deposit ${money(category.deposit)}</small></div><span class="mm-dash-category-balance"><small>${due?'Due':'Advance'}</small><strong>${money(Math.abs(category.balance))}</strong></span></div>`;
+    }).join(''):'<div class="mm-dash-empty">No category balance.</div>';
+    const layer=sheet({kind:'due',kicker:'Due breakdown',title:item.member.name,back:true,body:`<div class="mm-dash-list">${body}</div><div class="mm-dash-total-line is-due"><span>Net Total Due</span><strong>${money(item.totalDue)}</strong></div>`});
     layer?.querySelector('[data-dash-back]')?.addEventListener('click',()=>openDue(data));
   }
 
