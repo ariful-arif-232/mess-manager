@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v93-bazar-editor-v2';
+const CACHE = 'mess-manager-v94-auth-session-recovery';
 const SHELL = [
   './',
   './index.html',
