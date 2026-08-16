@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v90-interaction-state-fix';
+const CACHE = 'mess-manager-v91-dashboard-insights';
 const SHELL = [
   './',
   './index.html',
