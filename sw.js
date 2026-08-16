@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v97-bazar-voice-stability';
+const CACHE = 'mess-manager-v98-bazar-date-buyer-size';
 const SHELL = [
   './',
   './index.html',
