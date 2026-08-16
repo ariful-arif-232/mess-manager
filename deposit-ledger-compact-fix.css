@@ -1,0 +1,65 @@
+/* Small visual polish requested for the member-first Deposit page. */
+.mm-deposit-overview>div{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+}
+.mm-deposit-overview span{
+  text-align:center!important;
+}
+.mm-deposit-overview strong{
+  text-align:center!important;
+}
+.mm-deposit-member-total small{
+  font-weight:750!important;
+  letter-spacing:.025em!important;
+  color:#9aa6b8!important;
+}
+.mm-deposit-member-total strong{
+  font-weight:800!important;
+}
+
+@media(max-width:600px){
+  .mm-deposit-overview>div{
+    min-height:68px!important;
+    padding:8px 6px!important;
+  }
+  .mm-deposit-overview span{
+    font-size:7px!important;
+    line-height:1.15!important;
+    letter-spacing:.025em!important;
+  }
+  .mm-deposit-overview strong{
+    margin-top:4px!important;
+    font-size:15.5px!important;
+    line-height:1!important;
+    letter-spacing:-.025em!important;
+  }
+  .mm-deposit-member-total small{
+    font-size:7px!important;
+    line-height:1.1!important;
+    letter-spacing:.02em!important;
+  }
+  .mm-deposit-member-total strong{
+    margin-top:3px!important;
+    font-size:17px!important;
+    line-height:1.05!important;
+    letter-spacing:-.025em!important;
+  }
+  .mm-deposit-tap{
+    margin-top:6px!important;
+    font-size:8.5px!important;
+  }
+}
+
+@media(max-width:380px){
+  .mm-deposit-overview strong{font-size:14.5px!important}
+  .mm-deposit-member-total strong{font-size:16px!important}
+  .mm-deposit-member-total small{font-size:6.5px!important}
+}
+
+html[data-theme="dark"] .mm-deposit-member-total small{
+  color:#8fa3b7!important;
+}
