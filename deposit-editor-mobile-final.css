@@ -1,0 +1,97 @@
+/* Final mobile layout lock for the Add/Edit Deposit sheet. */
+.mm-deposit-editor-wrap,
+.mm-deposit-editor-wrap .mm-deposit-editor,
+.mm-deposit-editor-form,
+.mm-deposit-field-grid{
+  max-width:100%!important;
+  overflow-x:hidden!important;
+  box-sizing:border-box!important;
+}
+
+.mm-deposit-field-grid{
+  width:100%!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+.mm-deposit-field-grid>.mm-deposit-field{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+
+.mm-deposit-date-shell{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:43px!important;
+  min-height:43px!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+  border:1px solid #d9e3ef!important;
+  border-radius:13px!important;
+  background:#fff!important;
+  display:flex!important;
+  align-items:center!important;
+}
+.mm-deposit-date-shell input[type="date"]{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  inline-size:100%!important;
+  min-inline-size:0!important;
+  max-inline-size:100%!important;
+  height:41px!important;
+  min-height:41px!important;
+  margin:0!important;
+  padding:7px 9px!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  box-sizing:border-box!important;
+  -webkit-appearance:none!important;
+  appearance:none!important;
+  font-size:14px!important;
+  text-align:center!important;
+  color:#1a3152!important;
+}
+.mm-deposit-date-shell input[type="date"]::-webkit-date-and-time-value{
+  text-align:center!important;
+  min-width:0!important;
+}
+.mm-deposit-date-shell input[type="date"]::-webkit-calendar-picker-indicator{
+  margin:0!important;
+  padding:0!important;
+  opacity:.72!important;
+}
+.mm-deposit-date-shell:focus-within{
+  border-color:#6f9bdd!important;
+  box-shadow:0 0 0 3px rgba(61,116,205,.10)!important;
+}
+
+.mm-deposit-editor-wrap .mm-deposit-close{
+  cursor:pointer!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  z-index:2!important;
+}
+
+html[data-theme="dark"] .mm-deposit-date-shell{
+  background:#102439!important;
+  border-color:#29445d!important;
+}
+html[data-theme="dark"] .mm-deposit-date-shell input[type="date"]{
+  color:#edf5fd!important;
+}
+
+@media(max-width:600px){
+  .mm-deposit-field-grid{gap:8px!important}
+  .mm-deposit-date-shell{height:43px!important;min-height:43px!important}
+  .mm-deposit-date-shell input[type="date"]{height:41px!important;min-height:41px!important;font-size:13.5px!important;padding-inline:7px!important}
+}
+
+@media(max-width:360px){
+  .mm-deposit-field-grid{gap:6px!important}
+  .mm-deposit-date-shell input[type="date"]{font-size:12.5px!important;padding-inline:5px!important}
+}
