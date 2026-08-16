@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v94-auth-session-recovery';
+const CACHE = 'mess-manager-v95-auth-bootstrap-coordinator';
 const SHELL = [
   './',
   './index.html',
