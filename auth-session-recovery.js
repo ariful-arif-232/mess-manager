@@ -22,7 +22,6 @@
   const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
   let activePromise=null;
-  let activeUserId='';
   let signedOutAt=0;
   let authGeneration=0;
   let reconcileTimer=null;
@@ -155,7 +154,7 @@
     app.innerHTML=`<div class="login"><div class="card"><h1>Mess Manager</h1><p class="muted">${esc(message)}</p><div class="actions gap-top"><button class="btn primary" type="button" id="mmAuthRetry">Retry</button><button class="btn" type="button" id="mmAuthSignOut">Sign in again</button></div></div></div>`;
     document.getElementById('mmAuthRetry')?.addEventListener('click',async()=>{
       const current=await storedSession();
-      if(current?.user)return run(current,{force:true});
+      if(current?.user)return run(current);
       return wrappedBootstrap(null);
     });
     document.getElementById('mmAuthSignOut')?.addEventListener('click',async()=>{
@@ -220,18 +219,11 @@
     return wrappedBootstrap(null);
   }
 
-  function run(s,{force=false}={}){
-    const userId=String(s?.user?.id||'');
-    if(activePromise&&!force){
-      if(!userId||!activeUserId||userId===activeUserId)return activePromise;
-    }
+  function run(s){
+    if(activePromise)return activePromise;
     const generation=authGeneration;
-    activeUserId=userId;
     activePromise=(s?.user?resolveAuthenticated(s,generation):resolveNullSession(generation))
-      .finally(()=>{
-        activePromise=null;
-        activeUserId='';
-      });
+      .finally(()=>{activePromise=null;});
     return activePromise;
   }
 
@@ -292,7 +284,7 @@
         if(!sess?.user)throw new Error('Login session তৈরি হয়নি।');
         const claim=await withTimeout(client.rpc('claim_member_by_email'),RPC_TIMEOUT,'Member verification');
         if(claim?.error&&!/already/i.test(String(claim.error.message||'')))throw claim.error;
-        await run(sess,{force:true});
+        await run(sess);
         return;
       }
 
@@ -310,7 +302,7 @@
       const created=await withTimeout(client.rpc('create_admin_workspace',{p_name:setup.name,p_mess_name:setup.messName,p_email:setup.email}),RPC_TIMEOUT,'Workspace creation');
       if(created?.error&&!/already linked/i.test(String(created.error.message||'')))throw created.error;
       sessionStorage.removeItem('mm_admin_setup');
-      await run(sess,{force:true});
+      await run(sess);
     }catch(error){
       console.error('Login completion failed',error);
       notify(error?.message||'Login complete করা যাচ্ছে না।');
