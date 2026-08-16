@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v96-reload-auth-fastpath';
+const CACHE = 'mess-manager-v97-bazar-voice-stability';
 const SHELL = [
   './',
   './index.html',
