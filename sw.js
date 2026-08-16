@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v98-bazar-date-buyer-size';
+const CACHE = 'mess-manager-v99-bazar-meta-shell';
 const SHELL = [
   './',
   './index.html',
