@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v87-auth-bootstrap-race';
+const CACHE = 'mess-manager-v88-auth-network-project-wide';
 const SHELL = [
   './',
   './index.html',
