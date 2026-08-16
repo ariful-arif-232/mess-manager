@@ -38,6 +38,29 @@
       return;
     }
 
+    /* app.js, workspace-switch.js, otp-auth.js and google-auth-final.js all need
+       the initial session. During deferred-script execution those calls used to
+       race one another before the final bootstrap wrappers were installed. Gate
+       and de-duplicate that first lookup until DOMContentLoaded, then let normal
+       getSession calls behave exactly as Supabase intended. */
+    if(!client.auth.__mmGetSessionGatePatched){
+      const rawGetSession=client.auth.getSession.bind(client.auth);
+      let initialSessionPromise=null;
+      client.auth.getSession=()=>{
+        if(initialSessionPromise)return initialSessionPromise;
+        if(document.readyState!=='loading')return rawGetSession();
+        initialSessionPromise=new Promise((resolve,reject)=>{
+          window.addEventListener('DOMContentLoaded',()=>{
+            rawGetSession().then(resolve,reject).finally(()=>{
+              setTimeout(()=>{initialSessionPromise=null},0);
+            });
+          },{once:true});
+        });
+        return initialSessionPromise;
+      };
+      Object.defineProperty(client.auth,'__mmGetSessionGatePatched',{value:true});
+    }
+
     if(!client.auth.__mmLocalSignOutPatched){
       const rawSignOut=client.auth.signOut.bind(client.auth);
       client.auth.signOut=(options)=>rawSignOut(options??{scope:'local'});
