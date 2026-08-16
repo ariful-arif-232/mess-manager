@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v86-auth-login-stability';
+const CACHE = 'mess-manager-v87-auth-bootstrap-race';
 const SHELL = [
   './',
   './index.html',
