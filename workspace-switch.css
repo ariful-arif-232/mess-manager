@@ -1,0 +1,23 @@
+/* Multi-workspace login chooser. Shown only when the signed-in email belongs to 2+ messes. */
+.workspace-choice-card{width:min(430px,100%);padding:22px!important}
+.workspace-choice-head{text-align:center;margin-bottom:18px}
+.workspace-choice-mark{width:56px;height:56px;margin:0 auto 12px;display:grid;place-items:center;border-radius:18px;background:linear-gradient(145deg,#e5efff,#e6faf2);color:#2457d6;font-size:26px;font-weight:900;box-shadow:0 8px 22px rgba(36,87,214,.10)}
+.workspace-choice-head h2{margin:0;font-size:24px;letter-spacing:-.035em;color:#173052}
+.workspace-choice-head p{margin:7px auto 0;max-width:330px;color:#78879b;font-size:12px;line-height:1.5}
+.workspace-choice-list{display:grid;gap:10px}
+.workspace-choice{width:100%;display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:11px;padding:11px 12px;border:1px solid #dde6f1;border-radius:16px;background:#fff;color:#162c4e;text-align:left;box-shadow:0 4px 13px rgba(32,61,112,.04);cursor:pointer}
+.workspace-choice:hover{border-color:#bfcfe3;background:#fbfdff}
+.workspace-choice:active{transform:scale(.992)}
+.workspace-choice:disabled{opacity:.7;cursor:default}
+.workspace-choice-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#edf4ff,#e8faf3);color:#2a68d2;font-weight:900;font-size:17px}
+.workspace-choice-copy{min-width:0}
+.workspace-choice-copy b,.workspace-choice-copy span{display:block}
+.workspace-choice-copy b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.workspace-choice-copy span{margin-top:3px;font-size:10px;color:#7b899c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.workspace-role{padding:6px 8px;border-radius:999px;background:#edf3fb;color:#60718b;font-size:9px;font-weight:850;text-transform:capitalize;white-space:nowrap}
+.workspace-role.admin{background:#e8f1ff;color:#2165c7}
+.workspace-choice-foot{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:15px;color:#8b98aa;font-size:10px}
+.workspace-choice-signout{display:block;margin:13px auto 0;border:0;background:transparent;color:#64758d;font-size:11px;font-weight:750;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.workspace-choice-error{margin:0 0 12px;padding:9px 11px;border-radius:12px;background:#fff1f1;color:#a23d49;font-size:11px;line-height:1.4}
+html[data-theme="dark"] .auth-page .workspace-choice-card{background:#fff!important;color:#17243a!important}
+@media(max-width:520px){.workspace-choice-card{padding:20px 16px!important}.workspace-choice-head h2{font-size:22px}.workspace-choice{grid-template-columns:40px minmax(0,1fr) auto;padding:10px}.workspace-choice-icon{width:40px;height:40px;border-radius:13px}}
