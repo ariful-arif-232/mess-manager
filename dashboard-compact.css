@@ -1,0 +1,127 @@
+/* Six compact dashboard KPI cards: three across, two rows. */
+.mm-dashboard-kpis{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+.mm-dashboard-kpi{
+  min-width:0!important;
+  min-height:108px!important;
+  padding:13px 12px!important;
+  gap:10px!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  border-radius:22px!important;
+  overflow:hidden!important;
+  position:relative!important;
+}
+.mm-dashboard-kpi-copy{min-width:0;align-self:center}
+.mm-dashboard-kpi .label{
+  margin:0 0 3px!important;
+  color:#78869b!important;
+  font-size:11px!important;
+  line-height:1.15!important;
+  font-weight:700!important;
+  white-space:normal!important;
+}
+.mm-dashboard-kpi .value{
+  color:#13213c!important;
+  font-size:22px!important;
+  line-height:1!important;
+  letter-spacing:-.035em!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+}
+.mm-dashboard-kpi-icon{
+  width:38px!important;
+  height:38px!important;
+  flex:0 0 38px!important;
+  border-radius:13px!important;
+  display:grid!important;
+  place-items:center!important;
+  font-size:0!important;
+  line-height:0!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.32),0 7px 16px rgba(25,58,108,.10)!important;
+}
+.mm-dashboard-kpi-icon::after{
+  content:"";
+  width:21px;
+  height:21px;
+  display:block;
+  background:currentColor;
+  -webkit-mask:var(--mm-dashboard-icon) center/contain no-repeat;
+  mask:var(--mm-dashboard-icon) center/contain no-repeat;
+}
+.mm-dashboard-icon-expense{
+  color:#8a57d7!important;
+  background:linear-gradient(145deg,#f5efff,#eaddff)!important;
+  --mm-dashboard-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3h12v18H6z M9 7h6 M9 11h6 M9 15h3 M15 15h1 M8 3V1 M16 3V1' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.mm-dashboard-icon-utility{
+  color:#119377!important;
+  background:linear-gradient(145deg,#e9faf4,#d8f3e9)!important;
+  --mm-dashboard-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3h9l4 4v14H6z M15 3v5h4 M9 12h6 M9 16h3 M14.4 11.5l-2 3h1.7l-.4 3 2.4-4h-1.8l.1-2Z' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.mm-dashboard-icon-deposit{
+  color:#167fc6!important;
+  background:linear-gradient(145deg,#e9f8ff,#d8f0ff)!important;
+  --mm-dashboard-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 7.5h14.5A1.5 1.5 0 0 1 20 9v9.5A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-11Z M4 7.5V6a2 2 0 0 1 2-2h10.5 M15 11.5h5v4h-5a2 2 0 0 1 0-4Z' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.mm-dashboard-icon-bazar{
+  color:#2b70df!important;
+  background:linear-gradient(145deg,#edf4ff,#dce9ff)!important;
+  --mm-dashboard-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 9h16l-1.5 10h-13L4 9Z M8 9l2.2-5 M16 9l-2.2-5 M8 13h8' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.mm-dashboard-icon-fund{
+  color:#128866!important;
+  background:linear-gradient(145deg,#ecfbf5,#d5f3e7)!important;
+  --mm-dashboard-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 8.5h14v10.5H5z M5 8.5 7.5 5h9L19 8.5 M15 12h4v3h-4a1.5 1.5 0 0 1 0-3Z M10 5V3h4v2' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.mm-dashboard-icon-due{
+  color:#dd536c!important;
+  background:linear-gradient(145deg,#fff0f3,#ffe0e7)!important;
+  --mm-dashboard-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='1.8'/%3E%3Cpath d='M12 7.2v5.6 M12 16.8h.01' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+.mm-dashboard-member-head{margin-top:22px!important}
+
+/* app-polish-final may re-apply its premium icon classes to known labels. Keep
+   those icons compact inside this six-card dashboard. */
+.mm-dashboard-kpi .mm-kpi-icon{
+  width:38px!important;
+  height:38px!important;
+  flex-basis:38px!important;
+  border-radius:13px!important;
+}
+.mm-dashboard-kpi .mm-kpi-icon::after{width:21px!important;height:21px!important}
+
+html[data-theme="dark"] .mm-dashboard-kpi .label{color:#95a8bd!important}
+html[data-theme="dark"] .mm-dashboard-kpi .value{color:#f3f7fc!important}
+html[data-theme="dark"] .mm-dashboard-icon-expense{color:#c8a5ff!important;background:linear-gradient(145deg,#402d5b,#2c213f)!important}
+html[data-theme="dark"] .mm-dashboard-icon-utility{color:#6ce0bd!important;background:linear-gradient(145deg,#174e56,#103a41)!important}
+html[data-theme="dark"] .mm-dashboard-icon-deposit{color:#68c9ff!important;background:linear-gradient(145deg,#174777,#103453)!important}
+html[data-theme="dark"] .mm-dashboard-icon-bazar{color:#72a9ff!important;background:linear-gradient(145deg,#173d70,#102d52)!important}
+html[data-theme="dark"] .mm-dashboard-icon-fund{color:#72dfbc!important;background:linear-gradient(145deg,#194b40,#10372f)!important}
+html[data-theme="dark"] .mm-dashboard-icon-due{color:#ff9aab!important;background:linear-gradient(145deg,#583044,#3e2232)!important}
+
+@media(max-width:900px){
+  .mm-dashboard-kpis{gap:9px!important}
+  .mm-dashboard-kpi{min-height:100px!important;padding:11px 9px!important;gap:8px!important;border-radius:19px!important}
+  .mm-dashboard-kpi .label{font-size:10px!important}
+  .mm-dashboard-kpi .value{font-size:19px!important}
+  .mm-dashboard-kpi-icon,.mm-dashboard-kpi .mm-kpi-icon{width:34px!important;height:34px!important;flex-basis:34px!important;border-radius:12px!important}
+  .mm-dashboard-kpi-icon::after,.mm-dashboard-kpi .mm-kpi-icon::after{width:19px!important;height:19px!important}
+}
+@media(max-width:430px){
+  .mm-dashboard-kpis{gap:8px!important}
+  .mm-dashboard-kpi{min-height:96px!important;padding:10px 8px!important;gap:7px!important;flex-direction:column!important;justify-content:center!important}
+  .mm-dashboard-kpi-copy{align-self:stretch}
+  .mm-dashboard-kpi .label{font-size:9.5px!important;min-height:22px!important;display:flex!important;align-items:flex-end!important}
+  .mm-dashboard-kpi .value{font-size:18px!important}
+  .mm-dashboard-kpi-icon,.mm-dashboard-kpi .mm-kpi-icon{width:32px!important;height:32px!important;flex-basis:32px!important;border-radius:11px!important}
+  .mm-dashboard-kpi-icon::after,.mm-dashboard-kpi .mm-kpi-icon::after{width:18px!important;height:18px!important}
+}
+@media(max-width:360px){
+  .mm-dashboard-kpi{padding:9px 7px!important}
+  .mm-dashboard-kpi .label{font-size:9px!important}
+  .mm-dashboard-kpi .value{font-size:16.5px!important}
+}
