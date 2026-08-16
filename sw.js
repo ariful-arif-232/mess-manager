@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v84-deposit-editor-final';
+const CACHE = 'mess-manager-v85-deposit-title-polish';
 const SHELL = [
   './',
   './index.html',
