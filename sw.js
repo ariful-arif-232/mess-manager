@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v91-dashboard-insights';
+const CACHE = 'mess-manager-v92-composer-stability';
 const SHELL = [
   './',
   './index.html',
