@@ -8,43 +8,62 @@
   min-width:0!important;
   max-width:none!important;
 }
-.modal-wrap:has(#bazarForm) .bazar-v2-meta input,
-.modal-wrap:has(#bazarForm) .bazar-v2-meta select{
+.modal-wrap:has(#bazarForm) .bazar-v2-meta-control{
   display:block!important;
   width:100%!important;
   min-width:0!important;
-  max-width:none!important;
+  max-width:100%!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:1px solid #d6e1ef!important;
+  border-radius:13px!important;
+  background:#fff!important;
   box-sizing:border-box!important;
 }
-
-/* iOS paints date inputs with a slightly taller native control unless the
-   outer box and the WebKit date value are normalized explicitly. */
-.modal-wrap:has(#bazarForm) .bazar-v2-meta input[type="date"],
-.modal-wrap:has(#bazarForm) .bazar-v2-meta select[name="buyer_member_id"]{
-  height:43px!important;
-  min-height:43px!important;
-  max-height:43px!important;
+.modal-wrap:has(#bazarForm) .bazar-v2-meta-control:focus-within{
+  border-color:#75a0ea!important;
+  box-shadow:0 0 0 3px rgba(53,112,218,.09)!important;
+}
+.modal-wrap:has(#bazarForm) .bazar-v2-meta-control>input,
+.modal-wrap:has(#bazarForm) .bazar-v2-meta-control>select{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:42px!important;
+  min-height:42px!important;
+  max-height:42px!important;
   margin:0!important;
-  padding-top:0!important;
-  padding-bottom:0!important;
-  line-height:1.2!important;
-  border-width:1px!important;
+  padding:0 11px!important;
+  border:0!important;
+  border-radius:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  color:#173052!important;
+  font-size:16px!important;
+  line-height:42px!important;
   box-sizing:border-box!important;
   vertical-align:top!important;
 }
-.modal-wrap:has(#bazarForm) .bazar-v2-meta input[type="date"]{
+.modal-wrap:has(#bazarForm) .bazar-v2-meta-control>input[type="date"]{
   -webkit-appearance:none!important;
   appearance:none!important;
   overflow:hidden!important;
 }
-.modal-wrap:has(#bazarForm) .bazar-v2-meta input[type="date"]::-webkit-date-and-time-value{
+.modal-wrap:has(#bazarForm) .bazar-v2-meta-control>input[type="date"]::-webkit-date-and-time-value{
   min-height:0!important;
-  height:auto!important;
+  height:42px!important;
   margin:0!important;
   padding:0!important;
+  line-height:42px!important;
   text-align:left!important;
 }
-.modal-wrap:has(#bazarForm) .bazar-v2-meta input[type="date"]::-webkit-datetime-edit{
+.modal-wrap:has(#bazarForm) .bazar-v2-meta-control>input[type="date"]::-webkit-datetime-edit{
   padding:0!important;
 }
 .modal-wrap:has(#bazarForm) .bazar-v2-items-head small{
@@ -52,4 +71,12 @@
 }
 .modal-wrap:has(#bazarForm) .bazar-v2-items-head h3{
   margin-top:0!important;
+}
+html[data-theme="dark"] .modal-wrap:has(#bazarForm) .bazar-v2-meta-control{
+  background:#102438!important;
+  border-color:#29465f!important;
+}
+html[data-theme="dark"] .modal-wrap:has(#bazarForm) .bazar-v2-meta-control>input,
+html[data-theme="dark"] .modal-wrap:has(#bazarForm) .bazar-v2-meta-control>select{
+  color:#edf5fd!important;
 }
