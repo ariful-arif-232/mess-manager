@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v83-deposit-card-typography';
+const CACHE = 'mess-manager-v84-deposit-editor-final';
 const SHELL = [
   './',
   './index.html',
