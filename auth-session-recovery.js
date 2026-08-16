@@ -1,10 +1,4 @@
-/* Final auth coordinator for iOS/PWA.
- *
- * Keep one owner for session restoration. Known workspaces are resolved directly
- * and then handed to the original app bootstrap, avoiding the stacked
- * workspace/OAuth wrapper loop that could leave the UI on "Restoring secure
- * session..." forever. Every recovery stage is bounded and has a usable fallback.
- */
+/* Final auth coordinator: fast reload, one bootstrap owner, no restore-card flash. */
 'use strict';
 (()=>{
   if(window.__mmAuthSessionRecoveryLoaded)return;
@@ -16,15 +10,19 @@
   const GOOGLE_INTENT_KEY='mm_google_auth_intent_v1';
   const WORKSPACE_CHOICE_KEY='mm_workspace_choice_v1';
   const GOOGLE_INTENT_TTL=20*60*1000;
-  const RPC_TIMEOUT=9000;
-  const CORE_TIMEOUT=14000;
+  const SESSION_TIMEOUT=5000;
+  const RPC_TIMEOUT=8000;
+  const CORE_TIMEOUT=12000;
   const WRAPPER_TIMEOUT=12000;
   const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
   let activePromise=null;
+  let queuedSession=undefined;
   let signedOutAt=0;
-  let authGeneration=0;
+  let generation=0;
   let reconcileTimer=null;
+  let lastOpenedUser='';
+  let lastOpenedAt=0;
 
   function withTimeout(work,ms,label){
     let timer;
@@ -36,7 +34,7 @@
 
   async function storedSession(){
     try{
-      const result=await withTimeout(client.auth.getSession(),5000,'Session check');
+      const result=await withTimeout(client.auth.getSession(),SESSION_TIMEOUT,'Session check');
       return result?.data?.session||null;
     }catch(error){
       console.warn('Session check failed',error);
@@ -49,16 +47,8 @@
     try{return !!(session?.user?.id===s.user.id&&profile);}
     catch(_){return true;}
   }
-
-  function chooserIsOpen(){return !!document.querySelector('.workspace-choice-card');}
-  function authUiIsOpen(){return !!document.querySelector('.auth-page,.login');}
-
-  function showRestoring(){
-    if(document.querySelector('.layout')||chooserIsOpen())return;
-    const app=document.getElementById('app');
-    if(!app)return;
-    app.innerHTML='<div class="login"><div class="card"><h1>Mess Manager</h1><p class="muted">Restoring secure session…</p></div></div>';
-  }
+  const chooserIsOpen=()=>!!document.querySelector('.workspace-choice-card');
+  const authUiIsOpen=()=>!!document.querySelector('.auth-page,.login');
 
   function readGoogleIntent(){
     try{
@@ -85,64 +75,76 @@
     }catch(_){ }
   }
 
-  function rememberedWorkspace(userId,spaces){
+  function readWorkspaceChoice(userId){
     try{
       const value=JSON.parse(localStorage.getItem(WORKSPACE_CHOICE_KEY)||'null');
       if(value?.userId!==userId||!value?.memberId)return null;
-      return spaces.find(space=>String(space.member_id)===String(value.memberId))||null;
+      return value;
     }catch(_){return null;}
   }
-
-  async function selectWorkspace(space){
-    if(!space?.member_id)throw new Error('Workspace membership is unavailable.');
-    if(space.selected)return;
-    const selected=await withTimeout(
-      client.rpc('select_workspace',{p_member_id:space.member_id}),
-      RPC_TIMEOUT,
-      'Workspace selection'
-    );
-    if(selected?.error)throw selected.error;
+  function saveWorkspaceChoice(userId,memberId){
+    try{localStorage.setItem(WORKSPACE_CHOICE_KEY,JSON.stringify({userId,memberId,at:Date.now()}));}catch(_){ }
   }
 
-  async function openCore(s,{retry=true}={}){
+  async function selectMember(memberId){
+    if(!memberId)throw new Error('Workspace membership is unavailable.');
+    const result=await withTimeout(client.rpc('select_workspace',{p_member_id:memberId}),RPC_TIMEOUT,'Workspace selection');
+    if(result?.error)throw result.error;
+  }
+
+  async function openCore(s,{retry=false}={}){
     await withTimeout(coreBootstrap(s),CORE_TIMEOUT,'App data');
-    if(appIsOpen(s))return true;
+    if(appIsOpen(s)){
+      lastOpenedUser=s.user.id;
+      lastOpenedAt=Date.now();
+      return true;
+    }
     if(!retry)return false;
-    await sleep(260);
+    await sleep(220);
     await withTimeout(coreBootstrap(s),CORE_TIMEOUT,'App data retry');
-    return appIsOpen(s);
+    if(appIsOpen(s)){
+      lastOpenedUser=s.user.id;
+      lastOpenedAt=Date.now();
+      return true;
+    }
+    return false;
   }
 
-  async function directWorkspaceOpen(s){
+  async function tryRememberedWorkspace(s){
+    const choice=readWorkspaceChoice(s.user.id);
+    if(!choice?.memberId)return false;
+    try{
+      await selectMember(choice.memberId);
+      finishExistingGoogleIntent();
+      return await openCore(s,{retry:true});
+    }catch(error){
+      console.warn('Remembered workspace fast path failed',error);
+      return false;
+    }
+  }
+
+  async function resolveWorkspace(s){
     const result=await withTimeout(client.rpc('list_my_workspaces'),RPC_TIMEOUT,'Workspace list');
     if(result?.error)throw result.error;
     const spaces=Array.isArray(result?.data)?result.data:[];
-
     if(!spaces.length)return{opened:false,empty:true};
 
-    /* A returned membership means Google/OTP identity resolution is already done.
-       Clear a completed OAuth intent so a later refresh cannot re-run onboarding. */
     finishExistingGoogleIntent();
+    const localChoice=readWorkspaceChoice(s.user.id);
+    const target=spaces.find(space=>space.selected)
+      ||(localChoice&&spaces.find(space=>String(space.member_id)===String(localChoice.memberId)))
+      ||(spaces.length===1?spaces[0]:null);
 
-    if(spaces.length===1){
-      await selectWorkspace(spaces[0]);
-      return{opened:await openCore(s),empty:false};
+    if(target){
+      if(!target.selected)await selectMember(target.member_id);
+      saveWorkspaceChoice(s.user.id,target.member_id);
+      return{opened:await openCore(s,{retry:true}),empty:false};
     }
 
-    const selected=spaces.find(space=>space.selected);
-    const remembered=selected||rememberedWorkspace(s.user.id,spaces);
-    if(remembered){
-      await selectWorkspace(remembered);
-      return{opened:await openCore(s),empty:false};
-    }
-
-    /* Preserve the existing multi-workspace chooser UI. It has its own secure
-       select_workspace call and opens the core app after the user chooses. */
     if(typeof window.openWorkspaceChooser==='function'){
       await withTimeout(window.openWorkspaceChooser(),RPC_TIMEOUT,'Workspace chooser');
       if(chooserIsOpen())return{opened:true,chooser:true,empty:false};
     }
-
     return{opened:false,multi:true,empty:false};
   }
 
@@ -163,67 +165,76 @@
     });
   }
 
-  async function resolveAuthenticated(s,generation){
+  async function resolveAuthenticated(s,runGeneration){
     if(!s?.user)return;
 
-    /* Realtime refreshes and token callbacks still need fresh app data, but never
-       need to travel through the whole OAuth/workspace wrapper stack again. */
+    if(appIsOpen(s)&&lastOpenedUser===s.user.id&&Date.now()-lastOpenedAt<900)return;
+
     if(appIsOpen(s)){
-      try{await openCore(s,{retry:false});}
+      try{await openCore(s);}
       catch(error){console.warn('Background app refresh failed',error);}
       return;
     }
 
-    showRestoring();
     try{
-      let direct=await directWorkspaceOpen(s);
-      if(generation!==authGeneration)return;
-      if(direct.opened)return;
+      if(await openCore(s))return;
+    }catch(error){
+      console.warn('Direct reload bootstrap did not open the app',error);
+    }
+    if(runGeneration!==generation)return;
 
-      /* A genuine new Google admin can have a valid auth session before its first
-         workspace exists. Only that zero-workspace case needs the older onboarding
-         wrappers; ordinary logins stay on the direct deterministic path above. */
+    if(await tryRememberedWorkspace(s))return;
+    if(runGeneration!==generation)return;
+
+    try{
+      let workspace=await resolveWorkspace(s);
+      if(runGeneration!==generation)return;
+      if(workspace.opened)return;
+
       const intent=readGoogleIntent();
-      if(direct.empty&&intent){
+      if(workspace.empty&&intent){
         await withTimeout(wrappedBootstrap(s),WRAPPER_TIMEOUT,'Google account setup');
-        if(generation!==authGeneration)return;
+        if(runGeneration!==generation)return;
         if(appIsOpen(s)||chooserIsOpen())return;
 
         const current=await storedSession();
         if(current?.user&&current.user.id===s.user.id){
-          direct=await directWorkspaceOpen(current);
-          if(direct.opened)return;
+          workspace=await resolveWorkspace(current);
+          if(workspace.opened)return;
         }
       }
 
-      if(direct.empty)throw new Error('No active Mess workspace is linked to this account.');
-      if(direct.multi)throw new Error('Workspace chooser could not be opened.');
+      if(workspace.empty)throw new Error('No active Mess workspace is linked to this account.');
+      if(workspace.multi)throw new Error('Workspace chooser could not be opened.');
       throw new Error('Workspace data could not be opened.');
     }catch(error){
-      if(generation!==authGeneration)return;
+      if(runGeneration!==generation)return;
       console.error('Auth bootstrap failed',error);
       renderRecoveryError(error);
     }
   }
 
-  async function resolveNullSession(generation){
-    /* Explicit logout is authoritative. For other null callbacks, confirm local
-       storage once because iOS can emit a stale null event during OAuth restore. */
-    if(Date.now()-signedOutAt<=1400){
-      return wrappedBootstrap(null);
-    }
+  async function resolveNullSession(runGeneration){
+    if(Date.now()-signedOutAt<=1400)return wrappedBootstrap(null);
     await sleep(100);
-    if(generation!==authGeneration)return;
+    if(runGeneration!==generation)return;
     const current=await storedSession();
-    if(current?.user)return resolveAuthenticated(current,generation);
+    if(current?.user)return resolveAuthenticated(current,runGeneration);
     return wrappedBootstrap(null);
   }
 
   function run(s){
+    queuedSession=s;
     if(activePromise)return activePromise;
-    const generation=authGeneration;
-    activePromise=(s?.user?resolveAuthenticated(s,generation):resolveNullSession(generation))
-      .finally(()=>{activePromise=null;});
+    activePromise=(async()=>{
+      while(queuedSession!==undefined){
+        const next=queuedSession;
+        queuedSession=undefined;
+        const runGeneration=generation;
+        if(next?.user)await resolveAuthenticated(next,runGeneration);
+        else await resolveNullSession(runGeneration);
+      }
+    })().finally(()=>{activePromise=null;});
     return activePromise;
   }
 
@@ -232,13 +243,14 @@
   client.auth.onAuthStateChange((event,s)=>{
     if(event==='SIGNED_OUT'){
       signedOutAt=Date.now();
-      authGeneration+=1;
+      generation+=1;
+      queuedSession=null;
       return;
     }
     if(s?.user&&event==='SIGNED_IN')signedOutAt=0;
   });
 
-  function scheduleReconcile(delay=100){
+  function scheduleReconcile(delay=120){
     clearTimeout(reconcileTimer);
     reconcileTimer=setTimeout(async()=>{
       if(document.querySelector('.layout')||chooserIsOpen()||activePromise)return;
@@ -249,15 +261,10 @@
     },delay);
   }
 
-  /* Only repair a visible auth/loading screen when the iOS process returns. Do
-     not reload a healthy dashboard on every focus/visibility event. */
-  window.addEventListener('pageshow',()=>scheduleReconcile(80));
-  window.addEventListener('focus',()=>{if(authUiIsOpen())scheduleReconcile(120);});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&authUiIsOpen())scheduleReconcile(120);});
+  window.addEventListener('pageshow',()=>scheduleReconcile(100));
+  window.addEventListener('focus',()=>{if(authUiIsOpen())scheduleReconcile(160);});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&authUiIsOpen())scheduleReconcile(160);});
 
-  /* Finish OTP login in-place. The previous implementation reloaded immediately
-     after verifyOtp(), which could beat IndexedDB/localStorage session persistence
-     on iOS and reopen the sign-in screen. */
   document.addEventListener('click',async event=>{
     const memberButton=event.target.closest?.('#verifyOtp');
     const adminButton=event.target.closest?.('#verifyAdmin');
@@ -314,13 +321,10 @@
     }
   },true);
 
-  /* Wait until all deferred enhancement scripts are installed before the first
-     reconciliation. This prevents the auth coordinator itself from racing later
-     UI/bootstrap overrides. */
   const initialReconcile=()=>setTimeout(async()=>{
     const current=await storedSession();
     if(current?.user)run(current);
-  },80);
+  },60);
   if(document.readyState==='complete')initialReconcile();
   else window.addEventListener('DOMContentLoaded',initialReconcile,{once:true});
 })();

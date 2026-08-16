@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v95-auth-bootstrap-coordinator';
+const CACHE = 'mess-manager-v96-reload-auth-fastpath';
 const SHELL = [
   './',
   './index.html',
