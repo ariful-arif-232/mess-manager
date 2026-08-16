@@ -1,0 +1,50 @@
+/* Final dark-mode and ordering polish for the v2 Bazar editor. */
+@media(max-width:760px){
+  html[data-theme="dark"] .modal-wrap:has(#bazarForm){
+    align-items:flex-end!important;
+    background:rgba(2,10,18,.58)!important;
+    backdrop-filter:blur(10px)!important;
+    -webkit-backdrop-filter:blur(10px)!important;
+  }
+  html[data-theme="dark"] .modal-wrap:has(#bazarForm) .modal{
+    height:auto!important;
+    min-height:0!important;
+    max-height:92dvh!important;
+    background:#0d1d2d!important;
+    border-radius:28px 28px 0 0!important;
+    overflow-y:auto!important;
+  }
+}
+
+/* Keep the native date input tappable, but render one stable one-line label.
+   This avoids iOS/Android native date text wrapping in the compact half-width box. */
+.modal-wrap:has(#bazarForm) .bazar-v2-date-control{
+  position:relative!important;
+}
+.modal-wrap:has(#bazarForm) .bazar-v2-date-control>input[type="date"]{
+  position:absolute!important;
+  inset:0!important;
+  z-index:2!important;
+  width:100%!important;
+  height:100%!important;
+  opacity:0!important;
+  cursor:pointer!important;
+}
+.modal-wrap:has(#bazarForm) .bazar-v2-date-display{
+  position:absolute!important;
+  inset:0!important;
+  z-index:1!important;
+  display:flex!important;
+  align-items:center!important;
+  padding:0 11px!important;
+  overflow:hidden!important;
+  white-space:nowrap!important;
+  text-overflow:ellipsis!important;
+  color:#173052!important;
+  font-size:16px!important;
+  line-height:1!important;
+  pointer-events:none!important;
+}
+html[data-theme="dark"] .modal-wrap:has(#bazarForm) .bazar-v2-date-display{
+  color:#edf5fd!important;
+}
