@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v89-finance-allocation';
+const CACHE = 'mess-manager-v90-interaction-state-fix';
 const SHELL = [
   './',
   './index.html',
