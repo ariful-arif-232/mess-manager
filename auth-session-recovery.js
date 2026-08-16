@@ -16,12 +16,8 @@
   let recoveryPromise=null;
   let queuedSession=undefined;
   let lastGoodSession=null;
+  let reconcileTimer=null;
 
-  function sessionKey(s){
-    const token=String(s?.access_token||'');
-    const user=String(s?.user?.id||'');
-    return `${user}:${token.slice(-18)}`;
-  }
   async function storedSession(){
     try{return (await client.auth.getSession()).data?.session||null}
     catch(error){console.warn('Session re-check failed',error);return null}
@@ -68,6 +64,16 @@
         queuedSession=undefined;
 
         if(next?.user){
+          lastGoodSession=next;
+          /* Token refreshes and repeated SIGNED_IN callbacks are normal. Do not
+             replace an already-open dashboard with a loading screen. Only fall
+             back to full recovery if the normal bootstrap loses the profile. */
+          if(hasOpenedApp(next)){
+            try{
+              await baseBootstrap(next);
+              if(hasOpenedApp(next))continue;
+            }catch(error){console.warn('Existing session refresh failed; recovering.',error);}
+          }
           showRestoring();
           await openValidSession(next);
           continue;
@@ -103,6 +109,24 @@
     }
     if(s?.user)lastGoodSession=s;
   });
+
+  function scheduleReconcile(delay=80){
+    clearTimeout(reconcileTimer);
+    reconcileTimer=setTimeout(async()=>{
+      if(Date.now()-signedOutAt<=1200)return;
+      const current=await storedSession();
+      if(!current?.user)return;
+      lastGoodSession=current;
+      const authScreen=!!document.querySelector('.auth-page,.login');
+      if(authScreen||!hasOpenedApp(current))window.bootstrap(current);
+    },delay);
+  }
+
+  /* OAuth often leaves and re-enters the iOS PWA/Safari process. Re-check the
+     persisted session whenever that process becomes visible again. */
+  window.addEventListener('pageshow',()=>scheduleReconcile(60));
+  window.addEventListener('focus',()=>scheduleReconcile(90));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleReconcile(90)});
 
   /* OTP login used to hard-reload immediately after verifyOtp. On iOS that can
      race Supabase's persisted session and return to the login form even though the
