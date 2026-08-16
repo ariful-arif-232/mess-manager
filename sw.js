@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v100-bazar-dark-order';
+const CACHE = 'mess-manager-v101-bazar-dark-title';
 const SHELL = [
   './',
   './index.html',
