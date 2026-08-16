@@ -1,0 +1,78 @@
+/* Targeted iPhone/mobile fit corrections for Add/Edit Deposit. */
+.mm-deposit-editor-wrap{
+  overflow-x:hidden!important;
+}
+.mm-deposit-editor-wrap .mm-deposit-editor{
+  box-sizing:border-box!important;
+  max-width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  overflow-x:hidden!important;
+}
+.mm-deposit-editor-head{margin-bottom:10px!important}
+.mm-deposit-editor-head p{display:none!important}
+.mm-deposit-editor-form,
+.mm-deposit-field-grid,
+.mm-deposit-field{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+.mm-deposit-field-grid>*{min-width:0!important}
+.mm-deposit-field input,
+.mm-deposit-field select{
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+.mm-deposit-field input[type="date"]{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  font-size:15px!important;
+  padding-inline:10px!important;
+}
+.mm-deposit-editor-actions{margin-bottom:0!important}
+
+@media(max-width:600px){
+  .mm-deposit-editor-wrap{
+    align-items:flex-end!important;
+    padding:0!important;
+  }
+  .mm-deposit-editor-wrap .mm-deposit-editor{
+    width:100%!important;
+    max-width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:calc(100dvh - 86px)!important;
+    overflow-y:auto!important;
+    padding:14px 13px calc(14px + env(safe-area-inset-bottom))!important;
+    border-radius:26px 26px 0 0!important;
+  }
+  .mm-deposit-editor-head{margin-bottom:9px!important}
+  .mm-deposit-editor-head h2{margin-bottom:0!important}
+  .mm-deposit-field-grid{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    gap:7px!important;
+  }
+  .mm-deposit-field input,
+  .mm-deposit-field select{
+    height:43px!important;
+    min-height:43px!important;
+    padding:7px 9px!important;
+    font-size:15px!important;
+    border-radius:13px!important;
+  }
+  .mm-deposit-field input[type="date"]{
+    font-size:14px!important;
+    padding-inline:8px!important;
+  }
+  .mm-deposit-editor-form{gap:10px!important}
+  .mm-deposit-amount-input,
+  .mm-deposit-amount-input input{height:51px!important;min-height:51px!important}
+  .mm-deposit-note-picker{min-height:52px!important}
+  .mm-deposit-editor-actions button{min-height:45px!important}
+}
+
+@media(max-width:360px){
+  .mm-deposit-field-grid{gap:6px!important}
+  .mm-deposit-field input,
+  .mm-deposit-field select{font-size:14px!important;padding-inline:7px!important}
+  .mm-deposit-field input[type="date"]{font-size:13px!important;padding-inline:6px!important}
+}
