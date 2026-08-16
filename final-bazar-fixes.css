@@ -11,3 +11,19 @@
 @media(max-width:600px){.modal-wrap{align-items:stretch!important;padding:0!important}.modal{width:100%!important;height:100dvh!important;max-height:100dvh!important;border-radius:0!important;padding:16px 14px calc(16px + env(safe-area-inset-bottom))!important;overflow-y:auto!important;overscroll-behavior:contain}.final-bazar-modal-title{top:-16px;margin:-16px -14px 12px;padding:calc(13px + env(safe-area-inset-top)) 14px 10px;border-radius:0}.final-bazar-meta{grid-template-columns:1fr!important;gap:10px!important;padding:12px!important}.final-bazar-meta .note-field{grid-column:auto!important}.final-bazar-meta .meta-field{padding:0!important}.final-bazar-meta .field input,.final-bazar-meta .field select{min-height:46px;padding:8px 10px!important}.final-bazar-footer{position:sticky!important;bottom:calc(-16px - env(safe-area-inset-bottom));margin-left:-14px;margin-right:-14px;margin-bottom:calc(-16px - env(safe-area-inset-bottom));padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(248,250,255,.98);backdrop-filter:blur(12px);box-shadow:0 -7px 20px rgba(31,57,101,.07)}.final-bazar-footer .btn{min-height:45px;padding:10px 17px}.fresh-choice-grid{grid-template-columns:repeat(2,1fr)}.choice-chip{padding:10px 7px}.section-head{margin-top:13px}.section-head h2{font-size:18px!important}.bazar-form-item{padding:12px;border-radius:16px}.bazar-form-item-head b{font-size:16px}.clean-select{min-height:43px}.final-items-title>b{font-size:17px}}
 @media(max-width:430px){.bazar-money-grid.three{grid-template-columns:minmax(0,1fr) 60px minmax(0,1fr);gap:7px}.unit-box{font-size:12px}.fresh-detail-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:360px){.bazar-money-grid.three{grid-template-columns:1fr 58px 1fr}}
+
+/* Mobile Add Bazar final sizing.
+ * The generic mobile modal layer makes numeric inputs taller than Unit and adds
+ * the iOS top safe-area a second time. Keep this correction scoped to Bazar only. */
+@media(max-width:760px){
+  .modal-wrap:has(#bazarForm){align-items:flex-end!important;padding:0!important}
+  .modal-wrap:has(#bazarForm) .modal{width:100%!important;height:auto!important;max-height:92dvh!important;padding:14px 14px calc(16px + env(safe-area-inset-bottom))!important;border-radius:28px 28px 0 0!important;overflow-y:auto!important;overscroll-behavior:contain}
+  .modal-wrap:has(#bazarForm) .final-bazar-modal-title{position:sticky!important;top:0!important;z-index:20!important;margin:-14px -14px 10px!important;padding:12px 14px 10px!important;min-height:62px!important;border-radius:28px 28px 0 0!important;align-items:center!important}
+  .modal-wrap:has(#bazarForm) .final-bazar-modal-title h2{margin:0!important;line-height:1.12!important}
+  .modal-wrap:has(#bazarForm) .bazar-money-grid.three{align-items:end!important}
+  .modal-wrap:has(#bazarForm) .bazar-money-grid.three .field{min-width:0!important;margin:0!important}
+  .modal-wrap:has(#bazarForm) .bazar-money-grid.three .field>input,
+  .modal-wrap:has(#bazarForm) .bazar-money-grid.three .unit-box{width:100%!important;height:44px!important;min-height:44px!important;max-height:44px!important;padding-top:7px!important;padding-bottom:7px!important;border-radius:12px!important;box-sizing:border-box!important}
+  .modal-wrap:has(#bazarForm) .bazar-money-grid.three .unit-box{padding-left:7px!important;padding-right:7px!important}
+}
+@media(max-width:430px){.modal-wrap:has(#bazarForm) .final-bazar-modal-title{min-height:58px!important;padding-top:10px!important;padding-bottom:8px!important}}
