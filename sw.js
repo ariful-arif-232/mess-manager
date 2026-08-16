@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v92-composer-stability';
+const CACHE = 'mess-manager-v93-bazar-editor-v2';
 const SHELL = [
   './',
   './index.html',
