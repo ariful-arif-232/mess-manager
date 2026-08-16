@@ -1,0 +1,70 @@
+/* Final mobile-only Add Bazar polish.
+ * Keep this after the older modal layers so the Bazar editor is not affected by
+ * generic modal sizing or iPhone top safe-area padding intended for full-screen pages.
+ */
+@media (max-width:760px){
+  .modal-wrap:has(#bazarForm){
+    align-items:flex-end!important;
+    padding:0!important;
+  }
+
+  .modal-wrap:has(#bazarForm) .modal{
+    width:100%!important;
+    height:auto!important;
+    max-height:92dvh!important;
+    padding:14px 14px calc(16px + env(safe-area-inset-bottom))!important;
+    border-radius:28px 28px 0 0!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+  }
+
+  /* This dialog already starts below the status/notch area, so adding the iOS
+     top safe-area again created the large blank band above "Add Bazar". */
+  .modal-wrap:has(#bazarForm) .final-bazar-modal-title{
+    position:sticky!important;
+    top:0!important;
+    z-index:20!important;
+    margin:-14px -14px 10px!important;
+    padding:12px 14px 10px!important;
+    min-height:62px!important;
+    border-radius:28px 28px 0 0!important;
+    align-items:center!important;
+  }
+  .modal-wrap:has(#bazarForm) .final-bazar-modal-title h2{
+    margin:0!important;
+    line-height:1.12!important;
+  }
+
+  /* Generic mobile modal rules make number inputs 54px high, while Unit remains
+     44px. Keep Quantity, Unit and Total price visually equal. */
+  .modal-wrap:has(#bazarForm) .bazar-money-grid.three{
+    align-items:end!important;
+  }
+  .modal-wrap:has(#bazarForm) .bazar-money-grid.three .field{
+    min-width:0!important;
+    margin:0!important;
+  }
+  .modal-wrap:has(#bazarForm) .bazar-money-grid.three .field>input,
+  .modal-wrap:has(#bazarForm) .bazar-money-grid.three .unit-box{
+    width:100%!important;
+    height:44px!important;
+    min-height:44px!important;
+    max-height:44px!important;
+    padding-top:7px!important;
+    padding-bottom:7px!important;
+    border-radius:12px!important;
+    box-sizing:border-box!important;
+  }
+  .modal-wrap:has(#bazarForm) .bazar-money-grid.three .unit-box{
+    padding-left:7px!important;
+    padding-right:7px!important;
+  }
+}
+
+@media (max-width:430px){
+  .modal-wrap:has(#bazarForm) .final-bazar-modal-title{
+    min-height:58px!important;
+    padding-top:10px!important;
+    padding-bottom:8px!important;
+  }
+}
