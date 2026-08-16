@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v77-google-auth-final';
+const CACHE = 'mess-manager-v78-multi-workspace';
 const SHELL = [
   './',
   './index.html',
