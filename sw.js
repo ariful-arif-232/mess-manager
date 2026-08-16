@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v81-member-deposit-ledger';
+const CACHE = 'mess-manager-v82-deposit-editor-fit';
 const SHELL = [
   './',
   './index.html',
