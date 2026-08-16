@@ -1,6 +1,7 @@
 /* Final narrowly-scoped Add/Edit Bazar UI corrections. */
 .modal-wrap:has(#bazarForm) .bazar-v2-meta{
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  align-items:start!important;
 }
 .modal-wrap:has(#bazarForm) .bazar-v2-meta>.bazar-v2-field{
   width:100%!important;
@@ -14,6 +15,37 @@
   min-width:0!important;
   max-width:none!important;
   box-sizing:border-box!important;
+}
+
+/* iOS paints date inputs with a slightly taller native control unless the
+   outer box and the WebKit date value are normalized explicitly. */
+.modal-wrap:has(#bazarForm) .bazar-v2-meta input[type="date"],
+.modal-wrap:has(#bazarForm) .bazar-v2-meta select[name="buyer_member_id"]{
+  height:43px!important;
+  min-height:43px!important;
+  max-height:43px!important;
+  margin:0!important;
+  padding-top:0!important;
+  padding-bottom:0!important;
+  line-height:1.2!important;
+  border-width:1px!important;
+  box-sizing:border-box!important;
+  vertical-align:top!important;
+}
+.modal-wrap:has(#bazarForm) .bazar-v2-meta input[type="date"]{
+  -webkit-appearance:none!important;
+  appearance:none!important;
+  overflow:hidden!important;
+}
+.modal-wrap:has(#bazarForm) .bazar-v2-meta input[type="date"]::-webkit-date-and-time-value{
+  min-height:0!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+  text-align:left!important;
+}
+.modal-wrap:has(#bazarForm) .bazar-v2-meta input[type="date"]::-webkit-datetime-edit{
+  padding:0!important;
 }
 .modal-wrap:has(#bazarForm) .bazar-v2-items-head small{
   display:none!important;
