@@ -71,27 +71,66 @@ html[data-theme="dark"] .member-state-note ul{color:#c5b49e!important}
 .member-admin-primary-row>.member-self-badge{display:inline-flex!important;align-items:center!important;justify-content:center!important;grid-column:auto!important;gap:4px!important;min-width:0!important;max-width:100%!important;padding:0 5px!important;font-size:8.25px!important;font-weight:800!important;letter-spacing:-.01em!important;white-space:nowrap!important;overflow:hidden!important}
 .member-admin-primary-row>.member-self-badge::before{width:14px!important;height:14px!important;flex:0 0 14px!important;border-radius:5px!important;font-size:8px!important}
 
+/* Self-admin row needs more room for the status label than the Edit button. */
+.member-admin-primary-row:has(.member-self-badge){grid-template-columns:minmax(50px,.72fr) minmax(88px,1.28fr)!important}
+.member-admin-primary-row:has(.member-self-badge)>.member-self-badge{font-size:8.6px!important;overflow:visible!important;text-overflow:clip!important}
+
+/* Member profile and Deactivate confirmation follow the same bottom-sheet pattern
+   as utility detail sheets: anchored to the phone bottom, content-height only. */
 @media(max-width:760px){
-  .modal-wrap:has(.member-state-confirm),.modal-wrap:has(.profile-popup){align-items:flex-start!important;justify-content:center!important;padding:clamp(96px,12vh,180px) 0 14px!important}
-  .modal:has(.member-state-confirm),.modal:has(.profile-popup){width:100%!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:calc(100dvh - clamp(96px,12vh,180px) - 14px)!important;overflow:auto!important;padding:22px 20px calc(20px + env(safe-area-inset-bottom))!important;border-radius:28px!important}
-  .modal:has(.member-state-confirm) .member-state-confirm{margin-top:12px!important}
+  .modal-wrap:has(.member-state-confirm),
+  .modal-wrap:has(.profile-popup){
+    align-items:flex-end!important;
+    justify-content:center!important;
+    padding:0!important;
+  }
+  .modal:has(.member-state-confirm),
+  .modal:has(.profile-popup){
+    position:relative!important;
+    width:100%!important;
+    max-width:none!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:88dvh!important;
+    margin:0!important;
+    overflow:auto!important;
+    padding:30px 20px calc(18px + env(safe-area-inset-bottom))!important;
+    border-radius:28px 28px 0 0!important;
+  }
+  .modal:has(.member-state-confirm)::before,
+  .modal:has(.profile-popup)::before{
+    content:"";
+    position:absolute!important;
+    top:9px!important;
+    left:50%!important;
+    width:74px!important;
+    height:5px!important;
+    transform:translateX(-50%)!important;
+    border-radius:999px!important;
+    background:#d9e2ee!important;
+  }
+  .modal:has(.member-state-confirm) .member-state-confirm{margin-top:10px!important}
   .modal:has(.member-state-confirm) .member-state-person{padding:11px 12px!important}
   .modal:has(.member-state-confirm) .member-state-note{margin-top:10px!important;padding:12px!important}
   .modal:has(.member-state-confirm) .member-state-actions{margin-top:12px!important}
   .modal:has(.member-state-confirm) .member-state-actions .btn{min-height:44px!important;height:44px!important}
-  .modal:has(.profile-popup) .profile-popup{margin-top:12px!important;gap:14px!important;align-items:start!important}
+  .modal:has(.profile-popup) .profile-popup{margin-top:10px!important;gap:14px!important;align-items:start!important}
   .modal:has(.profile-popup) .profile-info{gap:8px!important}
   .modal:has(.profile-popup) .profile-info>div{padding:9px 11px!important}
+  html[data-theme="dark"] .modal:has(.member-state-confirm)::before,
+  html[data-theme="dark"] .modal:has(.profile-popup)::before{background:#465c70!important}
 }
 @media(max-width:520px){
-  .member-admin-actions.member-admin-actions-cutoff{min-width:142px!important;flex-basis:142px!important;gap:5px!important}
+  .member-admin-actions.member-admin-actions-cutoff{min-width:148px!important;flex-basis:148px!important;gap:5px!important}
   .member-admin-primary-row{gap:5px!important}
   .member-admin-primary-row>.btn,.member-admin-primary-row>.member-self-badge,.member-state-toggle{min-height:35px!important;height:35px!important;border-radius:11px!important;font-size:10px!important}
-  .member-admin-primary-row>.member-self-badge{font-size:8px!important;padding:0 4px!important;gap:3px!important}
+  .member-admin-primary-row:has(.member-self-badge){grid-template-columns:minmax(50px,.68fr) minmax(91px,1.32fr)!important}
+  .member-admin-primary-row>.member-self-badge{font-size:8.2px!important;padding:0 4px!important;gap:3px!important}
   .member-admin-primary-row>.member-self-badge::before{width:13px!important;height:13px!important;flex-basis:13px!important}
 }
 @media(max-width:390px){
-  .member-admin-actions.member-admin-actions-cutoff{min-width:134px!important;flex-basis:134px!important}
-  .member-admin-primary-row>.btn,.member-admin-primary-row>.member-self-badge,.member-state-toggle{font-size:9.5px!important}
-  .member-admin-primary-row>.member-self-badge{font-size:7.6px!important}
+  .member-admin-actions.member-admin-actions-cutoff{min-width:142px!important;flex-basis:142px!important}
+  .member-admin-primary-row>.btn,.member-state-toggle{font-size:9.5px!important}
+  .member-admin-primary-row:has(.member-self-badge){grid-template-columns:48px minmax(88px,1fr)!important}
+  .member-admin-primary-row>.member-self-badge{font-size:7.9px!important}
 }
