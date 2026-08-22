@@ -1,11 +1,13 @@
-const CACHE = 'mess-manager-v102-premium-splash';
+const CACHE = 'mess-manager-v103-chat-push-v2';
 const SHELL = [
   './',
   './index.html',
   './manifest.json?v=20260814-borderless2',
   './icons/icon.png?v=20260814-borderless2',
   './icons/icon-192.png?v=20260814-borderless2',
-  './icons/icon-512.png?v=20260814-borderless2'
+  './icons/icon-512.png?v=20260814-borderless2',
+  './chat-notifications.js?v=20260822-push2',
+  './chat-notification-heal.js?v=20260822-push2'
 ];
 
 self.addEventListener('install', event => {
@@ -30,20 +32,29 @@ self.addEventListener('push', event => {
 
   const sender = String(payload.sender_name || '').trim();
   const message = String(payload.body || '').trim();
-  const title = sender ? `${sender} sent a message` : 'New Mess Chat message';
+  const title = sender || 'Mess Manager';
   const createdAt = Date.parse(payload.created_at || '');
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      const active = list.some(client => client.url.startsWith(self.registration.scope) && client.visibilityState === 'visible' && client.focused);
+      const active = list.some(client => (
+        client.url.startsWith(self.registration.scope) &&
+        client.visibilityState === 'visible' &&
+        client.focused
+      ));
       if (active) return;
 
       const options = {
-        body: message || 'New chat message',
+        body: message || 'New Mess Chat message',
         icon: './icons/icon-192.png?v=20260814-borderless2',
         tag: `mess-chat-${payload.message_id || Date.now()}`,
         renotify: true,
-        data: { url: payload.url || './?open=chat' }
+        silent: false,
+        data: {
+          url: payload.url || './?open=chat',
+          message_id: payload.message_id || '',
+          mess_id: payload.mess_id || ''
+        }
       };
 
       if (Number.isFinite(createdAt)) options.timestamp = createdAt;
