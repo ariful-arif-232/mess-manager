@@ -1,0 +1,28 @@
+/* Reference-style member state marks.
+ * Visual-only override: keeps the solid circles and draws the inner symbols as shapes,
+ * not font glyphs, so the active tick matches the supplied rounded check reference.
+ */
+.member-name-state-icon{
+  position:relative!important;
+  overflow:hidden!important;
+  font-size:0!important;
+  line-height:0!important;
+}
+.member-name-state-icon::before{
+  content:"";
+  display:block!important;
+  pointer-events:none!important;
+}
+.member-name-state-icon.is-active::before{
+  width:68%!important;
+  height:68%!important;
+  background:#fff!important;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12.5L9.2 17L20 6' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12.5L9.2 17L20 6' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
+}
+.member-name-state-icon.is-inactive::before{
+  width:58%!important;
+  height:16%!important;
+  border-radius:999px!important;
+  background:#fff!important;
+}
