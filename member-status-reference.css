@@ -1,28 +1,205 @@
-/* Reference-style member state marks.
- * Visual-only override: keeps the solid circles and draws the inner symbols as shapes,
- * not font glyphs, so the active tick matches the supplied rounded check reference.
+/* Final member status + profile visual polish.
+ * Visual only: member state icon geometry and mobile member-profile bottom sheet.
  */
+
+/* Smaller solid state circles with a true centered drawn symbol. */
 .member-name-state-icon{
   position:relative!important;
+  display:inline-block!important;
+  width:15px!important;
+  height:15px!important;
+  min-width:15px!important;
+  min-height:15px!important;
+  max-width:15px!important;
+  max-height:15px!important;
+  flex:0 0 15px!important;
+  border:0!important;
+  border-radius:50%!important;
   overflow:hidden!important;
+  box-sizing:border-box!important;
   font-size:0!important;
   line-height:0!important;
+  vertical-align:middle!important;
+}
+.member-name-state-icon.is-active{
+  background:#34b94a!important;
+  box-shadow:0 2px 5px rgba(37,155,61,.20)!important;
+}
+.member-name-state-icon.is-inactive{
+  background:#ef3038!important;
+  box-shadow:0 2px 5px rgba(221,37,46,.18)!important;
 }
 .member-name-state-icon::before{
-  content:"";
+  content:""!important;
+  position:absolute!important;
   display:block!important;
   pointer-events:none!important;
+  box-sizing:border-box!important;
 }
 .member-name-state-icon.is-active::before{
-  width:68%!important;
-  height:68%!important;
-  background:#fff!important;
-  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12.5L9.2 17L20 6' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
-  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12.5L9.2 17L20 6' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
+  left:50%!important;
+  top:47%!important;
+  width:4px!important;
+  height:7px!important;
+  border:solid #fff!important;
+  border-width:0 2px 2px 0!important;
+  border-radius:1px!important;
+  background:transparent!important;
+  transform:translate(-50%,-54%) rotate(45deg)!important;
+  -webkit-mask:none!important;
+  mask:none!important;
 }
 .member-name-state-icon.is-inactive::before{
-  width:58%!important;
-  height:16%!important;
+  left:50%!important;
+  top:50%!important;
+  width:8px!important;
+  height:2px!important;
+  border:0!important;
   border-radius:999px!important;
   background:#fff!important;
+  transform:translate(-50%,-50%)!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+}
+html[data-theme="dark"] .member-name-state-icon.is-active{background:#34b94a!important;box-shadow:0 2px 5px rgba(52,185,74,.18)!important}
+html[data-theme="dark"] .member-name-state-icon.is-inactive{background:#ef3038!important;box-shadow:0 2px 5px rgba(239,48,56,.16)!important}
+
+/* High-specificity mobile profile rules so older modal layers cannot narrow it. */
+@media(max-width:760px){
+  body #modal.modal-wrap:has(.profile-popup){
+    display:flex!important;
+    align-items:flex-end!important;
+    justify-content:center!important;
+    place-items:unset!important;
+    padding:0!important;
+    overflow:hidden!important;
+  }
+  body #modal.modal-wrap:has(.profile-popup) > .modal{
+    position:relative!important;
+    inset:auto!important;
+    width:100vw!important;
+    min-width:100vw!important;
+    max-width:100vw!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:82dvh!important;
+    margin:0!important;
+    padding:30px 18px calc(18px + env(safe-area-inset-bottom))!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    border-radius:28px 28px 0 0!important;
+    box-sizing:border-box!important;
+    transform:none!important;
+  }
+  body #modal.modal-wrap:has(.profile-popup) > .modal::before{
+    content:""!important;
+    position:absolute!important;
+    top:9px!important;
+    left:50%!important;
+    width:72px!important;
+    height:5px!important;
+    transform:translateX(-50%)!important;
+    border-radius:999px!important;
+    background:#d8e1ed!important;
+  }
+  body #modal .modal:has(.profile-popup) > .modal-title{
+    margin:0!important;
+    padding:0!important;
+    align-items:center!important;
+  }
+  body #modal .modal:has(.profile-popup) > .modal-title h2{
+    margin:2px 0 0!important;
+    font-size:24px!important;
+    line-height:1.05!important;
+  }
+  body #modal .modal:has(.profile-popup) > .modal-title .icon-btn{
+    width:40px!important;
+    height:40px!important;
+    flex:0 0 40px!important;
+    border-radius:13px!important;
+    font-size:17px!important;
+  }
+  body #modal .modal:has(.profile-popup) .profile-popup{
+    display:grid!important;
+    grid-template-columns:78px minmax(0,1fr)!important;
+    gap:12px!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:14px 0 0!important;
+    align-items:start!important;
+  }
+  body #modal .modal:has(.profile-popup) .profile-photo{
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    min-width:0!important;
+    padding-top:8px!important;
+  }
+  body #modal .modal:has(.profile-popup) .profile-photo .member-photo,
+  body #modal .modal:has(.profile-popup) .profile-photo .member-photo.fallback{
+    width:70px!important;
+    height:70px!important;
+    min-width:70px!important;
+    min-height:70px!important;
+    max-width:70px!important;
+    max-height:70px!important;
+    flex:0 0 70px!important;
+    border-radius:20px!important;
+    object-fit:cover!important;
+  }
+  body #modal .modal:has(.profile-popup) .profile-info{
+    display:grid!important;
+    gap:7px!important;
+    min-width:0!important;
+    width:100%!important;
+  }
+  body #modal .modal:has(.profile-popup) .profile-info>div{
+    min-width:0!important;
+    width:100%!important;
+    padding:9px 11px!important;
+    border-radius:14px!important;
+    box-sizing:border-box!important;
+  }
+  body #modal .modal:has(.profile-popup) .profile-info span{
+    font-size:9px!important;
+    line-height:1.2!important;
+  }
+  body #modal .modal:has(.profile-popup) .profile-info b{
+    margin-top:2px!important;
+    font-size:13px!important;
+    line-height:1.25!important;
+    overflow-wrap:anywhere!important;
+  }
+  html[data-theme="dark"] body #modal.modal-wrap:has(.profile-popup) > .modal::before{background:#465c70!important}
+}
+
+@media(max-width:460px){
+  .member-name-state-icon{
+    width:14px!important;
+    height:14px!important;
+    min-width:14px!important;
+    min-height:14px!important;
+    max-width:14px!important;
+    max-height:14px!important;
+    flex-basis:14px!important;
+  }
+  .member-name-state-icon.is-active::before{
+    width:3.8px!important;
+    height:6.6px!important;
+    border-width:0 1.8px 1.8px 0!important;
+  }
+  .member-name-state-icon.is-inactive::before{width:7px!important;height:2px!important}
+  body #modal.modal-wrap:has(.profile-popup) > .modal{padding-left:16px!important;padding-right:16px!important}
+  body #modal .modal:has(.profile-popup) .profile-popup{grid-template-columns:72px minmax(0,1fr)!important;gap:10px!important}
+  body #modal .modal:has(.profile-popup) .profile-photo .member-photo,
+  body #modal .modal:has(.profile-popup) .profile-photo .member-photo.fallback{
+    width:64px!important;
+    height:64px!important;
+    min-width:64px!important;
+    min-height:64px!important;
+    max-width:64px!important;
+    max-height:64px!important;
+    flex-basis:64px!important;
+    border-radius:18px!important;
+  }
 }
