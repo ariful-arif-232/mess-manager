@@ -41,7 +41,6 @@
     return Number.isNaN(d.getTime())?value:d.toLocaleDateString('en-BD',{day:'numeric',month:'short',year:'numeric'});
   };
 
-  /* Load selected-month cutoff history alongside the existing monthly data. */
   const baseLoadData=window.loadData;
   async function loadDataWithFoodCutoffs(){
     await baseLoadData();
@@ -60,13 +59,6 @@
     try{loadData=loadDataWithFoodCutoffs;}catch(_){/* global binding may be lexical in some engines */}
   }
 
-  /*
-   * Chronological cutoff allocation:
-   * - each cutoff freezes that member's currently-unlocked meal units at the
-   *   cumulative bazar average through the cutoff date;
-   * - already locked cost/units are removed before the next cutoff rate;
-   * - the month-end residual bazar is divided only across remaining unlocked units.
-   */
   function calcMonthWithFoodCutoffs(){
     const utility=typeof window.mmUtilityLedger==='function'?window.mmUtilityLedger():utilityLedger();
     const enabledMeals=(db.meals||[]).filter(row=>row.on);
@@ -175,13 +167,18 @@
     modal(`<div class="modal-title member-state-modal-title"><div><span class="eyebrow">Deactivate member</span><h2>Deactivate ${esc(member.name)}?</h2></div><button class="icon-btn" data-close aria-label="Close">×</button></div>
       <div class="member-state-confirm">
         <div class="member-state-person">${avatar(member)}<div><b>${esc(member.name)}</b><span>Food cutoff · <span data-cutoff-person>${esc(friendlyDate(cutoff))}</span></span></div></div>
-        <div class="member-state-note"><span class="member-state-note-icon" aria-hidden="true">!</span><div><b>What will happen</b>
+        <div class="member-state-note"><span class="member-state-note-icon" aria-hidden="true">!</span><div><b class="member-state-note-title">What will happen</b>
           <label class="member-cutoff-date-card">
             <span class="member-cutoff-calendar" aria-hidden="true"></span>
             <span class="member-cutoff-date-copy"><small>DEACTIVATE FROM</small><strong data-cutoff-label>${esc(friendlyDate(cutoff))}</strong><em>Forgot earlier? Choose the correct date.</em></span>
             <input id="memberCutoffDate" type="date" value="${esc(cutoff)}" min="${esc(minValue)}" max="${esc(todayValue)}" aria-label="Deactivate from date">
           </label>
-          <ul><li>Meal will be OFF from <b data-cutoff-meal>${esc(friendlyDate(cutoff))}</b>.</li><li>Bazar up to this date stays in the member's food average.</li><li>From <b data-cutoff-next>${esc(friendlyDate(nextDate(cutoff)))}</b>, new bazar will not increase this member's food bill.</li><li>Existing deposit, due/advance and history stay saved.</li></ul>
+          <ul class="member-state-points">
+            <li>Meal will be OFF from <strong class="member-cutoff-inline-date" data-cutoff-meal>${esc(friendlyDate(cutoff))}</strong>.</li>
+            <li>Bazar up to this date stays in the member's food average.</li>
+            <li>From <strong class="member-cutoff-inline-date" data-cutoff-next>${esc(friendlyDate(nextDate(cutoff)))}</strong>, new bazar will not increase this member's food bill.</li>
+            <li>Existing deposit, due/advance and history stay saved.</li>
+          </ul>
         </div></div>
         <div class="member-state-actions"><button type="button" class="btn" data-state-cancel>Cancel</button><button type="button" class="btn member-deactivate-confirm" data-state-confirm>Deactivate</button></div>
       </div>`);
