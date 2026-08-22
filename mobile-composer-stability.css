@@ -2,9 +2,8 @@
  *
  * mobile-shell-final.js can briefly re-apply a stale keyboard class when WebKit
  * reports an old VisualViewport offset. mobile-interaction-state-fix.js then
- * removes it again. That class tug-of-war is invisible in a screenshot but can
- * make the Chat/Voice composer visibly shake. When the actual input is NOT
- * focused, force the closed-keyboard geometry regardless of stale classes.
+ * removes it again. Keep the Assistant in normal flow, but keep the Chat
+ * composer pinned above the mobile navigation whenever the keyboard is closed.
  */
 @media(max-width:900px){
   html.mm-assistant-page:not(:has(.ai-reference-composer input:focus)) .main{
@@ -36,30 +35,45 @@
     transform:none!important;
   }
 
-  html.mm-chat-page:not(:has(.chat-compose-pro textarea:focus)) .main{
+  html.mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)) .main{
     padding-bottom:82px!important;
   }
-  html.mm-chat-page:not(:has(.chat-compose-pro textarea:focus)) .chat-compose-pro{
-    position:relative!important;
+  html.mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)) body #app .chat-compose-pro{
+    position:fixed!important;
     inset:auto!important;
-    left:auto!important;
-    right:auto!important;
-    bottom:auto!important;
+    left:10px!important;
+    right:10px!important;
+    bottom:calc(var(--mm-nav-reserve,88px) + 4px)!important;
     width:auto!important;
+    max-width:none!important;
     margin:0!important;
+    z-index:96!important;
     transform:none!important;
     translate:none!important;
     transition:none!important;
     animation:none!important;
     will-change:auto!important;
+    border:1px solid #e1e8f1!important;
+    border-radius:18px!important;
+    padding:8px 10px!important;
+    background:rgba(255,255,255,.985)!important;
+    box-shadow:0 10px 30px rgba(31,57,101,.12)!important;
+    backdrop-filter:blur(16px)!important;
+    -webkit-backdrop-filter:blur(16px)!important;
   }
-  html.mm-chat-page:not(:has(.chat-compose-pro textarea:focus)) .chat-messages-pro{
-    padding-bottom:17px!important;
+  html.mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)) .chat-messages-pro{
+    padding-bottom:92px!important;
+    scroll-padding-bottom:92px!important;
   }
-  html.mm-chat-page:not(:has(.chat-compose-pro textarea:focus)) .mobilebar{
+  html.mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)) .mobilebar{
     opacity:1!important;
     visibility:visible!important;
     pointer-events:auto!important;
     transform:none!important;
+  }
+  html[data-theme="dark"].mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)) body #app .chat-compose-pro{
+    background:rgba(11,26,41,.985)!important;
+    border-color:#29455c!important;
+    box-shadow:0 10px 30px rgba(0,0,0,.28)!important;
   }
 }
