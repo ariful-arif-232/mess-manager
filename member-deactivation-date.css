@@ -6,7 +6,7 @@
   align-items:center!important;
   gap:10px!important;
   width:100%!important;
-  margin:10px 0 11px!important;
+  margin:10px 0 9px!important;
   padding:10px 11px!important;
   border:1px solid #e9c98f!important;
   border-radius:15px!important;
@@ -44,80 +44,88 @@
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 3v3m10-3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 3v3m10-3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat!important;
 }
-.member-cutoff-date-copy{
-  min-width:0!important;
-  display:block!important;
-  text-align:left!important;
-}
-.member-cutoff-date-copy small,
-.member-cutoff-date-copy strong,
-.member-cutoff-date-copy em{
-  display:block!important;
-}
-.member-cutoff-date-copy small{
-  margin:0!important;
-  color:#a07745!important;
-  font:800 8.5px/1.15 Inter,sans-serif!important;
-  letter-spacing:.10em!important;
-}
-.member-cutoff-date-copy strong{
-  margin-top:3px!important;
-  color:#694316!important;
-  font:850 13px/1.15 Inter,"Noto Sans Bengali",sans-serif!important;
-}
-.member-cutoff-date-copy em{
-  margin-top:3px!important;
-  color:#9b866b!important;
-  font:500 9px/1.25 Inter,"Noto Sans Bengali",sans-serif!important;
-  font-style:normal!important;
-}
+.member-cutoff-date-copy{min-width:0!important;display:block!important;text-align:left!important}
+.member-cutoff-date-copy small,.member-cutoff-date-copy strong,.member-cutoff-date-copy em{display:block!important}
+.member-cutoff-date-copy small{margin:0!important;color:#a07745!important;font:800 8.5px/1.15 Inter,sans-serif!important;letter-spacing:.10em!important}
+.member-cutoff-date-copy strong{margin-top:3px!important;color:#694316!important;font:850 13px/1.15 Inter,"Noto Sans Bengali",sans-serif!important}
+.member-cutoff-date-copy em{margin-top:3px!important;color:#9b866b!important;font:500 9px/1.25 Inter,"Noto Sans Bengali",sans-serif!important;font-style:normal!important}
 .modal .member-cutoff-date-card input#memberCutoffDate{
-  position:absolute!important;
-  inset:0!important;
-  z-index:5!important;
-  width:100%!important;
-  height:100%!important;
-  min-width:100%!important;
-  min-height:100%!important;
-  max-width:none!important;
-  margin:0!important;
-  padding:0!important;
-  border:0!important;
-  border-radius:inherit!important;
-  opacity:0!important;
-  background:transparent!important;
-  cursor:pointer!important;
-  -webkit-appearance:auto!important;
-  appearance:auto!important;
+  position:absolute!important;inset:0!important;z-index:5!important;width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;max-width:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:inherit!important;opacity:0!important;background:transparent!important;cursor:pointer!important;-webkit-appearance:auto!important;appearance:auto!important
 }
 .member-state-person [data-cutoff-person]{display:inline!important}
-.member-state-note [data-cutoff-meal],
-.member-state-note [data-cutoff-next]{font-weight:800!important;color:#6d4514!important}
 
-html[data-theme="dark"] .member-cutoff-date-card{
-  border-color:#6b4c2b!important;
-  background:rgba(19,34,44,.76)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 5px 14px rgba(0,0,0,.10)!important;
+/* Keep all explanation dates inline. This removes the stray punctuation/bullet line
+   caused by the older .member-state-note b { display:block } rule. */
+.member-state-note-title{display:block!important}
+.member-state-points{margin:7px 0 0!important;padding-left:17px!important;color:#76654f!important;font-size:10.8px!important;line-height:1.42!important}
+.member-state-points li{margin:0!important;padding:0!important}
+.member-state-points li+li{margin-top:6px!important}
+.member-state-points .member-cutoff-inline-date{
+  display:inline!important;
+  margin:0!important;
+  padding:0!important;
+  color:#6d4514!important;
+  font:800 inherit!important;
+  white-space:nowrap!important;
 }
+
+/* Final compact Member Management actions. */
+.member-admin-actions.member-admin-actions-cutoff{
+  min-width:132px!important;
+  flex:0 0 132px!important;
+  gap:4px!important;
+}
+.member-admin-primary-row{gap:4px!important}
+.member-admin-primary-row>.btn,
+.member-admin-primary-row>.member-self-badge,
+.member-state-toggle{
+  min-height:32px!important;
+  height:32px!important;
+  padding:0 6px!important;
+  border-radius:10px!important;
+  font-size:9.5px!important;
+  line-height:1!important;
+  box-shadow:none!important;
+}
+.member-state-toggle{
+  font-weight:800!important;
+  letter-spacing:0!important;
+}
+.member-state-toggle.is-deactivate{
+  color:#94601e!important;
+  background:linear-gradient(180deg,#fff8e9,#fff2d9)!important;
+  border:1px solid #ecd09b!important;
+}
+.member-state-toggle.is-activate{
+  color:#087657!important;
+  background:linear-gradient(180deg,#ebfaf4,#e2f7ee)!important;
+  border:1px solid #c6e9db!important;
+}
+.member-admin-primary-row:has(.member-self-badge){grid-template-columns:42px minmax(84px,1fr)!important}
+.member-admin-primary-row>.member-self-badge{font-size:7.8px!important;gap:3px!important;padding:0 3px!important;overflow:visible!important}
+.member-admin-primary-row>.member-self-badge::before{width:12px!important;height:12px!important;flex:0 0 12px!important;border-radius:4px!important;font-size:7px!important}
+
+html[data-theme="dark"] .member-cutoff-date-card{border-color:#6b4c2b!important;background:rgba(19,34,44,.76)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 5px 14px rgba(0,0,0,.10)!important}
 html[data-theme="dark"] .member-cutoff-calendar{background:linear-gradient(145deg,#5b3e20,#49341f)!important}
 html[data-theme="dark"] .member-cutoff-calendar::before{background:#ffc178!important}
 html[data-theme="dark"] .member-cutoff-date-card::after{color:#e6a65d!important}
 html[data-theme="dark"] .member-cutoff-date-copy small{color:#c79561!important}
 html[data-theme="dark"] .member-cutoff-date-copy strong{color:#ffd29d!important}
 html[data-theme="dark"] .member-cutoff-date-copy em{color:#bda88f!important}
-html[data-theme="dark"] .member-state-note [data-cutoff-meal],
-html[data-theme="dark"] .member-state-note [data-cutoff-next]{color:#ffd09a!important}
+html[data-theme="dark"] .member-state-points{color:#c5b49e!important}
+html[data-theme="dark"] .member-state-points .member-cutoff-inline-date{color:#ffd09a!important}
+html[data-theme="dark"] .member-state-toggle.is-deactivate{color:#ffc77f!important;background:linear-gradient(180deg,#392a1c,#302318)!important;border-color:#60472e!important}
+html[data-theme="dark"] .member-state-toggle.is-activate{color:#7ce0bd!important;background:linear-gradient(180deg,#173b33,#133129)!important;border-color:#2a5b4c!important}
 
 @media(max-width:520px){
-  .member-cutoff-date-card{
-    grid-template-columns:33px minmax(0,1fr) 20px!important;
-    gap:9px!important;
-    margin:8px 0 9px!important;
-    padding:9px 10px!important;
-    border-radius:14px!important;
-  }
+  .member-cutoff-date-card{grid-template-columns:33px minmax(0,1fr) 20px!important;gap:9px!important;margin:8px 0 8px!important;padding:9px 10px!important;border-radius:14px!important}
   .member-cutoff-calendar{width:33px!important;height:33px!important;border-radius:11px!important}
   .member-cutoff-calendar::before{width:16px!important;height:16px!important}
   .member-cutoff-date-copy strong{font-size:12px!important}
   .member-cutoff-date-copy em{font-size:8.5px!important}
+  .member-state-points{font-size:10.2px!important;line-height:1.38!important}
+  .member-admin-actions.member-admin-actions-cutoff{min-width:126px!important;flex-basis:126px!important;gap:4px!important}
+  .member-admin-primary-row>.btn,.member-admin-primary-row>.member-self-badge,.member-state-toggle{min-height:31px!important;height:31px!important;border-radius:9px!important;font-size:9px!important}
+  .member-admin-primary-row:has(.member-self-badge){grid-template-columns:40px minmax(82px,1fr)!important}
+  .member-admin-primary-row>.member-self-badge{font-size:7.5px!important}
 }
