@@ -41,7 +41,7 @@
       if(r.error)throw r.error;
       if(r.data?.error)throw new Error(r.data.error);
     }catch(error){
-      console.warn('Chat push dispatch failed; message was still saved normally.',error);
+      console.warn('Chat push fallback dispatch failed; server trigger remains primary.',error);
     }
   }
   function noticeModal(memberId){
@@ -60,7 +60,7 @@
     const messages=db.messages||[];
     c.innerHTML=`<div class="chat-shell"><div class="chat-head"><div><span class="eyebrow">Mess community</span><h2>Chat & খাবার আলোচনা</h2><p>Problem, বাজার, আগামীকালের খাবার—সবাই এখানে share করতে পারবে।</p></div></div>${(db.notices||[]).length?`<div class="notice-strip"><b>Latest notice</b><span>${esc(db.notices[0].title)} — ${esc(db.notices[0].body)}</span></div>`:''}<div class="chat-messages" id="chatMessages">${messages.map(m=>{const mine=m.sender_member_id===profile.id;return `<div class="chat-row ${mine?'mine':''}"><div class="chat-avatar">${esc(initials(memberName(m.sender_member_id)))}</div><div class="chat-bubble"><div><b>${esc(memberName(m.sender_member_id))}</b><time>${new Date(m.created_at).toLocaleString()}</time></div><p>${esc(m.body)}</p></div></div>`;}).join('')||'<div class="chat-empty">এখনও কোনো message নেই। প্রথম message লিখুন।</div>'}</div><form class="chat-compose" id="chatForm"><textarea name="body" rows="1" maxlength="2000" placeholder="Message লিখুন…" required></textarea><button class="btn primary" aria-label="Send">Send</button></form></div>`;
     $('#chatMessages').scrollTop=$('#chatMessages').scrollHeight;
-    $('#chatForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),body=f.get('body').trim();if(!body)return;await run(async()=>{const inserted=await client.from('mess_messages').insert({mess_id:profile.mess_id,sender_member_id:profile.id,body}).select('id').single();assertResult(inserted);await dispatchChatPush(inserted.data?.id);e.target.reset();await loadData();chatPage(c);});};
+    $('#chatForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),body=f.get('body').trim();if(!body)return;await run(async()=>{const inserted=await client.from('mess_messages').insert({mess_id:profile.mess_id,sender_member_id:profile.id,body}).select('id').single();assertResult(inserted);void dispatchChatPush(inserted.data?.id);e.target.reset();await loadData();chatPage(c);});};
   };
 
   const oldRenderPage=renderPage;
