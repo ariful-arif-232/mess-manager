@@ -1,0 +1,204 @@
+/* Final member profile sheet + compact member status marks.
+ * Loaded last in the stylesheet chain to win over older modal/mobile patches.
+ */
+
+/* Smaller status circles with a centered drawn mark. */
+.member-name-state-icon{
+  position:relative!important;
+  display:inline-block!important;
+  width:13px!important;
+  height:13px!important;
+  min-width:13px!important;
+  min-height:13px!important;
+  max-width:13px!important;
+  max-height:13px!important;
+  flex:0 0 13px!important;
+  border:0!important;
+  border-radius:50%!important;
+  overflow:hidden!important;
+  font-size:0!important;
+  line-height:0!important;
+  box-sizing:border-box!important;
+  vertical-align:middle!important;
+}
+.member-name-state-icon.is-active{background:#35b94a!important;box-shadow:0 2px 5px rgba(39,157,64,.18)!important}
+.member-name-state-icon.is-inactive{background:#ef3038!important;box-shadow:0 2px 5px rgba(221,37,46,.16)!important}
+.member-name-state-icon::before{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  display:block!important;
+  pointer-events:none!important;
+  box-sizing:border-box!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+}
+.member-name-state-icon.is-active::before{
+  width:3.2px!important;
+  height:5.8px!important;
+  border:solid #fff!important;
+  border-width:0 1.7px 1.7px 0!important;
+  border-radius:.6px!important;
+  background:transparent!important;
+  transform:translate(-50%,-58%) rotate(45deg)!important;
+}
+.member-name-state-icon.is-inactive::before{
+  width:6.8px!important;
+  height:1.8px!important;
+  border:0!important;
+  border-radius:999px!important;
+  background:#fff!important;
+  transform:translate(-50%,-50%)!important;
+}
+
+/* Member Profile now uses the same bottom-sheet foundation as Utility details. */
+.mm-member-profile-backdrop{
+  z-index:92!important;
+  background:rgba(17,34,68,.52)!important;
+  backdrop-filter:blur(7px)!important;
+  -webkit-backdrop-filter:blur(7px)!important;
+}
+.mm-member-profile-sheet{
+  position:relative!important;
+  width:min(560px,100%)!important;
+  max-width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:78dvh!important;
+  margin:0!important;
+  padding:28px 18px calc(18px + env(safe-area-inset-bottom))!important;
+  border-radius:28px 28px 0 0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  background:#fff!important;
+  box-shadow:0 -22px 60px rgba(21,48,91,.18)!important;
+}
+.mm-member-sheet-handle{
+  position:absolute!important;
+  top:9px!important;
+  left:50%!important;
+  width:72px!important;
+  height:5px!important;
+  transform:translateX(-50%)!important;
+  border-radius:999px!important;
+  background:#d8e1ed!important;
+}
+.mm-member-sheet-head{
+  display:grid!important;
+  grid-template-columns:50px minmax(0,1fr) 42px!important;
+  gap:12px!important;
+  align-items:center!important;
+}
+.mm-member-sheet-avatar{
+  width:50px!important;
+  height:50px!important;
+  min-width:50px!important;
+  min-height:50px!important;
+  max-width:50px!important;
+  max-height:50px!important;
+  border-radius:15px!important;
+  object-fit:cover!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  background:linear-gradient(135deg,#dce8ff,#dff8ef)!important;
+  color:#2457d6!important;
+  font:900 14px/1 Inter,sans-serif!important;
+  border:1px solid #dce6f2!important;
+}
+.mm-member-sheet-title{min-width:0!important}
+.mm-member-sheet-title span{
+  display:block!important;
+  color:#78879d!important;
+  font:850 10px/1.2 Inter,sans-serif!important;
+  letter-spacing:.12em!important;
+}
+.mm-member-sheet-title h3{
+  margin:4px 0 0!important;
+  color:#18304f!important;
+  font-size:21px!important;
+  line-height:1.08!important;
+  letter-spacing:-.02em!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.mm-member-sheet-close{
+  width:42px!important;
+  height:42px!important;
+  padding:0!important;
+  border:1px solid #dbe5f0!important;
+  border-radius:14px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:#eef3f9!important;
+  color:#4d6788!important;
+  font-size:20px!important;
+  line-height:1!important;
+}
+.mm-member-sheet-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;
+  margin-top:16px!important;
+}
+.mm-member-sheet-field{
+  min-width:0!important;
+  padding:11px 12px!important;
+  border:1px solid #e0e7f0!important;
+  border-radius:16px!important;
+  background:linear-gradient(145deg,#f7f9fd,#f1f5fa)!important;
+}
+.mm-member-sheet-wide{grid-column:1/-1!important}
+.mm-member-sheet-field span,
+.mm-member-sheet-field b{display:block!important}
+.mm-member-sheet-field span{
+  color:#7e8da2!important;
+  font-size:9px!important;
+  line-height:1.2!important;
+}
+.mm-member-sheet-field b{
+  margin-top:3px!important;
+  color:#1b3150!important;
+  font-size:13px!important;
+  line-height:1.25!important;
+  overflow-wrap:anywhere!important;
+}
+.mm-member-sheet-field b.is-active{color:#0a805c!important}
+.mm-member-sheet-field b.is-inactive{color:#c13a42!important}
+
+html[data-theme="dark"] .mm-member-profile-sheet{background:#0d1d2d!important;border:1px solid #29445b!important;border-bottom:0!important;box-shadow:0 -22px 65px rgba(0,0,0,.45)!important}
+html[data-theme="dark"] .mm-member-sheet-handle{background:#465c70!important}
+html[data-theme="dark"] .mm-member-sheet-avatar{background:linear-gradient(135deg,#15344c,#153b32)!important;border-color:#31536b!important;color:#8bbcff!important}
+html[data-theme="dark"] .mm-member-sheet-title span{color:#8ea4ba!important}
+html[data-theme="dark"] .mm-member-sheet-title h3{color:#f1f7ff!important}
+html[data-theme="dark"] .mm-member-sheet-close{background:#142b40!important;border-color:#304d65!important;color:#c6d7e8!important}
+html[data-theme="dark"] .mm-member-sheet-field{background:linear-gradient(145deg,#11263a,#102235)!important;border-color:#29465f!important}
+html[data-theme="dark"] .mm-member-sheet-field span{color:#8fa5ba!important}
+html[data-theme="dark"] .mm-member-sheet-field b{color:#edf5ff!important}
+html[data-theme="dark"] .mm-member-sheet-field b.is-active{color:#76ddb8!important}
+html[data-theme="dark"] .mm-member-sheet-field b.is-inactive{color:#ff8c98!important}
+
+@media(max-width:760px){
+  .mm-member-profile-backdrop{align-items:flex-end!important;justify-content:center!important}
+  .mm-member-profile-sheet{
+    width:100%!important;
+    max-width:none!important;
+    max-height:72dvh!important;
+    padding:28px 16px calc(16px + env(safe-area-inset-bottom))!important;
+  }
+}
+
+@media(max-width:420px){
+  .mm-member-profile-sheet{padding-left:14px!important;padding-right:14px!important}
+  .mm-member-sheet-head{grid-template-columns:46px minmax(0,1fr) 40px!important;gap:10px!important}
+  .mm-member-sheet-avatar{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;max-width:46px!important;max-height:46px!important;border-radius:14px!important}
+  .mm-member-sheet-close{width:40px!important;height:40px!important;border-radius:13px!important}
+  .mm-member-sheet-title h3{font-size:20px!important}
+  .mm-member-sheet-grid{gap:8px!important;margin-top:14px!important}
+  .mm-member-sheet-field{padding:10px 11px!important;border-radius:15px!important}
+  .member-name-state-icon{width:12px!important;height:12px!important;min-width:12px!important;min-height:12px!important;max-width:12px!important;max-height:12px!important;flex-basis:12px!important}
+  .member-name-state-icon.is-active::before{width:3px!important;height:5.3px!important;border-width:0 1.6px 1.6px 0!important}
+  .member-name-state-icon.is-inactive::before{width:6.2px!important;height:1.7px!important}
+}
