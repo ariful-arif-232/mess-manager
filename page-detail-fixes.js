@@ -93,7 +93,7 @@
           .insert({mess_id:profile.mess_id,sender_member_id:profile.id,body})
           .select('id')
           .single());
-        await dispatchInsertedChatMessage(inserted?.id);
+        void dispatchInsertedChatMessage(inserted?.id);
         e.target.reset();
         await loadData();
         await window.chat(c);
