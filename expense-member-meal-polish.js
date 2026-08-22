@@ -1,5 +1,5 @@
-/* Dashboard member meal-badge polish.
- * Keeps calculation logic untouched and decorates only rendered member rows.
+/* Dashboard member meal-badge and sheet-label polish.
+ * Keeps calculation logic untouched and decorates only rendered dashboard rows/sheets.
  */
 'use strict';
 (()=>{
@@ -66,7 +66,27 @@
     element.dataset.mmMealBadge='1';
   }
 
+  function removeRequestedBreakdownKickers(root=document){
+    const sheets=[];
+    if(root?.matches?.('.mm-dash-sheet'))sheets.push(root);
+    root?.querySelectorAll?.('.mm-dash-sheet').forEach(sheet=>sheets.push(sheet));
+
+    sheets.forEach(sheet=>{
+      const title=String(sheet.querySelector('.mm-dash-title-wrap h3')?.textContent||'').trim();
+      const kicker=sheet.querySelector('.mm-dash-title-wrap small');
+      const text=String(kicker?.textContent||'').trim();
+      if(
+        (title==='Utility Bills'&&text==='Utility breakdown') ||
+        (title==='মোট জমা'&&text==='Deposit breakdown')
+      ){
+        kicker.remove();
+      }
+    });
+  }
+
   function decorate(root=document){
+    removeRequestedBreakdownKickers(root);
+
     const targets=[];
     const selector='[data-dash-expense-member],[data-dash-deposit-member],.mm-dash-member-row:not(button)';
     if(root?.matches?.(selector))targets.push(root);
