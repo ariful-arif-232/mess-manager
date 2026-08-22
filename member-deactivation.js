@@ -14,6 +14,21 @@
     const day=String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${day}`;
   };
+  const currentMonthStart=()=>`${localToday().slice(0,7)}-01`;
+  const nextDate=value=>{
+    const d=new Date(`${value}T00:00:00`);
+    if(Number.isNaN(d.getTime()))return value;
+    d.setDate(d.getDate()+1);
+    const y=d.getFullYear();
+    const m=String(d.getMonth()+1).padStart(2,'0');
+    const day=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  };
+  const cutoffMinFor=member=>{
+    const monthStart=currentMonthStart();
+    const joined=String(member?.join_date||'');
+    return joined&&joined>monthStart?joined:monthStart;
+  };
   const unitsOf=row=>Number(row?.units||1);
   const sum=(rows,fn)=>rows.reduce((total,row)=>total+Number(fn?fn(row):row?.amount||0),0);
   const initials=name=>String(name||'M').trim().split(/\s+/).filter(Boolean).map(part=>part[0]).slice(0,2).join('').toUpperCase()||'M';
@@ -51,8 +66,6 @@
    *   cumulative bazar average through the cutoff date;
    * - already locked cost/units are removed before the next cutoff rate;
    * - the month-end residual bazar is divided only across remaining unlocked units.
-   * This preserves total bazar allocation while preventing later bazar from
-   * changing an inactive member's food share.
    */
   function calcMonthWithFoodCutoffs(){
     const utility=typeof window.mmUtilityLedger==='function'?window.mmUtilityLedger():utilityLedger();
@@ -155,16 +168,43 @@
   }
 
   function deactivateConfirm(member){
-    const cutoff=localToday();
+    const todayValue=localToday();
+    const minValue=cutoffMinFor(member);
+    let cutoff=todayValue;
+
     modal(`<div class="modal-title member-state-modal-title"><div><span class="eyebrow">Deactivate member</span><h2>Deactivate ${esc(member.name)}?</h2></div><button class="icon-btn" data-close aria-label="Close">×</button></div>
       <div class="member-state-confirm">
-        <div class="member-state-person">${avatar(member)}<div><b>${esc(member.name)}</b><span>Food cutoff · ${esc(friendlyDate(cutoff))}</span></div></div>
-        <div class="member-state-note"><span class="member-state-note-icon" aria-hidden="true">!</span><div><b>What will happen</b><ul><li>Meal will be OFF from ${esc(friendlyDate(cutoff))}.</li><li>Bazar up to this date stays in the member's food average.</li><li>From tomorrow, new bazar will not increase this member's food bill.</li><li>Existing deposit, due/advance and history stay saved.</li></ul></div></div>
+        <div class="member-state-person">${avatar(member)}<div><b>${esc(member.name)}</b><span>Food cutoff · <span data-cutoff-person>${esc(friendlyDate(cutoff))}</span></span></div></div>
+        <div class="member-state-note"><span class="member-state-note-icon" aria-hidden="true">!</span><div><b>What will happen</b>
+          <label class="member-cutoff-date-card">
+            <span class="member-cutoff-calendar" aria-hidden="true"></span>
+            <span class="member-cutoff-date-copy"><small>DEACTIVATE FROM</small><strong data-cutoff-label>${esc(friendlyDate(cutoff))}</strong><em>Forgot earlier? Choose the correct date.</em></span>
+            <input id="memberCutoffDate" type="date" value="${esc(cutoff)}" min="${esc(minValue)}" max="${esc(todayValue)}" aria-label="Deactivate from date">
+          </label>
+          <ul><li>Meal will be OFF from <b data-cutoff-meal>${esc(friendlyDate(cutoff))}</b>.</li><li>Bazar up to this date stays in the member's food average.</li><li>From <b data-cutoff-next>${esc(friendlyDate(nextDate(cutoff)))}</b>, new bazar will not increase this member's food bill.</li><li>Existing deposit, due/advance and history stay saved.</li></ul>
+        </div></div>
         <div class="member-state-actions"><button type="button" class="btn" data-state-cancel>Cancel</button><button type="button" class="btn member-deactivate-confirm" data-state-confirm>Deactivate</button></div>
       </div>`);
+
+    const input=$('#memberCutoffDate');
+    const refreshCutoffCopy=()=>{
+      cutoff=String(input?.value||'');
+      if(!cutoff)return;
+      const label=friendlyDate(cutoff);
+      const nextLabel=friendlyDate(nextDate(cutoff));
+      document.querySelectorAll('[data-cutoff-person],[data-cutoff-label],[data-cutoff-meal]').forEach(node=>{node.textContent=label;});
+      document.querySelectorAll('[data-cutoff-next]').forEach(node=>{node.textContent=nextLabel;});
+    };
+    input?.addEventListener('change',refreshCutoffCopy);
+    input?.addEventListener('input',refreshCutoffCopy);
+
     $('[data-close]').onclick=closeModal;
     $('[data-state-cancel]').onclick=closeModal;
     $('[data-state-confirm]').onclick=async event=>{
+      cutoff=String(input?.value||'');
+      if(!cutoff)return notify('Deactivate date select করুন।');
+      if(cutoff<minValue||cutoff>todayValue)return notify(`Date ${friendlyDate(minValue)} থেকে ${friendlyDate(todayValue)}-এর মধ্যে দিন।`);
+
       const button=event.currentTarget;
       const old=button.textContent;
       button.disabled=true;
