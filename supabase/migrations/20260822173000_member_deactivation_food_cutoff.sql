@@ -60,7 +60,7 @@ begin
   if p_cutoff_date is null then
     raise exception 'Cutoff date is required';
   end if;
-  if p_cutoff_date > current_date then
+  if p_cutoff_date > (now() at time zone 'Asia/Dhaka')::date then
     raise exception 'Cutoff date cannot be in the future';
   end if;
 
