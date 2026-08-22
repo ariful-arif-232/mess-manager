@@ -206,7 +206,7 @@
       ${kpi('মোট জমা',data.totalDeposit,'deposit','deposit')}
       ${kpi('মোট বাজার',data.bazarBill,'bazar','bazar')}
       ${kpi('বাজার ফান্ড',data.bazarFund,'fund','fund',{negative:data.bazarFund<0})}
-      ${kpi('মোট Due',data.due,'due','due')}
+      ${kpi('Member Due',data.due,'due','due')}
     </section><div class="section-head mm-dashboard-member-head"><div><span class="eyebrow">This month</span><h2>Members Summary</h2></div></div>${settlementTableInsights(data.calc)}`;
     c.querySelectorAll('[data-dashboard-action]').forEach(card=>{
       const activate=()=>handleAction(card.dataset.dashboardAction,data);
