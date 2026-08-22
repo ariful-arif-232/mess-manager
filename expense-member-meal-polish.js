@@ -1,5 +1,5 @@
-/* Dashboard member meal-badge and sheet-label polish.
- * Keeps calculation logic untouched and decorates only rendered dashboard rows/sheets.
+/* Dashboard member meal-badge and row-copy polish.
+ * Keeps calculation logic untouched and decorates only rendered dashboard member rows.
  */
 'use strict';
 (()=>{
@@ -66,26 +66,27 @@
     element.dataset.mmMealBadge='1';
   }
 
-  function removeRequestedBreakdownKickers(root=document){
-    const sheets=[];
-    if(root?.matches?.('.mm-dash-sheet'))sheets.push(root);
-    root?.querySelectorAll?.('.mm-dash-sheet').forEach(sheet=>sheets.push(sheet));
+  function shortenMemberHelperText(root=document){
+    const utilityRows=[];
+    const depositRows=[];
 
-    sheets.forEach(sheet=>{
-      const title=String(sheet.querySelector('.mm-dash-title-wrap h3')?.textContent||'').trim();
-      const kicker=sheet.querySelector('.mm-dash-title-wrap small');
-      const text=String(kicker?.textContent||'').trim();
-      if(
-        (title==='Utility Bills'&&text==='Utility breakdown') ||
-        (title==='মোট জমা'&&text==='Deposit breakdown')
-      ){
-        kicker.remove();
-      }
+    if(root?.matches?.('[data-dash-utility-member]'))utilityRows.push(root);
+    if(root?.matches?.('[data-dash-deposit-member]'))depositRows.push(root);
+    root?.querySelectorAll?.('[data-dash-utility-member]').forEach(row=>utilityRows.push(row));
+    root?.querySelectorAll?.('[data-dash-deposit-member]').forEach(row=>depositRows.push(row));
+
+    utilityRows.forEach(row=>{
+      const helper=row.querySelector('.mm-dash-member-copy > small');
+      if(helper)helper.textContent='Tap to view utility';
+    });
+    depositRows.forEach(row=>{
+      const helper=row.querySelector('.mm-dash-member-copy > small');
+      if(helper)helper.textContent='Tap to view deposit';
     });
   }
 
   function decorate(root=document){
-    removeRequestedBreakdownKickers(root);
+    shortenMemberHelperText(root);
 
     const targets=[];
     const selector='[data-dash-expense-member],[data-dash-deposit-member],.mm-dash-member-row:not(button)';
