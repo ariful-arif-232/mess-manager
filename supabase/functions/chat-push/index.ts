@@ -17,6 +17,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 });
 
 const cleanText = (value: unknown, max: number) => String(value ?? '').trim().slice(0, max);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type Member = {
   id: string;
@@ -76,10 +77,18 @@ async function authenticate(req: Request) {
     return { error: json({ error: 'Unauthorized' }, 401) } as const;
   }
 
+  const selectedMess = await caller.rpc('current_mess_id');
+  if (selectedMess.error) throw selectedMess.error;
+  const messId = cleanText(selectedMess.data, 80);
+  if (!UUID_RE.test(messId)) {
+    return { error: json({ error: 'Select an active mess workspace first' }, 409) } as const;
+  }
+
   const memberResult = await admin
     .from('members')
     .select('id,mess_id,name')
     .eq('user_id', user.id)
+    .eq('mess_id', messId)
     .eq('active', true)
     .is('deleted_at', null)
     .maybeSingle();
@@ -118,8 +127,6 @@ async function ensureVapid(admin: ReturnType<typeof createAdminClient>): Promise
 
   if (!created.error && created.data) return created.data as VapidConfig;
 
-  // First-use requests can race. The single-row PK lets one request win;
-  // every other request reuses the same generated key pair.
   if (created.error?.code === '23505') {
     const winner = await readConfig();
     if (winner.error) throw winner.error;
@@ -156,6 +163,62 @@ async function loadOwnedFreshMessage(
   }
 
   return { message } as const;
+}
+
+async function loadServerMessage(
+  admin: ReturnType<typeof createAdminClient>,
+  messageId: string,
+) {
+  const messageResult = await admin
+    .from('mess_messages')
+    .select('id,mess_id,sender_member_id,body,created_at')
+    .eq('id', messageId)
+    .maybeSingle();
+
+  if (messageResult.error) throw messageResult.error;
+  if (!messageResult.data) return { error: json({ error: 'Message not found' }, 404) } as const;
+
+  const message = messageResult.data as ChatMessage;
+  const createdAt = Date.parse(message.created_at);
+  const ageMs = Date.now() - createdAt;
+  if (!Number.isFinite(createdAt) || ageMs < -60_000 || ageMs > 24 * 60 * 60_000) {
+    return { error: json({ error: 'Message is too old to dispatch' }, 409) } as const;
+  }
+
+  const senderResult = await admin
+    .from('members')
+    .select('id,mess_id,name')
+    .eq('id', message.sender_member_id)
+    .eq('mess_id', message.mess_id)
+    .eq('active', true)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (senderResult.error) throw senderResult.error;
+  if (!senderResult.data) return { error: json({ error: 'Active sender not found' }, 404) } as const;
+
+  return { message, sender: senderResult.data as Member } as const;
+}
+
+async function validateWebhookToken(
+  admin: ReturnType<typeof createAdminClient>,
+  supplied: string,
+) {
+  if (!supplied || supplied.length < 32 || supplied.length > 256) return false;
+  const config = await admin
+    .from('chat_push_server_config')
+    .select('webhook_token')
+    .eq('id', true)
+    .maybeSingle();
+  if (config.error) throw config.error;
+  const expected = cleanText(config.data?.webhook_token, 256);
+  if (!expected || expected.length !== supplied.length) return false;
+
+  let diff = 0;
+  for (let i = 0; i < expected.length; i += 1) {
+    diff |= expected.charCodeAt(i) ^ supplied.charCodeAt(i);
+  }
+  return diff === 0;
 }
 
 async function claimDispatch(admin: ReturnType<typeof createAdminClient>, messageId: string) {
@@ -210,7 +273,7 @@ async function sendPushes(
     message_id: message.id,
     mess_id: sender.mess_id,
     sender_name: cleanText(sender.name, 120) || 'Mess Chat',
-    body: cleanText(message.body, 180) || 'New chat message',
+    body: cleanText(message.body, 240) || 'New chat message',
     created_at: message.created_at,
     url: './?open=chat',
   });
@@ -234,10 +297,10 @@ async function sendPushes(
           publicKey: vapid.public_key,
           privateKey: vapid.private_key,
         },
-        TTL: 300,
+        TTL: 86_400,
         urgency: 'high',
         topic,
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(15_000),
       });
       delivered += 1;
     } catch (error) {
@@ -258,17 +321,54 @@ async function sendPushes(
   return { delivered, failed, removed };
 }
 
+async function dispatchClaimed(
+  admin: ReturnType<typeof createAdminClient>,
+  sender: Member,
+  message: ChatMessage,
+) {
+  const claimed = await claimDispatch(admin, message.id);
+  if (!claimed) {
+    return { ok: true, already_dispatched: true, push: { delivered: 0, failed: 0, removed: 0 } };
+  }
+
+  try {
+    const push = await sendPushes(admin, sender, message);
+    if (push.delivered === 0 && push.failed > 0) {
+      await releaseDispatch(admin, message.id);
+    }
+    return { ok: true, already_dispatched: false, push };
+  } catch (pushError) {
+    await releaseDispatch(admin, message.id);
+    throw pushError;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   try {
+    const requestBody = await req.json().catch(() => ({}));
+    const action = cleanText(requestBody?.action, 40);
+
+    if (action === 'dispatch-webhook') {
+      const admin = createAdminClient();
+      const suppliedToken = cleanText(requestBody?.webhook_token, 256);
+      if (!await validateWebhookToken(admin, suppliedToken)) {
+        return json({ error: 'Unauthorized' }, 401);
+      }
+
+      const messageId = cleanText(requestBody?.message_id, 80);
+      if (!UUID_RE.test(messageId)) return json({ error: 'Invalid message id' }, 400);
+
+      const loaded = await loadServerMessage(admin, messageId);
+      if ('error' in loaded) return loaded.error;
+      return json(await dispatchClaimed(admin, loaded.sender, loaded.message));
+    }
+
     const authenticated = await authenticate(req);
     if ('error' in authenticated) return authenticated.error;
     const { admin, member } = authenticated;
-
-    const requestBody = await req.json().catch(() => ({}));
-    const action = cleanText(requestBody?.action, 40);
 
     if (action === 'public-key') {
       const vapid = await ensureVapid(admin);
@@ -280,36 +380,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const messageId = cleanText(requestBody?.message_id, 80);
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(messageId)) {
-      return json({ error: 'Invalid message id' }, 400);
-    }
+    if (!UUID_RE.test(messageId)) return json({ error: 'Invalid message id' }, 400);
 
     const loaded = await loadOwnedFreshMessage(admin, member, messageId);
     if ('error' in loaded) return loaded.error;
-
-    const claimed = await claimDispatch(admin, messageId);
-    if (!claimed) {
-      return json({
-        ok: true,
-        already_dispatched: true,
-        push: { delivered: 0, failed: 0, removed: 0 },
-      });
-    }
-
-    try {
-      const push = await sendPushes(admin, member, loaded.message);
-
-      // If every attempted delivery failed, permit a later sender tab/client
-      // to retry. Partial success remains claimed to avoid duplicate banners.
-      if (push.delivered === 0 && push.failed > 0) {
-        await releaseDispatch(admin, messageId);
-      }
-
-      return json({ ok: true, already_dispatched: false, push });
-    } catch (pushError) {
-      await releaseDispatch(admin, messageId);
-      throw pushError;
-    }
+    return json(await dispatchClaimed(admin, member, loaded.message));
   } catch (error) {
     console.error('chat-push failed', error);
     return json({ error: 'Unable to process chat notification right now.' }, 500);
