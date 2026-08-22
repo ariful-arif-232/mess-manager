@@ -102,11 +102,53 @@
     return `<div class="mm-dash-stats">${items.map(item=>`<div><span>${esc(item.label)}</span><strong class="${item.tone||''}">${money(item.value)}</strong></div>`).join('')}</div>`;
   }
 
+  function memberSectionTitle(label='Member breakdown'){
+    return `<div class="mm-dash-member-section-title"><span>${esc(label)}</span><small>Tap a member to view details</small></div>`;
+  }
+
+  function drillMemberRow(item,{mode,total,label,copy}){
+    return `<button type="button" class="mm-dash-member-row mm-dash-drill-member" data-dash-${mode}-member="${esc(item.member.id)}">
+      ${avatar(item.member)}
+      <div class="mm-dash-member-copy"><b>${esc(item.member.name)}</b><small>${esc(copy||'Tap to view breakdown')}</small></div>
+      <span class="mm-dash-status neutral"><small>${esc(label)}</small><strong>${money(total)}</strong></span>
+      <i aria-hidden="true">›</i>
+    </button>`;
+  }
+
+  function categoryAmountRow(category,{mode='bill'}={}){
+    const amount=mode==='deposit'?Number(category.deposit||0):Number(category.bill||0);
+    const detail=mode==='deposit'?'Member deposit':category.key==='Bazar'?'Food / bazar expense':'Utility expense';
+    return `<div class="mm-dash-detail-row">
+      <span class="mm-dash-type-icon" aria-hidden="true">${category.icon}</span>
+      <div><b>${esc(category.label)}</b><small>${esc(detail)}</small></div>
+      <strong>${money(amount)}</strong>
+    </div>`;
+  }
+
   function openExpense(data){
-    sheet({kind:'expense',kicker:'Monthly expense',title:'মোট খরচ',body:`${statGrid([
+    const members=data.memberBreakdowns.filter(item=>Number(item.row.total||0)>0.001);
+    const memberRows=members.map(item=>drillMemberRow(item,{
+      mode:'expense',
+      total:Number(item.row.total||0),
+      label:'Total expense',
+      copy:'Tap to view Bazar + Utility'
+    })).join('');
+    const layer=sheet({kind:'expense',kicker:'Monthly expense',title:'মোট খরচ',body:`${statGrid([
       {label:'মোট বাজার',value:data.bazarBill},
       {label:'Utility Bills',value:data.utilityBill}
-    ])}<div class="mm-dash-total-line"><span>মোট খরচ</span><strong>${money(data.totalBill)}</strong></div>`});
+    ])}<div class="mm-dash-total-line"><span>মোট খরচ</span><strong>${money(data.totalBill)}</strong></div>
+      ${memberSectionTitle('Member expense')}
+      <div class="mm-dash-list">${memberRows||'<div class="mm-dash-empty">এই মাসে কোনো member expense নেই।</div>'}</div>`});
+    layer?.querySelectorAll('[data-dash-expense-member]').forEach(button=>button.addEventListener('click',()=>openExpenseMember(data,button.dataset.dashExpenseMember)));
+  }
+
+  function openExpenseMember(data,memberId){
+    const item=data.memberBreakdowns.find(row=>row.member.id===memberId);
+    if(!item)return;
+    const categories=item.categories.filter(category=>Number(category.bill||0)>0.001);
+    const body=categories.length?categories.map(category=>categoryAmountRow(category,{mode:'bill'})).join(''):'<div class="mm-dash-empty">এই member-এর কোনো expense নেই।</div>';
+    const layer=sheet({kind:'expense',kicker:'Member expense',title:item.member.name,back:true,body:`<div class="mm-dash-list">${body}</div><div class="mm-dash-total-line"><span>Total Expense</span><strong>${money(item.row.total)}</strong></div>`});
+    layer?.querySelector('[data-dash-back]')?.addEventListener('click',()=>openExpense(data));
   }
 
   function openUtility(data){
@@ -115,14 +157,52 @@
       const meta=typeMeta(category.key);
       return `<div class="mm-dash-detail-row"><span class="mm-dash-type-icon" aria-hidden="true">${meta.icon}</span><div><b>${esc(meta.label)}</b><small>Monthly total bill</small></div><strong>${money(category.total)}</strong></div>`;
     }).join(''):'<div class="mm-dash-empty">এই মাসে কোনো Utility Bill নেই।</div>';
-    sheet({kind:'utility',kicker:'Utility breakdown',title:'Utility Bills',body:`<div class="mm-dash-list">${body}</div><div class="mm-dash-total-line"><span>Total Utility Bill</span><strong>${money(data.utilityBill)}</strong></div>`});
+    const members=data.memberBreakdowns.filter(item=>Number(item.row.util||0)>0.001);
+    const memberRows=members.map(item=>drillMemberRow(item,{
+      mode:'utility',
+      total:Number(item.row.util||0),
+      label:'Utility bill',
+      copy:'Tap to view utility breakdown'
+    })).join('');
+    const layer=sheet({kind:'utility',kicker:'Utility breakdown',title:'Utility Bills',body:`<div class="mm-dash-list">${body}</div><div class="mm-dash-total-line"><span>Total Utility Bill</span><strong>${money(data.utilityBill)}</strong></div>
+      ${memberSectionTitle('Member utility')}
+      <div class="mm-dash-list">${memberRows||'<div class="mm-dash-empty">এই মাসে কোনো member utility charge নেই।</div>'}</div>`});
+    layer?.querySelectorAll('[data-dash-utility-member]').forEach(button=>button.addEventListener('click',()=>openUtilityMember(data,button.dataset.dashUtilityMember)));
+  }
+
+  function openUtilityMember(data,memberId){
+    const item=data.memberBreakdowns.find(row=>row.member.id===memberId);
+    if(!item)return;
+    const categories=item.categories.filter(category=>category.key!=='Bazar'&&Number(category.bill||0)>0.001);
+    const body=categories.length?categories.map(category=>categoryAmountRow(category,{mode:'bill'})).join(''):'<div class="mm-dash-empty">এই member-এর কোনো Utility Bill নেই।</div>';
+    const layer=sheet({kind:'utility',kicker:'Member utility',title:item.member.name,back:true,body:`<div class="mm-dash-list">${body}</div><div class="mm-dash-total-line"><span>Total Utility Bill</span><strong>${money(item.row.util)}</strong></div>`});
+    layer?.querySelector('[data-dash-back]')?.addEventListener('click',()=>openUtility(data));
   }
 
   function openDeposit(data){
-    sheet({kind:'deposit',kicker:'Deposit breakdown',title:'মোট জমা',body:`${statGrid([
+    const members=data.memberBreakdowns.filter(item=>Number(item.row.deposit||0)>0.001);
+    const memberRows=members.map(item=>drillMemberRow(item,{
+      mode:'deposit',
+      total:Number(item.row.deposit||0),
+      label:'Total deposit',
+      copy:'Tap to view deposit breakdown'
+    })).join('');
+    const layer=sheet({kind:'deposit',kicker:'Deposit breakdown',title:'মোট জমা',body:`${statGrid([
       {label:'Bazar Deposit',value:data.foodDeposit},
       {label:'Utility Deposit',value:data.utilityDeposit}
-    ])}<div class="mm-dash-total-line"><span>Total Deposit</span><strong>${money(data.totalDeposit)}</strong></div>`});
+    ])}<div class="mm-dash-total-line"><span>Total Deposit</span><strong>${money(data.totalDeposit)}</strong></div>
+      ${memberSectionTitle('Member deposits')}
+      <div class="mm-dash-list">${memberRows||'<div class="mm-dash-empty">এই মাসে কোনো member deposit নেই।</div>'}</div>`});
+    layer?.querySelectorAll('[data-dash-deposit-member]').forEach(button=>button.addEventListener('click',()=>openDepositMember(data,button.dataset.dashDepositMember)));
+  }
+
+  function openDepositMember(data,memberId){
+    const item=data.memberBreakdowns.find(row=>row.member.id===memberId);
+    if(!item)return;
+    const categories=item.categories.filter(category=>Number(category.deposit||0)>0.001);
+    const body=categories.length?categories.map(category=>categoryAmountRow(category,{mode:'deposit'})).join(''):'<div class="mm-dash-empty">এই member-এর কোনো deposit নেই।</div>';
+    const layer=sheet({kind:'deposit',kicker:'Member deposits',title:item.member.name,back:true,body:`<div class="mm-dash-list">${body}</div><div class="mm-dash-total-line"><span>Total Deposit</span><strong>${money(item.row.deposit)}</strong></div>`});
+    layer?.querySelector('[data-dash-back]')?.addEventListener('click',()=>openDeposit(data));
   }
 
   function fundRow(item){
