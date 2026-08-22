@@ -1,9 +1,9 @@
 /* Member deactivation UI: compact state badge, two-up admin actions and confirmation sheet. */
 .member-name-state-line{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important}
 .member-name-state-line>b{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
-.member-name-state-icon{width:18px!important;height:18px!important;flex:0 0 18px!important;border-radius:999px!important;display:grid!important;place-items:center!important;font:900 11px/1 Inter,sans-serif!important;border:1px solid transparent!important;box-shadow:0 4px 10px rgba(35,71,116,.08)!important}
-.member-name-state-icon.is-active{color:#087c5a!important;background:#e6f8f0!important;border-color:#c8ecdd!important}
-.member-name-state-icon.is-inactive{color:#a05a23!important;background:#fff1e7!important;border-color:#f2d5c1!important}
+.member-name-state-icon{width:18px!important;height:18px!important;flex:0 0 18px!important;border-radius:50%!important;display:grid!important;place-items:center!important;font:900 11px/1 Inter,sans-serif!important;border:1px solid transparent!important;box-sizing:border-box!important}
+.member-name-state-icon.is-active{color:#fff!important;background:#35b94a!important;border-color:#35b94a!important;box-shadow:0 3px 8px rgba(36,154,63,.24),inset 0 1px 0 rgba(255,255,255,.24)!important}
+.member-name-state-icon.is-inactive{color:#fff!important;background:#ef3038!important;border-color:#ef3038!important;box-shadow:0 3px 8px rgba(221,37,46,.22),inset 0 1px 0 rgba(255,255,255,.22)!important}
 .member-clean-card.is-member-inactive{background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(250,248,246,.98))!important}
 .member-clean-card.is-member-inactive .member-photo{filter:saturate(.8)}
 
@@ -34,8 +34,8 @@
 .member-state-actions .btn{min-height:48px!important;border-radius:15px!important}
 .member-deactivate-confirm{color:#fff!important;background:linear-gradient(135deg,#df8b2f,#bd6514)!important;border:0!important;box-shadow:0 10px 22px rgba(189,101,20,.18)!important}
 
-html[data-theme="dark"] .member-name-state-icon.is-active{color:#75e0ba!important;background:#153b32!important;border-color:#2a5c4b!important;box-shadow:none!important}
-html[data-theme="dark"] .member-name-state-icon.is-inactive{color:#ffc178!important;background:#3f2d1c!important;border-color:#62472b!important;box-shadow:none!important}
+html[data-theme="dark"] .member-name-state-icon.is-active{color:#fff!important;background:#35b94a!important;border-color:#35b94a!important;box-shadow:0 3px 8px rgba(53,185,74,.22)!important}
+html[data-theme="dark"] .member-name-state-icon.is-inactive{color:#fff!important;background:#ef3038!important;border-color:#ef3038!important;box-shadow:0 3px 8px rgba(239,48,56,.2)!important}
 html[data-theme="dark"] .member-clean-card.is-member-inactive{background:linear-gradient(145deg,#102234,#151f28)!important;border-color:#314459!important}
 html[data-theme="dark"] .member-state-toggle.is-deactivate{color:#ffc77f!important;background:linear-gradient(135deg,#3a2a1d,#302217)!important;border-color:#62462d!important}
 html[data-theme="dark"] .member-state-toggle.is-activate{color:#7ce0bd!important;background:linear-gradient(135deg,#173b33,#133129)!important;border-color:#2a5b4c!important}
