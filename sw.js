@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v104-chat-push-auto';
+const CACHE = 'mess-manager-v105-monthly-food-control';
 const SHELL = [
   './',
   './index.html',
@@ -6,7 +6,9 @@ const SHELL = [
   './icons/icon.png?v=20260814-borderless2',
   './icons/icon-192.png?v=20260814-borderless2',
   './icons/icon-512.png?v=20260814-borderless2',
-  './chat-notifications.js?v=20260822-auto3'
+  './chat-notifications.js?v=20260822-auto3',
+  './monthly-food-control.js?v=20260826-foodclose1',
+  './monthly-food-control.css?v=20260826-foodclose1'
 ];
 
 self.addEventListener('install', event => {
