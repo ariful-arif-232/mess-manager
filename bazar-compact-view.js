@@ -52,6 +52,6 @@
 
   window.bazar=compactBazar;
   const previousRenderPage=window.renderPage;
-  window.renderPage=function(){if(state.page==='bazar')return compactBazar(document.querySelector('#content'));return previousRenderPage();};
+  window.renderPage=function(){if(state.page==='bazar')return window.bazar(document.querySelector('#content'));return previousRenderPage();};
   document.addEventListener('click',e=>{const b=e.target.closest('[data-view-bazar]');if(b){e.preventDefault();openDetails(b.dataset.viewBazar);}},true);
 })();
