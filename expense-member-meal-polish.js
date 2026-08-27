@@ -42,6 +42,9 @@
     return String(
       element?.dataset?.dashExpenseMember ||
       element?.dataset?.dashDepositMember ||
+      element?.dataset?.dashBazarMember ||
+      element?.dataset?.dashBazarFundMember ||
+      element?.dataset?.dashBazarDueMember ||
       ''
     );
   }
@@ -89,7 +92,7 @@
     shortenMemberHelperText(root);
 
     const targets=[];
-    const selector='[data-dash-expense-member],[data-dash-deposit-member],.mm-dash-member-row:not(button)';
+    const selector='[data-dash-expense-member],[data-dash-deposit-member],[data-dash-bazar-member],[data-dash-bazar-fund-member],[data-dash-bazar-due-member],.mm-dash-member-row:not(button)';
     if(root?.matches?.(selector))targets.push(root);
     root?.querySelectorAll?.(selector).forEach(row=>targets.push(row));
     if(!targets.length)return;
@@ -124,6 +127,30 @@
     if(document.body)observer.observe(document.body,{childList:true,subtree:true});
   };
 
+  function loadSeparatedDashboard(){
+    if(!document.querySelector('link[data-mm-dashboard-finance-separation]')){
+      const link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href='dashboard-finance-separation.css?v=20260828-finsep1';
+      link.dataset.mmDashboardFinanceSeparation='1';
+      document.head.appendChild(link);
+    }
+    const queue=[
+      ['dashboard-finance-separation.js?v=20260828-finsep1','mmDashboardFinanceSeparationAsset'],
+      ['dashboard-finance-monthly-compat.js?v=20260828-finsep1','mmDashboardFinanceMonthlyCompatAsset']
+    ];
+    queue.forEach(([src,key])=>{
+      if(document.querySelector(`script[data-${key.replace(/[A-Z]/g,m=>`-${m.toLowerCase()}`)}]`))return;
+      const script=document.createElement('script');
+      script.src=src;
+      script.async=false;
+      script.dataset[key]='1';
+      script.addEventListener('error',()=>console.warn(`Unable to load ${src}`));
+      document.head.appendChild(script);
+    });
+  }
+
+  loadSeparatedDashboard();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
