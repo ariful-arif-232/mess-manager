@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v107-classic-member-summary';
+const CACHE = 'mess-manager-v108-dashboard-summary-micro-polish';
 const SHELL = [
   './',
   './index.html',
@@ -14,7 +14,9 @@ const SHELL = [
   './dashboard-finance-monthly-compat.js?v=20260828-finsep1',
   './dashboard-finance-separation.css?v=20260828-finsep1',
   './dashboard-member-summary-classic.js?v=20260828-classic1',
-  './dashboard-member-summary-classic.css?v=20260828-classic1'
+  './dashboard-member-summary-classic.css?v=20260828-classic1',
+  './dashboard-summary-micro-polish.js?v=20260828-micro1',
+  './dashboard-summary-micro-polish.css?v=20260828-micro1'
 ];
 
 self.addEventListener('install', event => {
