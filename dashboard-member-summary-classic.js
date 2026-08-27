@@ -31,6 +31,7 @@
     const bazarBalance=Number(row.foodDeposit||0)-Number(row.food||0);
     const utilityBalance=Number(row.utilityDeposit||0)-Number(row.util||0);
     const totalBalance=bazarBalance+utilityBalance;
+    const totalTone=balanceState(totalBalance).tone;
     return `<article class="member-summary-card mm-fin-member-summary mm-dash-member-summary mm-fin-separated-member-summary mm-classic-member-summary">
       <div class="member-summary-head mm-fin-member-head mm-classic-summary-head">
         ${avatar(row.member)}
@@ -47,7 +48,7 @@
         <div class="is-bill is-total"><span>Total Bill</span><b>${money(row.total)}</b></div>
         <div class="is-deposit"><span>Food Deposit</span><b>${money(row.foodDeposit)}</b></div>
         <div class="is-deposit"><span>Utility Deposit</span><b>${money(row.utilityDeposit)}</b></div>
-        <div class="is-deposit is-total"><span>Total Deposit</span><b>${money(row.deposit)}</b></div>
+        <div class="is-deposit is-total is-${totalTone}"><span>Total Deposit</span><b>${money(row.deposit)}</b></div>
       </div>
     </article>`;
   }
