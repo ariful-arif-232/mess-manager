@@ -62,8 +62,8 @@ Deno.serve(async (req: Request) => {
     const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const anon = Deno.env.get('SUPABASE_ANON_KEY')!;
     const resendKey = Deno.env.get('RESEND_API_KEY')?.trim();
-    const gmailUser = Deno.env.get('GMAIL_USER')?.trim();
-    const gmailPassword = Deno.env.get('GMAIL_APP_PASSWORD')?.replace(/\s+/g, '');
+    if (!resendKey) throw new Error('RESEND_API_KEY is not configured');
+
     const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
 
     if (purpose === 'reset') {
@@ -103,37 +103,7 @@ Deno.serve(async (req: Request) => {
     });
     if (storeError) throw storeError;
 
-    const reset = purpose === 'reset';
-
-    if (resendKey) {
-      await sendWithResend(resendKey, email, code, reset);
-    } else if (gmailUser && gmailPassword) {
-      const nodemailer = (await import('npm:nodemailer@6.9.15')).default;
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com', port: 465, secure: true,
-        auth: { user: gmailUser, pass: gmailPassword },
-        connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000,
-      });
-      const subject = reset
-        ? `${code} is your Mess Manager reset verification code`
-        : `${code} is your Mess Manager verification code`;
-      const intro = reset
-        ? 'Use this 8-digit code to confirm the workspace reset. Do not share this code.'
-        : 'Use this 8-digit code to create your admin account:';
-      const footer = reset
-        ? 'If you did not request a workspace reset, ignore this email. Your data has not been changed.'
-        : 'If you did not request this code, you can ignore this email.';
-      await transporter.sendMail({
-        from: `Mess Manager <${gmailUser}>`,
-        to: email,
-        subject,
-        text: `${intro} ${code}. It expires in 10 minutes. ${footer}`,
-        html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#172033"><h2 style="color:#102653">Mess Manager</h2><p>${intro}</p><div style="font-size:34px;font-weight:700;letter-spacing:8px;margin:24px 0;color:#1268e8">${code}</div><p>This code expires in 10 minutes.</p><p style="color:#71809a;font-size:13px">${footer}</p></div>`,
-      });
-    } else {
-      throw new Error('RESEND_API_KEY is not configured');
-    }
-
+    await sendWithResend(resendKey, email, code, purpose === 'reset');
     return json({ ok: true });
   } catch (error) {
     console.error('request-admin-otp failed', error);
