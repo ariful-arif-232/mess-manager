@@ -37,8 +37,7 @@ Deno.serve(async (req: Request) => {
     const anon = Deno.env.get('SUPABASE_ANON_KEY')!;
     const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const resendKey = Deno.env.get('RESEND_API_KEY')?.trim();
-    const gmailUser = Deno.env.get('GMAIL_USER')?.trim();
-    const gmailPassword = Deno.env.get('GMAIL_APP_PASSWORD')?.replace(/\s+/g, '');
+    if (!resendKey) return json({ error: 'RESEND_API_KEY is not configured.' }, 503);
 
     const caller = createClient(url, anon, {
       global: { headers: { Authorization: auth } },
@@ -82,43 +81,16 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    if (resendKey) {
-      const data = await sendWithResend(resendKey, {
-        from: 'Mess Manager <notice@mess-manager.app>',
-        to: [member.email],
-        reply_to: 'support@mess-manager.app',
-        subject,
-        text: message,
-        html,
-        ...(attachments.length ? { attachments } : {}),
-      });
-      return json({ ok: true, message_id: data?.id ?? null });
-    }
-
-    if (gmailUser && gmailPassword) {
-      const nodemailer = (await import('npm:nodemailer@6.9.15')).default;
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com', port: 465, secure: true,
-        auth: { user: gmailUser, pass: gmailPassword },
-        connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000,
-      });
-      const info = await transporter.sendMail({
-        from: `Mess Manager <${gmailUser}>`,
-        to: member.email,
-        subject,
-        text: message,
-        html,
-        attachments: attachments.map((a) => ({
-          filename: a.filename,
-          content: a.content,
-          encoding: 'base64',
-          contentType: 'application/pdf',
-        })),
-      });
-      return json({ ok: true, message_id: info.messageId });
-    }
-
-    return json({ error: 'RESEND_API_KEY is not configured.' }, 503);
+    const data = await sendWithResend(resendKey, {
+      from: 'Mess Manager <notice@mess-manager.app>',
+      to: [member.email],
+      reply_to: 'support@mess-manager.app',
+      subject,
+      text: message,
+      html,
+      ...(attachments.length ? { attachments } : {}),
+    });
+    return json({ ok: true, message_id: data?.id ?? null });
   } catch (error) {
     console.error('mess-notify failed', error);
     return json({ error: 'Unable to send email right now.' }, 500);
