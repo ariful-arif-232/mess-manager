@@ -30,6 +30,24 @@
     try{dashboard=window.dashboard;}catch(_){/* window assignment is sufficient */}
   }
 
+  function loadMicroPolish(){
+    if(!document.querySelector('link[data-mm-dashboard-summary-micro-polish]')){
+      const link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href='dashboard-summary-micro-polish.css?v=20260828-micro1';
+      link.dataset.mmDashboardSummaryMicroPolish='1';
+      document.head.appendChild(link);
+    }
+    if(window.__mmDashboardSummaryMicroPolishLoaded)return;
+    if(document.querySelector('script[data-mm-dashboard-summary-micro-polish]'))return;
+    const script=document.createElement('script');
+    script.src='dashboard-summary-micro-polish.js?v=20260828-micro1';
+    script.async=false;
+    script.dataset.mmDashboardSummaryMicroPolish='1';
+    script.addEventListener('error',()=>console.warn('Unable to load dashboard summary micro polish.'));
+    document.head.appendChild(script);
+  }
+
   function loadClassicSummary(){
     if(!document.getElementById('mmClassicSummaryAlignment')){
       const style=document.createElement('style');
@@ -45,6 +63,7 @@
       document.head.appendChild(link);
     }
     if(window.__mmDashboardMemberSummaryClassicLoaded){
+      loadMicroPolish();
       if(profile&&state?.page==='dashboard'&&typeof render==='function')render();
       return;
     }
@@ -53,6 +72,7 @@
     script.src='dashboard-member-summary-classic.js?v=20260828-classic1';
     script.async=false;
     script.dataset.mmClassicMemberSummary='1';
+    script.addEventListener('load',loadMicroPolish,{once:true});
     script.addEventListener('error',()=>console.warn('Unable to load classic member summary.'));
     document.head.appendChild(script);
   }
