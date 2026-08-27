@@ -1,4 +1,4 @@
-/* Keep the monthly Bazar-close status visible when the separated dashboard loads after other dashboard wrappers. */
+/* Keep the monthly Bazar-close status visible and load the classic compact member summary. */
 'use strict';
 (()=>{
   if(window.__mmDashboardFinanceMonthlyCompatLoaded)return;
@@ -30,5 +30,32 @@
     try{dashboard=window.dashboard;}catch(_){/* window assignment is sufficient */}
   }
 
-  if(profile&&state?.page==='dashboard'&&typeof render==='function')render();
+  function loadClassicSummary(){
+    if(!document.getElementById('mmClassicSummaryAlignment')){
+      const style=document.createElement('style');
+      style.id='mmClassicSummaryAlignment';
+      style.textContent='.mm-classic-summary-grid>div{justify-self:stretch!important}';
+      document.head.appendChild(style);
+    }
+    if(!document.querySelector('link[data-mm-classic-member-summary]')){
+      const link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href='dashboard-member-summary-classic.css?v=20260828-classic1';
+      link.dataset.mmClassicMemberSummary='1';
+      document.head.appendChild(link);
+    }
+    if(window.__mmDashboardMemberSummaryClassicLoaded){
+      if(profile&&state?.page==='dashboard'&&typeof render==='function')render();
+      return;
+    }
+    if(document.querySelector('script[data-mm-classic-member-summary]'))return;
+    const script=document.createElement('script');
+    script.src='dashboard-member-summary-classic.js?v=20260828-classic1';
+    script.async=false;
+    script.dataset.mmClassicMemberSummary='1';
+    script.addEventListener('error',()=>console.warn('Unable to load classic member summary.'));
+    document.head.appendChild(script);
+  }
+
+  loadClassicSummary();
 })();

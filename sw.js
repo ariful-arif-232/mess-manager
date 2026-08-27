@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v106-finance-separation';
+const CACHE = 'mess-manager-v107-classic-member-summary';
 const SHELL = [
   './',
   './index.html',
@@ -12,7 +12,9 @@ const SHELL = [
   './expense-member-meal-polish.js?v=20260822-meal3',
   './dashboard-finance-separation.js?v=20260828-finsep1',
   './dashboard-finance-monthly-compat.js?v=20260828-finsep1',
-  './dashboard-finance-separation.css?v=20260828-finsep1'
+  './dashboard-finance-separation.css?v=20260828-finsep1',
+  './dashboard-member-summary-classic.js?v=20260828-classic1',
+  './dashboard-member-summary-classic.css?v=20260828-classic1'
 ];
 
 self.addEventListener('install', event => {
