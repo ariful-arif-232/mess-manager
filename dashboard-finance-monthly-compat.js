@@ -31,6 +31,12 @@
   }
 
   function loadClassicSummary(){
+    if(!document.getElementById('mmClassicSummaryAlignment')){
+      const style=document.createElement('style');
+      style.id='mmClassicSummaryAlignment';
+      style.textContent='.mm-classic-summary-grid>div{justify-self:stretch!important}';
+      document.head.appendChild(style);
+    }
     if(!document.querySelector('link[data-mm-classic-member-summary]')){
       const link=document.createElement('link');
       link.rel='stylesheet';
