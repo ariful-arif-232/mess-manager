@@ -43,10 +43,7 @@ async function sendWithResend(apiKey: string, email: string, code: string) {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
@@ -61,8 +58,8 @@ Deno.serve(async (req: Request) => {
 
     const url = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const resendKey = Deno.env.get('RESEND_API_KEY')?.trim();
+    if (!resendKey) throw new Error('RESEND_API_KEY is not configured');
 
     const admin = createClient(url, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -73,13 +70,11 @@ Deno.serve(async (req: Request) => {
       .select('id,mess_id,user_id,email')
       .eq('active', true)
       .is('deleted_at', null);
-
     if (memberError) throw memberError;
 
     const matches = (activeMembers ?? []).filter(
       (member) => normalizeEmail(member.email) === email,
     );
-
     if (matches.length === 0) return genericResponse();
 
     const linkedIds = [
@@ -89,53 +84,34 @@ Deno.serve(async (req: Request) => {
           .filter((value): value is string => Boolean(value)),
       ),
     ];
-
     if (linkedIds.length > 1) return genericResponse();
 
     let authUserId: string | null = linkedIds[0] ?? null;
-
     if (authUserId) {
       const { data, error } = await admin.auth.admin.getUserById(authUserId);
-      if (
-        error ||
-        !data?.user ||
-        normalizeEmail(data.user.email) !== email
-      ) {
-        authUserId = null;
-      }
+      if (error || !data?.user || normalizeEmail(data.user.email) !== email) authUserId = null;
     }
 
     if (!authUserId) {
       let foundUser: any = null;
       for (let page = 1; page <= 10 && !foundUser; page += 1) {
-        const { data, error } = await admin.auth.admin.listUsers({
-          page,
-          perPage: 100,
-        });
+        const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 100 });
         if (error) throw error;
-        foundUser =
-          data.users.find((user) => normalizeEmail(user.email) === email) ??
-          null;
+        foundUser = data.users.find((user) => normalizeEmail(user.email) === email) ?? null;
         if (data.users.length < 100) break;
       }
 
       if (!foundUser) {
-        const { data, error } = await admin.auth.admin.createUser({
-          email,
-          email_confirm: true,
-        });
+        const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true });
         if (error) throw error;
         foundUser = data.user;
       }
-
       authUserId = foundUser.id;
     }
 
     for (const member of matches) {
       if (member.user_id === authUserId) continue;
-      if (member.user_id && member.user_id !== authUserId) {
-        return genericResponse();
-      }
+      if (member.user_id && member.user_id !== authUserId) return genericResponse();
 
       const { data: existingIdentity, error: identityError } = await admin
         .from('members')
@@ -145,7 +121,6 @@ Deno.serve(async (req: Request) => {
         .is('deleted_at', null)
         .limit(1)
         .maybeSingle();
-
       if (identityError) throw identityError;
       if (existingIdentity && existingIdentity.id !== member.id) continue;
 
@@ -154,32 +129,18 @@ Deno.serve(async (req: Request) => {
         .update({ user_id: authUserId })
         .eq('id', member.id)
         .is('user_id', null);
-
       if (linkError) throw linkError;
     }
 
-    if (resendKey) {
-      const { data: generated, error: generateError } = await admin.auth.admin.generateLink({
-        type: 'magiclink',
-        email,
-      });
-      if (generateError) throw generateError;
+    const { data: generated, error: generateError } = await admin.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+    });
+    if (generateError) throw generateError;
 
-      const code = String(generated?.properties?.email_otp ?? '').trim();
-      if (!code) throw new Error('Supabase did not generate an email OTP');
-      await sendWithResend(resendKey, email, code);
-    } else {
-      const publicClient = createClient(url, anonKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-
-      const { error: otpError } = await publicClient.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false },
-      });
-
-      if (otpError) throw otpError;
-    }
+    const code = String(generated?.properties?.email_otp ?? '').trim();
+    if (!code) throw new Error('Supabase did not generate an email OTP');
+    await sendWithResend(resendKey, email, code);
 
     return genericResponse();
   } catch (error) {
