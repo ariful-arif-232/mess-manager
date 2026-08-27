@@ -16,6 +16,32 @@ function genericResponse() {
   });
 }
 
+async function sendWithResend(apiKey: string, email: string, code: string) {
+  const subject = `${code} is your Mess Manager login code`;
+  const text = `Use this one-time code to sign in to Mess Manager: ${code}. Do not share this code. If you did not request it, you can ignore this email.`;
+  const html = `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#172033"><h2 style="color:#102653">Mess Manager</h2><p>Use this one-time code to sign in:</p><div style="font-size:34px;font-weight:700;letter-spacing:8px;margin:24px 0;color:#1268e8">${code}</div><p>Do not share this code with anyone.</p><p style="color:#71809a;font-size:13px">If you did not request this code, you can ignore this email.</p></div>`;
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'Mess Manager <no-reply@mess-manager.app>',
+      to: [email],
+      subject,
+      text,
+      html,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '');
+    throw new Error(`Resend failed (${response.status}): ${detail.slice(0, 500)}`);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -36,6 +62,7 @@ Deno.serve(async (req: Request) => {
     const url = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const resendKey = Deno.env.get('RESEND_API_KEY')?.trim();
 
     const admin = createClient(url, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -53,9 +80,6 @@ Deno.serve(async (req: Request) => {
       (member) => normalizeEmail(member.email) === email,
     );
 
-    // Keep the response generic so this endpoint cannot be used to enumerate
-    // member emails. Multiple matches are valid because one verified email may
-    // belong to several Mess workspaces.
     if (matches.length === 0) return genericResponse();
 
     const linkedIds = [
@@ -66,8 +90,6 @@ Deno.serve(async (req: Request) => {
       ),
     ];
 
-    // Two different auth identities already attached to the same email are an
-    // unsafe data conflict; do not guess which identity owns the address.
     if (linkedIds.length > 1) return genericResponse();
 
     let authUserId: string | null = linkedIds[0] ?? null;
@@ -111,17 +133,10 @@ Deno.serve(async (req: Request) => {
 
     for (const member of matches) {
       if (member.user_id === authUserId) continue;
-
-      // Never overwrite a membership that is already owned by another auth
-      // identity. Treat that as an ambiguous/conflicting account instead.
       if (member.user_id && member.user_id !== authUserId) {
         return genericResponse();
       }
 
-      // The same identity may only have one membership inside a given mess.
-      // If that identity is already linked in this workspace, leave any
-      // duplicate roster row unclaimed rather than violating the uniqueness
-      // rule or merging data implicitly.
       const { data: existingIdentity, error: identityError } = await admin
         .from('members')
         .select('id')
@@ -143,16 +158,29 @@ Deno.serve(async (req: Request) => {
       if (linkError) throw linkError;
     }
 
-    const publicClient = createClient(url, anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    if (resendKey) {
+      const { data: generated, error: generateError } = await admin.auth.admin.generateLink({
+        type: 'magiclink',
+        email,
+      });
+      if (generateError) throw generateError;
 
-    const { error: otpError } = await publicClient.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false },
-    });
+      const code = String(generated?.properties?.email_otp ?? '').trim();
+      if (!code) throw new Error('Supabase did not generate an email OTP');
+      await sendWithResend(resendKey, email, code);
+    } else {
+      const publicClient = createClient(url, anonKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
 
-    if (otpError) throw otpError;
+      const { error: otpError } = await publicClient.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
+      });
+
+      if (otpError) throw otpError;
+    }
+
     return genericResponse();
   } catch (error) {
     console.error('request-mess-otp failed', error);
