@@ -56,10 +56,11 @@
   function decorate(c){
     if(!c||String(state?.page||'')!=='settlement')return;
     const mobile=c.querySelector('.mobile-summary');
-    if(!mobile)return;
+    if(!mobile||mobile.dataset.mmSettlementHomeReady==='1')return;
     let rows=[];
     try{rows=typeof calcMonth==='function'?(calcMonth()||[]):[];}catch(error){console.warn('Unable to build Settlement member summary',error);return;}
     mobile.classList.add('mm-settlement-home-list');
+    mobile.dataset.mmSettlementHomeReady='1';
     mobile.innerHTML=rows.map(homeStyleCard).join('');
     c.classList.add('mm-settlement-home-sync');
   }
@@ -77,7 +78,8 @@
   const observer=new MutationObserver(()=>{
     if(String(state?.page||'')!=='settlement')return;
     const c=document.querySelector('#content');
-    if(c&&!c.classList.contains('mm-settlement-home-sync'))requestAnimationFrame(()=>decorate(c));
+    const mobile=c?.querySelector('.mobile-summary');
+    if(c&&mobile&&mobile.dataset.mmSettlementHomeReady!=='1')requestAnimationFrame(()=>decorate(c));
   });
   if(document.body)observer.observe(document.body,{childList:true,subtree:true});
 
