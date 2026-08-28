@@ -5,6 +5,15 @@
   window.__mmBazarUndoSettlementLoaded=true;
 
   const monthStart=()=>`${state.month}-01`;
+  const clearModalLocks=()=>{
+    document.getElementById('mmBazarUndoLayer')?.remove();
+    document.getElementById('mmBazarFinalizeLayer')?.remove();
+    document.getElementById('mmMonthlyFoodControlLayer')?.remove();
+    document.documentElement.classList.remove('mm-finalize-open','mm-food-control-open');
+    document.body?.classList.remove('mm-finalize-open','mm-food-control-open');
+    document.documentElement.style.removeProperty('overflow');
+    document.body?.style?.removeProperty('overflow');
+  };
   const closeUndo=()=>document.getElementById('mmBazarUndoLayer')?.remove();
 
   function openUndo(){
@@ -30,11 +39,20 @@
       try{
         const result=assertResult(await client.rpc('undo_bazar_settlement_and_reopen',{p_month:monthStart(),p_pin:pin}));
         if(!result?.ok){notify(result?.message||'Undo & Reopen failed');btn.disabled=false;btn.textContent=old;return;}
-        closeUndo();
-        document.getElementById('mmBazarFinalizeLayer')?.remove();
-        await window.loadData();window.render();
+        clearModalLocks();
+        db.bazarFinalization={active:false};
+        if(db.foodControl){db.foodControl.bazar_closed_from=null;db.foodControl.meal_stop_from=null;db.foodControl.active_finalization_id=null;}
+        await window.loadData();
+        window.render();
+        requestAnimationFrame(()=>{
+          clearModalLocks();
+          window.scrollTo({top:window.scrollY,behavior:'auto'});
+        });
         notify('Settlement undo হয়েছে এবং Bazar আগের live state-এ reopen হয়েছে।','success');
-      }catch(error){notify(friendlyError(error));btn.disabled=false;btn.textContent=old;}
+      }catch(error){
+        clearModalLocks();
+        notify(friendlyError(error));
+      }
     });
   }
 

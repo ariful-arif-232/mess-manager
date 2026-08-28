@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v110-bazar-undo-reopen';
+const CACHE = 'mess-manager-v111-meal-undo-fix';
 const SHELL = [
   './',
   './index.html',
@@ -11,8 +11,8 @@ const SHELL = [
   './monthly-food-control.css?v=20260826-foodclose1',
   './bazar-finalization.js?v=20260828-finalize1',
   './bazar-finalization.css?v=20260828-finalize1',
-  './bazar-finalization-undo.js?v=20260828-undo1',
-  './bazar-finalization-undo.css?v=20260828-undo1',
+  './bazar-finalization-undo.js?v=20260828-undo2',
+  './bazar-finalization-undo.css?v=20260828-undo2',
   './expense-member-meal-polish.js?v=20260822-meal3',
   './dashboard-finance-separation.js?v=20260828-finsep1',
   './dashboard-finance-monthly-compat.js?v=20260828-finsep1',
