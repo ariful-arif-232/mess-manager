@@ -4,6 +4,20 @@
   if(window.__mmBazarUndoSettlementLoaded)return;
   window.__mmBazarUndoSettlementLoaded=true;
 
+  if(!document.querySelector('link[data-mm-finalize-polish]')){
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='bazar-finalization-ui-polish.css?v=20260828-finalize2';
+    link.dataset.mmFinalizePolish='1';
+    document.head.appendChild(link);
+  }
+  if(!document.querySelector('script[data-mm-finalize-polish]')){
+    const script=document.createElement('script');
+    script.src='bazar-finalization-ui-polish.js?v=20260828-finalize2';
+    script.dataset.mmFinalizePolish='1';
+    document.head.appendChild(script);
+  }
+
   const monthStart=()=>`${state.month}-01`;
   const clearModalLocks=()=>{
     document.getElementById('mmBazarUndoLayer')?.remove();
