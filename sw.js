@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v112-finalize-ui-polish';
+const CACHE = 'mess-manager-v113-settlement-home-sync';
 const SHELL = [
   './',
   './index.html',
@@ -22,7 +22,11 @@ const SHELL = [
   './dashboard-member-summary-classic.js?v=20260828-classic1',
   './dashboard-member-summary-classic.css?v=20260828-classic1',
   './dashboard-summary-micro-polish.js?v=20260828-micro1',
-  './dashboard-summary-micro-polish.css?v=20260828-micro1'
+  './dashboard-summary-micro-polish.css?v=20260828-micro1',
+  './settlement-home-summary-sync.js?v=20260828-settlehome1',
+  './settlement-home-summary-sync.css?v=20260828-settlehome1',
+  './settlement-bazar-compact-polish.js?v=20260828-settlehome1',
+  './settlement-bazar-compact-polish.css?v=20260828-settlehome1'
 ];
 
 self.addEventListener('install', event => {

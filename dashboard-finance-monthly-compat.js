@@ -48,6 +48,37 @@
     document.head.appendChild(script);
   }
 
+  function loadSettlementSync(){
+    if(!document.querySelector('link[data-mm-settlement-home-sync]')){
+      const link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href='settlement-home-summary-sync.css?v=20260828-settlehome1';
+      link.dataset.mmSettlementHomeSync='1';
+      document.head.appendChild(link);
+    }
+    if(!document.querySelector('link[data-mm-settlement-bazar-compact]')){
+      const link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href='settlement-bazar-compact-polish.css?v=20260828-settlehome1';
+      link.dataset.mmSettlementBazarCompact='1';
+      document.head.appendChild(link);
+    }
+    const assets=[
+      ['settlement-home-summary-sync.js?v=20260828-settlehome1','mmSettlementHomeSync'],
+      ['settlement-bazar-compact-polish.js?v=20260828-settlehome1','mmSettlementBazarCompact']
+    ];
+    assets.forEach(([src,key])=>{
+      const attr=`data-${key.replace(/[A-Z]/g,m=>`-${m.toLowerCase()}`)}`;
+      if(document.querySelector(`script[${attr}]`))return;
+      const script=document.createElement('script');
+      script.src=src;
+      script.async=false;
+      script.setAttribute(attr,'1');
+      script.addEventListener('error',()=>console.warn(`Unable to load ${src}`));
+      document.head.appendChild(script);
+    });
+  }
+
   function loadClassicSummary(){
     if(!document.getElementById('mmClassicSummaryAlignment')){
       const style=document.createElement('style');
@@ -64,16 +95,20 @@
     }
     if(window.__mmDashboardMemberSummaryClassicLoaded){
       loadMicroPolish();
+      loadSettlementSync();
       if(profile&&state?.page==='dashboard'&&typeof render==='function')render();
       return;
     }
-    if(document.querySelector('script[data-mm-classic-member-summary]'))return;
+    if(document.querySelector('script[data-mm-classic-member-summary]')){
+      loadSettlementSync();
+      return;
+    }
     const script=document.createElement('script');
     script.src='dashboard-member-summary-classic.js?v=20260828-classic1';
     script.async=false;
     script.dataset.mmClassicMemberSummary='1';
-    script.addEventListener('load',loadMicroPolish,{once:true});
-    script.addEventListener('error',()=>console.warn('Unable to load classic member summary.'));
+    script.addEventListener('load',()=>{loadMicroPolish();loadSettlementSync();},{once:true});
+    script.addEventListener('error',()=>{console.warn('Unable to load classic member summary.');loadSettlementSync();});
     document.head.appendChild(script);
   }
 

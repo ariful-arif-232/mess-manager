@@ -1,0 +1,3 @@
+/* Settlement page reuses the current Home Members Summary card system. */
+.mm-settlement-home-list{display:grid;gap:12px;margin-top:4px}.mm-settlement-home-card{margin:0!important}.mm-settlement-home-sync .section-head{align-items:center}.mm-settlement-home-sync .section-head h2{margin:0}.mm-settlement-home-sync .mobile-summary{padding-bottom:8px}
+@media(max-width:430px){.mm-settlement-home-list{gap:11px}.mm-settlement-home-card{border-radius:21px!important}}
