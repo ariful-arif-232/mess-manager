@@ -17,7 +17,6 @@
 
   function polishMainSheet(sheet){
     sheet.classList.add('mm-finalize-ui-main');
-
     sheet.querySelector('.mm-finalize-head small')?.remove();
     sheet.querySelector('.mm-finalize-date em')?.remove();
 
@@ -46,7 +45,7 @@
     const ready=sheet.querySelector('.mm-finalize-ready');
     if(ready&&!ready.classList.contains('mm-finalize-ready-polished')){
       ready.classList.add('mm-finalize-ready-polished');
-      ready.innerHTML='<span class="mm-finalize-ready-icon" aria-hidden="true">✓</span><div><b>Bazar Calculation Okay</b><span>Ready to finalize.</span></div>';
+      ready.innerHTML='<span class="mm-finalize-ready-icon" aria-hidden="true">✓</span><div><b>Bazar Calculation Okay</b></div>';
     }
   }
 
