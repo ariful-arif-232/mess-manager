@@ -1,0 +1,6 @@
+/* Compact Current Bazar Cash card requested for the settlement sheet. */
+.mm-settle-hero.mm-settle-hero-compact{padding:11px 14px!important;border-radius:16px!important}
+.mm-settle-hero.mm-settle-hero-compact small{font-size:7.6px!important;letter-spacing:.11em!important}
+.mm-settle-hero.mm-settle-hero-compact strong{margin-top:4px!important;font-size:21px!important;line-height:1!important}
+.mm-settle-hero.mm-settle-hero-compact>span{max-width:330px;margin:4px auto 0!important;color:#78899b!important;font-size:7.9px!important;line-height:1.25!important}
+@media(max-width:430px){.mm-settle-hero.mm-settle-hero-compact{padding:10px 12px!important}.mm-settle-hero.mm-settle-hero-compact strong{font-size:20px!important}.mm-settle-hero.mm-settle-hero-compact>span{font-size:7.5px!important}}
