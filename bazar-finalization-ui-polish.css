@@ -1,0 +1,30 @@
+/* Finalize Bazar requested micro-polish. */
+.mm-finalize-ui-main .mm-finalize-head{margin-bottom:15px}
+.mm-finalize-ui-main .mm-finalize-head>div{display:flex;align-items:center;min-height:32px}
+.mm-finalize-ui-main .mm-finalize-date{padding-top:14px;padding-bottom:14px}
+.mm-finalize-ui-main .mm-finalize-date b{margin-top:5px}
+.mm-finalize-ui-main .mm-finalize-ready-polished{display:flex;align-items:center;gap:10px;padding:11px 13px;border-color:#bfe5d4;background:linear-gradient(135deg,#effbf5,#f7fcf9);color:#176b50;box-shadow:0 5px 16px rgba(26,126,92,.06)}
+.mm-finalize-ready-polished .mm-finalize-ready-icon{display:grid!important;place-items:center;flex:0 0 28px;width:28px;height:28px;margin:0!important;border-radius:50%;background:linear-gradient(135deg,#17a170,#087c56);color:#fff!important;font:900 15px/1 Inter,sans-serif;box-shadow:0 6px 14px rgba(15,132,91,.18)}
+.mm-finalize-ready-polished>div{min-width:0}
+.mm-finalize-ready-polished>div b{font-size:10.5px;line-height:1.15}
+.mm-finalize-ready-polished>div span{margin-top:2px;font-size:8.4px;line-height:1.25;color:#4f806f}
+.mm-finalize-ui-pin .mm-finalize-confirm-card{padding-top:14px;padding-bottom:14px}
+.mm-finalize-ui-pin .mm-finalize-lock-note{padding:11px 12px}
+.mm-finalize-ui-pin .mm-finalize-lock-note b{font-size:10px}
+
+.mm-bazar-finalized-toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));z-index:24000;display:grid;grid-template-columns:36px minmax(0,1fr) 30px;align-items:center;gap:10px;width:min(520px,calc(100% - 32px));padding:11px 12px;border:1px solid rgba(88,202,148,.65);border-radius:17px;background:linear-gradient(135deg,rgba(18,113,78,.98),rgba(12,82,58,.98));color:#fff;box-shadow:0 16px 38px rgba(8,67,47,.28),inset 0 1px rgba(255,255,255,.14);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);animation:mmBazarToastIn .24s cubic-bezier(.2,.8,.2,1)}
+.mm-bazar-finalized-toast-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#fff;color:#12845e;font:900 18px/1 Inter,sans-serif;box-shadow:0 5px 13px rgba(0,0,0,.13)}
+.mm-bazar-finalized-toast>div{min-width:0}
+.mm-bazar-finalized-toast b,.mm-bazar-finalized-toast span{display:block}
+.mm-bazar-finalized-toast b{font:800 11px/1.2 Inter,"Noto Sans Bengali",sans-serif;letter-spacing:-.01em}
+.mm-bazar-finalized-toast>div span{margin-top:3px;color:rgba(255,255,255,.78);font:500 8.5px/1.2 Inter,sans-serif}
+.mm-bazar-finalized-toast button{width:30px;height:30px;padding:0;border:0;border-radius:10px;background:transparent;color:rgba(255,255,255,.72);font-size:20px;line-height:1;display:grid;place-items:center}
+.mm-bazar-finalized-toast button:active{background:rgba(255,255,255,.1)}
+@keyframes mmBazarToastIn{from{opacity:0;transform:translate(-50%,12px) scale(.98)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+
+@media(max-width:420px){
+  .mm-bazar-finalized-toast{bottom:calc(88px + env(safe-area-inset-bottom));width:calc(100% - 28px);padding:10px 11px;border-radius:16px}
+  .mm-bazar-finalized-toast b{font-size:10.5px}
+}
+html[data-theme="dark"] .mm-finalize-ui-main .mm-finalize-ready-polished,body.dark .mm-finalize-ui-main .mm-finalize-ready-polished{border-color:#285d4b;background:linear-gradient(135deg,#18372e,#162e29);color:#83d9b8}
+html[data-theme="dark"] .mm-finalize-ready-polished>div span,body.dark .mm-finalize-ready-polished>div span{color:#9bb9ad}
