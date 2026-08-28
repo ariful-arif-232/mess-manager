@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v111-meal-undo-fix';
+const CACHE = 'mess-manager-v112-finalize-ui-polish';
 const SHELL = [
   './',
   './index.html',
@@ -13,6 +13,8 @@ const SHELL = [
   './bazar-finalization.css?v=20260828-finalize1',
   './bazar-finalization-undo.js?v=20260828-undo2',
   './bazar-finalization-undo.css?v=20260828-undo2',
+  './bazar-finalization-ui-polish.js?v=20260828-finalize2',
+  './bazar-finalization-ui-polish.css?v=20260828-finalize2',
   './expense-member-meal-polish.js?v=20260822-meal3',
   './dashboard-finance-separation.js?v=20260828-finsep1',
   './dashboard-finance-monthly-compat.js?v=20260828-finsep1',
