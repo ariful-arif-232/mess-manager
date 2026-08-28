@@ -18,11 +18,8 @@
   function polishMainSheet(sheet){
     sheet.classList.add('mm-finalize-ui-main');
 
-    const kicker=sheet.querySelector('.mm-finalize-head small');
-    if(kicker)kicker.remove();
-
-    const dateHelp=sheet.querySelector('.mm-finalize-date em');
-    if(dateHelp)dateHelp.remove();
+    sheet.querySelector('.mm-finalize-head small')?.remove();
+    sheet.querySelector('.mm-finalize-date em')?.remove();
 
     const stats=[...sheet.querySelectorAll('.mm-finalize-stats:not(.compact)>div')];
     const cardByLabel=label=>stats.find(card=>String(card.querySelector('span')?.textContent||'').trim()===label);
@@ -60,9 +57,10 @@
   }
 
   function polishStatusCard(root=document){
-    const cards=[];
-    if(root?.matches?.('[data-mm-food-status]'))cards.push(root);
-    root?.querySelectorAll?.('[data-mm-food-status]').forEach(card=>cards.push(card));
+    const cards=new Set();
+    if(root?.matches?.('[data-mm-food-status]'))cards.add(root);
+    root?.closest?.('[data-mm-food-status]')&&cards.add(root.closest('[data-mm-food-status]'));
+    root?.querySelectorAll?.('[data-mm-food-status]').forEach(card=>cards.add(card));
     cards.forEach(card=>{
       const copy=card.querySelector('.mm-food-status-copy');
       const stateLabel=String(copy?.querySelector('b')?.textContent||'').trim();
@@ -71,9 +69,10 @@
   }
 
   function polishSheets(root=document){
-    const sheets=[];
-    if(root?.matches?.('.mm-finalize-sheet'))sheets.push(root);
-    root?.querySelectorAll?.('.mm-finalize-sheet').forEach(sheet=>sheets.push(sheet));
+    const sheets=new Set();
+    if(root?.matches?.('.mm-finalize-sheet'))sheets.add(root);
+    root?.closest?.('.mm-finalize-sheet')&&sheets.add(root.closest('.mm-finalize-sheet'));
+    root?.querySelectorAll?.('.mm-finalize-sheet').forEach(sheet=>sheets.add(sheet));
     sheets.forEach(sheet=>{
       if(mainFinalizeSheet(sheet))polishMainSheet(sheet);
       else if(pinSheet(sheet))polishPinSheet(sheet);
@@ -111,13 +110,16 @@
   }
 
   function fallbackToastCheck(root){
-    const toast=root?.matches?.('.toast')?root:root?.querySelector?.('.toast');
-    if(!toast)return;
-    const text=String(toast.textContent||'');
-    if(toast.classList.contains('success')&&/finalized/i.test(text)&&/PIN/i.test(text)){
-      toast.remove();
-      showSuccessToast();
-    }
+    const candidates=[];
+    if(root?.matches?.('.toast'))candidates.push(root);
+    root?.querySelectorAll?.('.toast').forEach(toast=>candidates.push(toast));
+    candidates.forEach(toast=>{
+      const text=String(toast.textContent||'');
+      if(toast.classList.contains('success')&&/finalized/i.test(text)&&/PIN/i.test(text)){
+        toast.remove();
+        showSuccessToast();
+      }
+    });
   }
 
   function polish(root=document){
