@@ -1,4 +1,4 @@
-/* Late dashboard guard: finance cards stay transfer-aware even when older dashboard layers load asynchronously. */
+/* Late finance guard: transferred fund cards stay synced and finalized Utility stays read-only. */
 'use strict';
 (()=>{
   if(window.__mmFinanceAccountRuntimeLoaded)return;
@@ -30,6 +30,10 @@
     return{card,account};
   }
   document.addEventListener('click',event=>{
+    if(String(state?.page||'')==='utilities'&&db?.utilityFinalization?.active){
+      const edit=event.target?.closest?.('[data-fin-add-bill],[data-fin-edit],[data-fin-delete]');
+      if(edit){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();notify('Utility is finalized for this month. Reopen it with the PIN before changing bills.');return;}
+    }
     const hit=fundCard(event);if(!hit||typeof window.openAccountFundDetails!=='function')return;
     event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();window.openAccountFundDetails(hit.account);
   },true);
