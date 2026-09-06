@@ -8,7 +8,11 @@
     const cards=[];
     if(root?.matches?.('[data-mm-utility-final-status]'))cards.push(root);
     root?.querySelectorAll?.('[data-mm-utility-final-status]').forEach(card=>cards.push(card));
-    cards.forEach(card=>card.querySelector('.mm-utility-final-status-copy span')?.remove());
+    cards.forEach(card=>{
+      card.querySelector('.mm-utility-final-status-copy span')?.remove();
+      const title=card.querySelector('.mm-utility-final-status-copy b');
+      if(title&&String(title.textContent||'').trim()==='Utility account is open')title.textContent='Utility is running';
+    });
   }
   function patchLayer(root=document){
     const layers=[];
@@ -21,7 +25,7 @@
       layer.querySelector('.mm-finalize-head small')?.remove();
       layer.querySelector('.mm-finalize-date em')?.remove();
       const ready=layer.querySelector('.mm-finalize-ready');
-      if(ready){ready.innerHTML='<b>Utility Calculation Okay</b>';}
+      if(ready)ready.innerHTML='<b>Utility Calculation Okay</b>';
     });
   }
   function patch(root=document){patchStatus(root);patchLayer(root);}
