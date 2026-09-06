@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v114-member-lifecycle-access';
+const CACHE = 'mess-manager-v115-finance-accounts';
 const SHELL = [
   './',
   './index.html',
@@ -15,6 +15,13 @@ const SHELL = [
   './bazar-finalization-undo.css?v=20260828-undo2',
   './bazar-finalization-ui-polish.js?v=20260828-finalize2',
   './bazar-finalization-ui-polish.css?v=20260828-finalize2',
+  './utility-finalization.js?v=20260906-finance1',
+  './utility-finalization.css?v=20260906-finance1',
+  './fund-transfer.js?v=20260906-finance1',
+  './fund-transfer.css?v=20260906-finance1',
+  './finance-account-runtime.js?v=20260906-finance1',
+  './english-ui-final.js?v=20260906-english1',
+  './english-ui-final.css?v=20260906-english1',
   './expense-member-meal-polish.js?v=20260822-meal3',
   './member-lifecycle-access.js?v=20260906-memberlife1',
   './dashboard-finance-separation.js?v=20260828-finsep1',

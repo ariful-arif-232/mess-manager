@@ -1,0 +1,22 @@
+/* Utility finalization uses the proven Bazar finalization sheet system with a compact Utility status card. */
+.mm-utility-final-status{margin:14px 0 16px;display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 14px;border:1px solid rgba(55,104,214,.16);border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(243,248,255,.98));box-shadow:0 9px 24px rgba(31,61,125,.07)}
+.mm-utility-final-status-icon{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:20px;background:rgba(42,105,224,.1);color:#1760d4}
+.mm-utility-final-status-copy{min-width:0;display:flex;flex-direction:column;gap:2px}
+.mm-utility-final-status-copy small{font:800 10px/1.1 Inter,sans-serif;letter-spacing:.09em;color:#6780a8}
+.mm-utility-final-status-copy b{font:800 15px/1.25 Inter,sans-serif;color:#13294d}
+.mm-utility-final-status-copy span{font:500 11.5px/1.35 Inter,sans-serif;color:#74839d;white-space:normal}
+.mm-utility-final-status>button{border:0;border-radius:13px;padding:10px 13px;min-height:40px;font:750 12px/1 Inter,sans-serif;cursor:pointer;background:#2466d7;color:#fff;box-shadow:0 7px 16px rgba(36,102,215,.2)}
+.mm-utility-final-status.is-finalized{border-color:rgba(31,166,111,.2);background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(239,252,247,.98))}
+.mm-utility-final-status.is-finalized .mm-utility-final-status-icon{background:rgba(31,166,111,.12);color:#168a5d}
+.mm-utility-final-status.is-finalized>button{background:#13885b;box-shadow:0 7px 16px rgba(19,136,91,.18)}
+.mm-utility-final-viewer{justify-self:end;padding:7px 10px;border-radius:999px;background:rgba(36,102,215,.08);color:#2466d7;font:750 11px/1 Inter,sans-serif}
+.mm-utility-final-layer .mm-finalize-head>div:before{content:'⚡';display:grid;place-items:center;width:34px;height:34px;margin-bottom:7px;border-radius:11px;background:rgba(36,102,215,.1);font-size:17px}
+.mm-utility-final-layer .mm-finalize-ready{border-color:rgba(25,151,97,.17);background:rgba(236,252,246,.82)}
+.mm-utility-final-layer .mm-finalize-actions .primary{background:linear-gradient(135deg,#2b70e0,#1855c0);box-shadow:0 10px 20px rgba(33,96,201,.2)}
+.mm-utility-kpi-status{display:block;margin-top:3px;font:700 9.5px/1.2 Inter,sans-serif;color:#168a5d;white-space:nowrap}
+html[data-theme="dark"] .mm-utility-final-status,.dark .mm-utility-final-status{background:linear-gradient(145deg,rgba(26,35,55,.98),rgba(22,34,58,.98));border-color:rgba(113,158,238,.2);box-shadow:none}
+html[data-theme="dark"] .mm-utility-final-status-copy b,.dark .mm-utility-final-status-copy b{color:#edf4ff}
+html[data-theme="dark"] .mm-utility-final-status-copy span,.dark .mm-utility-final-status-copy span{color:#9dacbf}
+html[data-theme="dark"] .mm-utility-final-status.is-finalized,.dark .mm-utility-final-status.is-finalized{background:linear-gradient(145deg,rgba(24,38,48,.98),rgba(20,47,42,.98));border-color:rgba(56,190,137,.22)}
+@media(max-width:520px){.mm-utility-final-status{grid-template-columns:38px minmax(0,1fr) auto;gap:9px;padding:11px 12px;border-radius:16px}.mm-utility-final-status-icon{width:38px;height:38px;border-radius:12px;font-size:18px}.mm-utility-final-status-copy b{font-size:13.5px}.mm-utility-final-status-copy span{font-size:10.5px}.mm-utility-final-status>button{padding:9px 10px;font-size:10.5px;min-height:36px}}
+@media(max-width:390px){.mm-utility-final-status{grid-template-columns:36px minmax(0,1fr);}.mm-utility-final-status>button,.mm-utility-final-viewer{grid-column:2;justify-self:start}.mm-utility-final-status-icon{width:36px;height:36px}}
