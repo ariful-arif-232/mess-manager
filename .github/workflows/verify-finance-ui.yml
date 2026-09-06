@@ -1,0 +1,24 @@
+name: Verify Finance UI
+
+on:
+  push:
+    branches:
+      - feat/utility-finalize-fund-transfer-english
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: |
+          node --check utility-finalization.js
+          node --check fund-transfer.js
+          node --check finance-account-runtime.js
+          node --check english-ui-final.js
+      - name: Check finance assets are loaded
+        run: |
+          grep -q 'utility-finalization.js?v=20260906-finance1' index.html
+          grep -q 'fund-transfer.js?v=20260906-finance1' index.html
+          grep -q 'finance-account-runtime.js?v=20260906-finance1' index.html
+          grep -q 'english-ui-final.js?v=20260906-english1' index.html
