@@ -150,7 +150,19 @@
     });
   }
 
+  function loadMemberLifecycle(){
+    if(window.__mmMemberLifecycleAccessLoaded)return;
+    if(document.querySelector('script[data-mm-member-lifecycle-access]'))return;
+    const script=document.createElement('script');
+    script.src='member-lifecycle-access.js?v=20260906-memberlife1';
+    script.async=false;
+    script.dataset.mmMemberLifecycleAccess='1';
+    script.addEventListener('error',()=>console.warn('Unable to load member lifecycle access.'));
+    document.head.appendChild(script);
+  }
+
+  const startAll=()=>{start();loadMemberLifecycle();};
   loadSeparatedDashboard();
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
-  else start();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startAll,{once:true});
+  else startAll();
 })();
