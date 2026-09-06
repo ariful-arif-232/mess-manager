@@ -1,4 +1,4 @@
-/* Separate Bazar/Utility account transfers. Member deposits and bills stay unchanged. */
+/* Member-only Fund Transfer. Transfers reclassify one member's deposit between Bazar and a Utility category. */
 'use strict';
 (()=>{
   if(window.__mmFundTransferLoaded)return;
@@ -6,221 +6,152 @@
   if(typeof client==='undefined'||!client)return;
 
   const LAYER='mmFundTransferLayer';
+  const PURPOSES=Array.isArray(window.MM_UTILITY_TYPES)&&window.MM_UTILITY_TYPES.length
+    ?window.MM_UTILITY_TYPES.map(x=>({key:x.key,label:x.label||x.key,icon:x.icon||'▦'}))
+    :[
+      {key:'Gas',label:'Gas',icon:'🔥'},
+      {key:'Current',label:'Current',icon:'⚡'},
+      {key:'WiFi',label:'WiFi',icon:'📶'},
+      {key:'Bua',label:'Bua Bill',icon:'🧹'},
+      {key:'Water',label:'Water',icon:'💧'},
+      {key:'Other',label:'Other',icon:'▦'}
+    ];
+  const n=value=>Number(value||0);
+  const isAdmin=()=>profile?.role==='admin';
   const monthStart=()=>`${state.month}-01`;
   const monthEnd=()=>{const [y,m]=String(state.month||'').split('-').map(Number);return new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);};
   const dhakaToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Dhaka',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const transferDate=()=>{const today=dhakaToday();if(today<monthStart())return'';return today>monthEnd()?monthEnd():today;};
   const dateText=value=>{if(!value)return'-';const d=new Date(`${value}T00:00:00Z`);return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString('en-BD',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});};
-  const n=value=>Number(value||0);
-  const zero=value=>Math.abs(n(value))<0.005;
-  const signed=value=>zero(value)?money(0):`${n(value)>0?'+':'-'}${money(Math.abs(n(value)))}`;
-  const isAdmin=()=>profile?.role==='admin';
-  const transfers=()=>Array.isArray(db.fundTransfers)?db.fundTransfers:[];
-  const summary=()=>db.fundTransferSummary||{bazar_current_fund:0,utility_current_fund:0,bazar_settlement_fund:0,utility_settlement_fund:0,utility_to_bazar:0,bazar_to_utility:0,bazar_transfer_net:0,utility_transfer_net:0};
-  let financeChannel=null,financeChannelMess='';let realtimeTimer=null;
+  const transfers=()=>Array.isArray(db.memberFundTransfers)?db.memberFundTransfers:[];
+  let financeChannel=null,financeMess='';let realtimeTimer=null;
+  let ui={memberId:'',direction:'',purpose:''};
 
   function closeLayer(){document.getElementById(LAYER)?.remove();document.documentElement.classList.remove('mm-transfer-open');}
-  function accountIcon(name){return name==='Utility'?'⚡':'🛒';}
-  function accountCurrent(name){const s=summary();return n(name==='Utility'?s.utility_current_fund:s.bazar_current_fund);}
-  function accountBase(name){const s=summary();return n(name==='Utility'?s.utility_settlement_fund:s.bazar_settlement_fund);}
-  function flowTotals(name){
-    const s=summary();
-    if(name==='Utility')return{incoming:n(s.bazar_to_utility),outgoing:n(s.utility_to_bazar)};
-    return{incoming:n(s.utility_to_bazar),outgoing:n(s.bazar_to_utility)};
+  function purposeMeta(key){return PURPOSES.find(x=>x.key===key)||{key,label:key,icon:'▦'};}
+  function monthRows(){const start=monthStart(),end=monthEnd();return (db.deposits||[]).filter(row=>String(row.deposit_date||row.date||'')>=start&&String(row.deposit_date||row.date||'')<=end);}
+  function activeDestinationIds(){return new Set(transfers().filter(row=>!row.undone_at&&row.destination_deposit_id).map(row=>String(row.destination_deposit_id)));}
+  function sourceAvailable(memberId,purpose){
+    const blocked=activeDestinationIds();
+    return monthRows().filter(row=>String(row.memberId||row.member_id)===String(memberId)&&String(row.purpose||'Bazar')===purpose&&!blocked.has(String(row.id))).reduce((sum,row)=>sum+n(row.amount),0);
   }
+  function memberName(id){return (db.members||[]).find(row=>String(row.id)===String(id))?.name||'Member';}
+  function memberAvatar(id){const member=(db.members||[]).find(row=>String(row.id)===String(id));if(member?.avatar_url)return `<img src="${esc(member.avatar_url)}" alt="${esc(member.name||'Member')}"/>`;const initials=String(member?.name||'M').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();return `<span>${esc(initials||'M')}</span>`;}
+  function eligibleMembers(){
+    const ids=new Set(monthRows().map(row=>String(row.memberId||row.member_id)).filter(Boolean));
+    return [...ids].map(id=>(db.members||[]).find(row=>String(row.id)===id)).filter(Boolean).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+  }
+  function utilityAvailable(memberId){return PURPOSES.reduce((sum,purpose)=>sum+sourceAvailable(memberId,purpose.key),0);}
+  function lockedByFinalization(){return !!db.bazarFinalization?.active||!!db.utilityFinalization?.active;}
 
   function ensureRealtime(){
     if(!profile?.mess_id)return;
-    if(financeChannel&&financeChannelMess===profile.mess_id)return;
+    if(financeChannel&&financeMess===profile.mess_id)return;
     if(financeChannel){try{client.removeChannel(financeChannel);}catch(_){ }financeChannel=null;}
-    financeChannelMess=profile.mess_id;
-    const refresh=()=>{
-      clearTimeout(realtimeTimer);
-      realtimeTimer=setTimeout(async()=>{
-        if(!session?.user||state?.busy)return;
-        try{await window.loadData();window.render();}catch(error){console.warn('Finance account realtime refresh skipped',error);}
-      },180);
-    };
-    financeChannel=client.channel(`finance-account:${profile.mess_id}`)
-      .on('postgres_changes',{event:'*',schema:'public',table:'fund_transfers',filter:`mess_id=eq.${profile.mess_id}`},refresh)
-      .on('postgres_changes',{event:'*',schema:'public',table:'monthly_utility_controls',filter:`mess_id=eq.${profile.mess_id}`},refresh)
+    financeMess=profile.mess_id;
+    const refresh=()=>{clearTimeout(realtimeTimer);realtimeTimer=setTimeout(async()=>{if(!session?.user||state?.busy)return;try{await window.loadData();window.render();}catch(error){console.warn('Member fund transfer realtime refresh skipped',error);}},180);};
+    financeChannel=client.channel(`member-fund-transfer:${profile.mess_id}`)
+      .on('postgres_changes',{event:'*',schema:'public',table:'member_fund_transfers',filter:`mess_id=eq.${profile.mess_id}`},refresh)
       .subscribe();
   }
 
   const baseLoadData=window.loadData;
-  async function loadDataWithTransfers(){
+  async function loadDataWithMemberTransfers(){
     await baseLoadData();
-    if(!profile?.mess_id){db.fundTransfers=[];db.fundTransferSummary=null;return;}
-    const start=monthStart(),end=monthEnd();
-    const [rowsRes,summaryRes]=await Promise.all([
-      client.from('fund_transfers').select('*').gte('transfer_date',start).lte('transfer_date',end).order('transfer_date',{ascending:false}).order('created_at',{ascending:false}),
-      client.rpc('get_fund_transfer_summary',{p_month:start})
-    ]);
-    if(rowsRes.error)throw rowsRes.error;
-    if(summaryRes.error)throw summaryRes.error;
-    db.fundTransfers=rowsRes.data||[];
-    db.fundTransferSummary=summaryRes.data||null;
+    db.fundTransferSummary=null;
+    if(!profile?.mess_id){db.memberFundTransfers=[];return;}
+    const result=await client.from('member_fund_transfers').select('*').gte('transfer_date',monthStart()).lte('transfer_date',monthEnd()).order('created_at',{ascending:false});
+    if(result.error)throw result.error;
+    db.memberFundTransfers=result.data||[];
     ensureRealtime();
   }
   if(typeof baseLoadData==='function'){
-    window.loadData=loadDataWithTransfers;
-    try{loadData=loadDataWithTransfers;}catch(_){ }
+    window.loadData=loadDataWithMemberTransfers;
+    try{loadData=loadDataWithMemberTransfers;}catch(_){ }
   }
 
-  function transferCountCopy(){const count=transfers().length;return `${count} transfer${count===1?'':'s'} this month`;}
-  function transferCard(){
-    const s=summary();
-    return `<button type="button" class="mm-transfer-card" data-open-fund-transfer aria-label="Open Fund Transfer">
-      <span class="mm-transfer-card-icon" aria-hidden="true">⇄</span>
-      <span class="mm-transfer-card-copy"><small>ACCOUNT MOVEMENT</small><b>Fund Transfer</b><em>Move cash between Utility and Bazar without changing member balances.</em></span>
-      <span class="mm-transfer-card-values"><span><small>Utility</small><b class="${n(s.utility_current_fund)<0?'is-due':'is-good'}">${signed(s.utility_current_fund)}</b></span><i aria-hidden="true">↔</i><span><small>Bazar</small><b class="${n(s.bazar_current_fund)<0?'is-due':'is-good'}">${signed(s.bazar_current_fund)}</b></span><em>${esc(transferCountCopy())} · View ›</em></span>
-    </button>`;
+  function compactCard(){
+    return `<button type="button" class="mm-transfer-card mm-transfer-card-compact" data-open-fund-transfer aria-label="Open Fund Transfer"><span class="mm-transfer-card-icon" aria-hidden="true">⇄</span><b>Fund Transfer</b><span>Tap to view ›</span></button>`;
   }
-
   function injectDepositCard(c){
     c.querySelector('[data-open-fund-transfer]')?.remove();
-    const overview=c.querySelector('.mm-deposit-overview');
-    if(!overview)return;
-    overview.insertAdjacentHTML('afterend',transferCard());
+    const overview=c.querySelector('.mm-deposit-overview');if(!overview)return;
+    overview.insertAdjacentHTML('afterend',compactCard());
     c.querySelector('[data-open-fund-transfer]')?.addEventListener('click',openSheet);
-    const intro=c.querySelector('.mm-deposit-page-head p');
-    if(intro)intro.textContent='Bazar and Utility deposits stay separate. Open a member card for deposit history, or use Fund Transfer for internal cash movement.';
   }
 
   function historyRow(row){
-    const from=String(row.from_account||'');const to=String(row.to_account||'');
-    return `<article class="mm-transfer-history-row">
-      <span class="mm-transfer-history-icon" aria-hidden="true">${accountIcon(from)}</span>
-      <div><b>${esc(from)} <i>→</i> ${esc(to)}</b><small>${esc(dateText(row.transfer_date))}${row.note?` · ${esc(row.note)}`:''}</small></div>
-      <strong>${money(row.amount)}</strong>
-      ${isAdmin()?`<button type="button" data-delete-transfer="${esc(row.id)}" aria-label="Delete transfer">×</button>`:''}
-    </article>`;
+    const undone=!!row.undone_at;const metaFrom=row.from_purpose==='Bazar'?{icon:'🛒',label:'Bazar'}:purposeMeta(row.from_purpose);const metaTo=row.to_purpose==='Bazar'?{icon:'🛒',label:'Bazar'}:purposeMeta(row.to_purpose);
+    return `<article class="mm-transfer-history-row${undone?' is-undone':''}"><span class="mm-transfer-history-icon" aria-hidden="true">${metaFrom.icon}</span><div><b>${esc(memberName(row.member_id))}</b><small>${esc(metaFrom.label)} → ${esc(metaTo.label)} · ${esc(dateText(row.transfer_date))}</small></div><strong>${money(row.amount)}</strong>${undone?'<em>Undone</em>':isAdmin()?`<button type="button" data-undo-transfer="${esc(row.id)}" aria-label="Undo transfer">↶</button>`:''}</article>`;
   }
 
-  function accountStats(){
-    const s=summary();
-    return `<div class="mm-transfer-account-grid">
-      <div class="is-utility"><span><i>⚡</i><small>UTILITY FUND</small></span><b class="${n(s.utility_current_fund)<0?'is-due':'is-good'}">${signed(s.utility_current_fund)}</b><em>Current after transfers</em></div>
-      <div class="is-bazar"><span><i>🛒</i><small>BAZAR FUND</small></span><b class="${n(s.bazar_current_fund)<0?'is-due':'is-good'}">${signed(s.bazar_current_fund)}</b><em>Current after transfers</em></div>
-    </div>`;
+  function memberOptions(){
+    const members=eligibleMembers();
+    return `<option value="">Select member</option>${members.map(member=>`<option value="${esc(member.id)}" ${String(ui.memberId)===String(member.id)?'selected':''}>${esc(member.name)}</option>`).join('')}`;
   }
+  function directionCards(){
+    if(!ui.memberId)return'';
+    const util=utilityAvailable(ui.memberId),bazar=sourceAvailable(ui.memberId,'Bazar');
+    return `<div class="mm-transfer-section"><small>DIRECTION</small><div class="mm-transfer-directions"><button type="button" class="${ui.direction==='utility-bazar'?'is-selected':''}" data-member-transfer-direction="utility-bazar" ${util<=0?'disabled':''}><span>⚡</span><div><b>Utility → Bazar</b><small>Available ${money(util)}</small></div></button><button type="button" class="${ui.direction==='bazar-utility'?'is-selected':''}" data-member-transfer-direction="bazar-utility" ${bazar<=0?'disabled':''}><span>🛒</span><div><b>Bazar → Utility</b><small>Available ${money(bazar)}</small></div></button></div></div>`;
+  }
+  function purposeChoices(){
+    if(!ui.memberId||!ui.direction)return'';
+    if(ui.direction==='utility-bazar'){
+      const available=PURPOSES.map(meta=>({...meta,available:sourceAvailable(ui.memberId,meta.key)})).filter(item=>item.available>0.004);
+      return `<div class="mm-transfer-section"><small>UTILITY SOURCE</small><div class="mm-transfer-purpose-grid">${available.map(item=>`<button type="button" class="${ui.purpose===item.key?'is-selected':''}" data-member-transfer-purpose="${esc(item.key)}"><span>${item.icon}</span><b>${esc(item.label)}</b><small>${money(item.available)}</small></button>`).join('')||'<div class="mm-transfer-empty-inline">No Utility deposit available.</div>'}</div></div>`;
+    }
+    return `<div class="mm-transfer-section"><small>UTILITY DESTINATION</small><div class="mm-transfer-purpose-grid">${PURPOSES.map(item=>`<button type="button" class="${ui.purpose===item.key?'is-selected':''}" data-member-transfer-purpose="${esc(item.key)}"><span>${item.icon}</span><b>${esc(item.label)}</b></button>`).join('')}</div></div>`;
+  }
+  function maxAmount(){if(!ui.memberId||!ui.direction||!ui.purpose)return 0;return ui.direction==='utility-bazar'?sourceAvailable(ui.memberId,ui.purpose):sourceAvailable(ui.memberId,'Bazar');}
+  function amountBox(){
+    if(!ui.memberId||!ui.direction||!ui.purpose)return'';const max=maxAmount();
+    return `<div class="mm-transfer-section mm-transfer-amount-section"><small>AMOUNT</small><div class="mm-transfer-money"><b>৳</b><input id="mmMemberTransferAmount" type="number" min="0.01" max="${max}" step="0.01" inputmode="decimal" placeholder="0.00"></div><span>Available ${money(max)}</span><button type="button" class="primary" data-save-member-transfer ${max<=0?'disabled':''}>Transfer</button></div>`;
+  }
+  function formMarkup(){
+    const locked=lockedByFinalization();
+    return `${locked?'<div class="mm-transfer-warning"><b>Transfer locked</b><span>Reopen finalized Bazar and Utility before changing member deposits.</span></div>':''}<label class="mm-transfer-member-select"><span>MEMBER</span><select id="mmTransferMember" ${locked?'disabled':''}>${memberOptions()}</select></label>${locked?'':directionCards()+purposeChoices()+amountBox()}`;
+  }
+
+  function bindSheet(layer){
+    layer.querySelector('#mmTransferMember')?.addEventListener('change',event=>{ui={memberId:event.target.value,direction:'',purpose:''};renderForm(layer);});
+    layer.querySelectorAll('[data-member-transfer-direction]').forEach(button=>button.addEventListener('click',()=>{ui.direction=button.dataset.memberTransferDirection;ui.purpose='';renderForm(layer);}));
+    layer.querySelectorAll('[data-member-transfer-purpose]').forEach(button=>button.addEventListener('click',()=>{ui.purpose=button.dataset.memberTransferPurpose;renderForm(layer);}));
+    layer.querySelector('[data-save-member-transfer]')?.addEventListener('click',()=>saveTransfer(layer));
+  }
+  function renderForm(layer){const body=layer.querySelector('[data-member-transfer-form]');if(!body)return;body.innerHTML=formMarkup();bindSheet(layer);}
 
   function openSheet(){
     closeLayer();document.documentElement.classList.add('mm-transfer-open');
-    const history=transfers();
-    document.body.insertAdjacentHTML('beforeend',`<div class="mm-transfer-layer" id="${LAYER}"><section class="mm-transfer-sheet" role="dialog" aria-modal="true" aria-label="Fund Transfer"><div class="mm-transfer-handle"></div>
-      <header class="mm-transfer-sheet-head"><div><small>SEPARATE ACCOUNT CONTROL</small><h2>Fund Transfer</h2><p>Internal transfers move cash only. Member deposits, bills, Due and Advance stay unchanged.</p></div><button type="button" data-transfer-close aria-label="Close">×</button></header>
-      ${accountStats()}
-      ${isAdmin()?`<div class="mm-transfer-direction-title"><b>Choose direction</b><small>Tap one option to continue</small></div><div class="mm-transfer-directions">
-        <button type="button" data-transfer-direction="Utility:Bazar"><span>⚡</span><div><b>Utility → Bazar</b><small>Use Utility fund for Bazar</small></div><i>›</i></button>
-        <button type="button" data-transfer-direction="Bazar:Utility"><span>🛒</span><div><b>Bazar → Utility</b><small>Return or move Bazar fund</small></div><i>›</i></button>
-      </div>`:''}
-      <div class="mm-transfer-history-title"><div><b>Transfer History</b><small>${esc(transferCountCopy())}</small></div></div>
-      <div class="mm-transfer-history">${history.length?history.map(historyRow).join(''):'<div class="mm-transfer-empty"><span>⇄</span><b>No transfers this month</b><small>Both account ledgers are still untouched by internal movement.</small></div>'}</div>
-    </section></div>`);
-    const layer=document.getElementById(LAYER);
-    layer?.addEventListener('click',event=>{if(event.target===layer)closeLayer();});
-    layer?.querySelector('[data-transfer-close]')?.addEventListener('click',closeLayer);
-    layer?.querySelectorAll('[data-transfer-direction]').forEach(button=>button.addEventListener('click',()=>{
-      const [from,to]=String(button.dataset.transferDirection||'').split(':');openForm(from,to);
-    }));
-    layer?.querySelectorAll('[data-delete-transfer]').forEach(button=>button.addEventListener('click',()=>deleteTransfer(button.dataset.deleteTransfer,button)));
+    document.body.insertAdjacentHTML('beforeend',`<div class="mm-transfer-layer" id="${LAYER}"><section class="mm-transfer-sheet" role="dialog" aria-modal="true" aria-label="Fund Transfer"><div class="mm-transfer-handle"></div><header class="mm-transfer-sheet-head"><div><small>MEMBER DEPOSIT</small><h2>Fund Transfer</h2></div><button type="button" data-transfer-close aria-label="Close">×</button></header><div class="mm-transfer-form-body" data-member-transfer-form>${formMarkup()}</div><div class="mm-transfer-history-title"><div><b>Transfer History</b><small>${transfers().length} record${transfers().length===1?'':'s'} this month</small></div></div><div class="mm-transfer-history">${transfers().length?transfers().map(historyRow).join(''):'<div class="mm-transfer-empty"><span>⇄</span><b>No transfers yet</b><small>Member deposit transfers will appear here.</small></div>'}</div></section></div>`);
+    const layer=document.getElementById(LAYER);layer?.addEventListener('click',event=>{if(event.target===layer)closeLayer();});layer?.querySelector('[data-transfer-close]')?.addEventListener('click',closeLayer);bindSheet(layer);layer?.querySelectorAll('[data-undo-transfer]').forEach(button=>button.addEventListener('click',()=>openUndoConfirm(button.dataset.undoTransfer)));
   }
 
-  function defaultTransferDate(){
-    const today=dhakaToday();
-    if(today<monthStart())return'';
-    return today>monthEnd()?monthEnd():today;
+  async function saveTransfer(layer){
+    if(state.busy)return;const amount=n(layer.querySelector('#mmMemberTransferAmount')?.value);if(!(amount>0))return notify('Enter a valid amount.');const max=maxAmount();if(amount>max+0.004)return notify(`Only ${money(max)} is available.`);const date=transferDate();if(!date)return notify('Fund Transfer is not available for a future month.');
+    const from=ui.direction==='utility-bazar'?ui.purpose:'Bazar';const to=ui.direction==='utility-bazar'?'Bazar':ui.purpose;const button=layer.querySelector('[data-save-member-transfer]');const old=button.textContent;button.disabled=true;button.textContent='Transferring…';state.busy=true;
+    try{const result=await client.rpc('create_member_fund_transfer',{p_member_id:ui.memberId,p_transfer_date:date,p_from_purpose:from,p_to_purpose:to,p_amount:amount});if(result.error)throw result.error;ui={memberId:ui.memberId,direction:'',purpose:''};await window.loadData();window.render();openSheet();notify(`${money(amount)} moved for ${memberName(ui.memberId)}.`,'success');}
+    catch(error){notify(friendlyError(error));button.disabled=false;button.textContent=old;}finally{state.busy=false;}
   }
 
-  function openForm(from,to){
-    if(!isAdmin()||!['Bazar','Utility'].includes(from)||!['Bazar','Utility'].includes(to)||from===to)return;
-    const available=accountCurrent(from);const date=defaultTransferDate();
-    const futureMonth=!date;
-    const body=`<div class="mm-transfer-form-route"><span class="from">${accountIcon(from)}</span><div><small>FROM</small><b>${esc(from)} Fund</b><em>Available ${signed(available)}</em></div><i>→</i><span class="to">${accountIcon(to)}</span><div><small>TO</small><b>${esc(to)} Fund</b><em>Internal account movement</em></div></div>
-      ${available<=0?`<div class="mm-transfer-warning"><b>No transferable balance</b><span>${esc(from)} Fund currently has ${signed(available)} available.</span></div>`:''}
-      ${futureMonth?'<div class="mm-transfer-warning"><b>Future month</b><span>Fund transfers can only be recorded up to today.</span></div>':''}
-      <form id="mmFundTransferForm" class="mm-transfer-form">
-        <label><span>Transfer Date</span><input name="transfer_date" type="date" min="${esc(monthStart())}" max="${esc(dhakaToday()<monthEnd()?dhakaToday():monthEnd())}" value="${esc(date)}" ${futureMonth?'disabled':''} required></label>
-        <label><span>Amount</span><div class="mm-transfer-money"><b>৳</b><input name="amount" type="number" min="0.01" max="${Math.max(0,available)}" step="0.01" inputmode="decimal" placeholder="0.00" ${available<=0||futureMonth?'disabled':''} required></div><small>Maximum available: ${money(Math.max(0,available))}</small></label>
-        <label><span>Note <em>optional</em></span><input name="note" maxlength="120" placeholder="Example: Temporary Bazar support"></label>
-      </form>`;
-    closeLayer();document.documentElement.classList.add('mm-transfer-open');
-    document.body.insertAdjacentHTML('beforeend',`<div class="mm-transfer-layer" id="${LAYER}"><section class="mm-transfer-sheet mm-transfer-form-sheet" role="dialog" aria-modal="true" aria-label="${esc(from)} to ${esc(to)} transfer"><div class="mm-transfer-handle"></div><header class="mm-transfer-sheet-head compact"><button type="button" class="back" data-transfer-back aria-label="Back">‹</button><div><small>NEW FUND TRANSFER</small><h2>${esc(from)} → ${esc(to)}</h2></div><button type="button" data-transfer-close aria-label="Close">×</button></header><div class="mm-transfer-form-body">${body}</div><div class="mm-transfer-form-actions"><button type="button" data-transfer-cancel>Cancel</button><button type="button" class="primary" data-transfer-save ${available<=0||futureMonth?'disabled':''}>Transfer Fund</button></div></section></div>`);
-    const layer=document.getElementById(LAYER);
-    layer?.addEventListener('click',event=>{if(event.target===layer)closeLayer();});
-    layer?.querySelector('[data-transfer-close]')?.addEventListener('click',closeLayer);
-    layer?.querySelector('[data-transfer-cancel]')?.addEventListener('click',openSheet);
-    layer?.querySelector('[data-transfer-back]')?.addEventListener('click',openSheet);
-    layer?.querySelector('[data-transfer-save]')?.addEventListener('click',()=>saveTransfer(from,to,layer));
+  function openUndoConfirm(id){
+    const row=transfers().find(item=>String(item.id)===String(id));if(!row||row.undone_at)return;const from=row.from_purpose==='Bazar'?'Bazar':purposeMeta(row.from_purpose).label;const to=row.to_purpose==='Bazar'?'Bazar':purposeMeta(row.to_purpose).label;
+    closeLayer();document.documentElement.classList.add('mm-transfer-open');document.body.insertAdjacentHTML('beforeend',`<div class="mm-transfer-layer" id="${LAYER}"><section class="mm-transfer-sheet mm-transfer-confirm-sheet" role="dialog" aria-modal="true" aria-label="Undo Fund Transfer"><div class="mm-transfer-handle"></div><header class="mm-transfer-sheet-head"><div><small>CONFIRM UNDO</small><h2>Undo Fund Transfer?</h2></div><button type="button" data-transfer-close aria-label="Close">×</button></header><div class="mm-transfer-confirm"><span>↶</span><b>${money(row.amount)}</b><p>${esc(memberName(row.member_id))}: ${esc(from)} → ${esc(to)}</p><small>The destination deposit will be removed and the amount will return to the original member deposit.</small></div><div class="mm-transfer-form-actions"><button type="button" data-undo-cancel>Cancel</button><button type="button" class="primary is-danger" data-undo-confirm>Undo Transfer</button></div></section></div>`);
+    const layer=document.getElementById(LAYER);layer?.querySelector('[data-transfer-close]')?.addEventListener('click',openSheet);layer?.querySelector('[data-undo-cancel]')?.addEventListener('click',openSheet);layer?.querySelector('[data-undo-confirm]')?.addEventListener('click',()=>undoTransfer(row.id,layer));
   }
 
-  async function saveTransfer(from,to,layer){
-    if(state.busy)return;
-    const form=layer.querySelector('#mmFundTransferForm');const fd=new FormData(form);
-    const transferDate=String(fd.get('transfer_date')||'');const amount=n(fd.get('amount'));const note=String(fd.get('note')||'').trim();
-    if(!transferDate)return notify('Choose a transfer date.');
-    if(!(amount>0))return notify('Enter a valid transfer amount.');
-    const available=accountCurrent(from);
-    if(amount>available+0.004)return notify(`Only ${money(Math.max(0,available))} is available in ${from} Fund.`);
-    const button=layer.querySelector('[data-transfer-save]');const old=button.textContent;button.disabled=true;button.textContent='Transferring…';state.busy=true;
-    try{
-      const result=await client.from('fund_transfers').insert({mess_id:profile.mess_id,transfer_date:transferDate,from_account:from,to_account:to,amount,note,created_by:session.user.id});
-      if(result.error)throw result.error;
-      await window.loadData();window.render();closeLayer();notify(`${money(amount)} transferred from ${from} to ${to}.`,'success');
-    }catch(error){notify(friendlyError(error));button.disabled=false;button.textContent=old;}
-    finally{state.busy=false;}
-  }
-
-  async function deleteTransfer(id,button){
-    const row=transfers().find(item=>String(item.id)===String(id));if(!row||state.busy)return;
-    const old=button.textContent;button.disabled=true;button.textContent='…';state.busy=true;
-    try{
-      const result=await client.from('fund_transfers').delete().eq('id',id);if(result.error)throw result.error;
-      await window.loadData();window.render();openSheet();notify('Fund transfer removed and both account balances were restored.','success');
-    }catch(error){notify(friendlyError(error));button.disabled=false;button.textContent=old;}
-    finally{state.busy=false;}
-  }
-
-  function openAccountSheet(account){
-    const s=summary();const flow=flowTotals(account);const current=accountCurrent(account);const base=accountBase(account);
-    const relevant=transfers().filter(row=>row.from_account===account||row.to_account===account);
-    closeLayer();document.documentElement.classList.add('mm-transfer-open');
-    document.body.insertAdjacentHTML('beforeend',`<div class="mm-transfer-layer" id="${LAYER}"><section class="mm-transfer-sheet mm-transfer-account-sheet" role="dialog" aria-modal="true" aria-label="${esc(account)} Fund"><div class="mm-transfer-handle"></div><header class="mm-transfer-sheet-head"><div><small>${esc(account.toUpperCase())} ACCOUNT</small><h2>${esc(account)} Fund</h2><p>Member balances stay based on deposits and bills. Transfers only change cash held by this account.</p></div><button type="button" data-transfer-close aria-label="Close">×</button></header>
-      <div class="mm-transfer-account-hero ${current<0?'is-due':'is-good'}"><span>${accountIcon(account)}</span><div><small>CURRENT FUND</small><strong>${signed(current)}</strong><em>After internal transfers</em></div></div>
-      <div class="mm-transfer-breakdown"><div><span>Ledger / Settlement Fund</span><b>${signed(base)}</b></div><div class="incoming"><span>Transfers In</span><b>+${money(flow.incoming)}</b></div><div class="outgoing"><span>Transfers Out</span><b>-${money(flow.outgoing)}</b></div><div class="current"><span>Current Fund</span><b>${signed(current)}</b></div></div>
-      <div class="mm-transfer-history-title"><div><b>Account Transfers</b><small>${relevant.length} record${relevant.length===1?'':'s'}</small></div><button type="button" data-member-balance>Member balances ›</button></div>
-      <div class="mm-transfer-history">${relevant.length?relevant.map(historyRow).join(''):'<div class="mm-transfer-empty"><span>⇄</span><b>No internal transfers</b><small>Current Fund equals the account ledger fund.</small></div>'}</div>
-    </section></div>`);
-    const layer=document.getElementById(LAYER);layer?.addEventListener('click',event=>{if(event.target===layer)closeLayer();});layer?.querySelector('[data-transfer-close]')?.addEventListener('click',closeLayer);
-    layer?.querySelector('[data-member-balance]')?.addEventListener('click',()=>{closeLayer();if(typeof window.openDashboardInsight==='function')window.openDashboardInsight(account==='Utility'?'utility-fund':'fund');});
-    layer?.querySelectorAll('[data-delete-transfer]').forEach(button=>button.addEventListener('click',()=>deleteTransfer(button.dataset.deleteTransfer,button)));
-  }
-
-  function patchFundCard(c,account){
-    const selector=account==='Utility'?'[data-dashboard-action="utility-fund"],.mm-dashboard-kpi-utility-fund':'[data-dashboard-action="fund"],.mm-dashboard-kpi-fund';
-    const original=c.querySelector(selector);if(!original)return;
-    const current=accountCurrent(account);const existingValue=original.querySelector('.value');if(existingValue)existingValue.textContent=signed(current);
-    let status=original.querySelector('.mm-transfer-kpi-status');if(!status){status=document.createElement('small');status.className='mm-transfer-kpi-status';(original.querySelector('.mm-dashboard-kpi-copy')||original).appendChild(status);}
-    const flow=flowTotals(account);status.textContent=(flow.incoming>0.004||flow.outgoing>0.004)?'After fund transfers':'Account fund';
-    if(original.dataset.mmTransferPatched==='1')return;
-    const clone=original.cloneNode(true);clone.dataset.mmTransferPatched='1';original.replaceWith(clone);
-    const activate=()=>openAccountSheet(account);
-    clone.addEventListener('click',activate);
-    clone.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();activate();}});
+  async function undoTransfer(id,layer){
+    if(state.busy)return;const button=layer.querySelector('[data-undo-confirm]');const old=button.textContent;button.disabled=true;button.textContent='Undoing…';state.busy=true;
+    try{const result=await client.rpc('undo_member_fund_transfer',{p_transfer_id:id});if(result.error)throw result.error;await window.loadData();window.render();openSheet();notify('Fund Transfer undone. Member deposits were restored.','success');}
+    catch(error){notify(friendlyError(error));button.disabled=false;button.textContent=old;}finally{state.busy=false;}
   }
 
   const baseDeposits=window.deposits;
   if(typeof baseDeposits==='function'){
-    window.deposits=function depositsWithFundTransfer(c){baseDeposits(c);injectDepositCard(c);};
+    window.deposits=function depositsWithMemberFundTransfer(c){baseDeposits(c);injectDepositCard(c);};
     try{deposits=window.deposits;}catch(_){ }
-  }
-  const baseDashboard=window.dashboard;
-  if(typeof baseDashboard==='function'){
-    window.dashboard=function dashboardWithFundTransfers(c){baseDashboard(c);patchFundCard(c,'Utility');patchFundCard(c,'Bazar');};
-    try{dashboard=window.dashboard;}catch(_){ }
   }
 
   window.openFundTransfer=openSheet;
-  window.openAccountFundDetails=openAccountSheet;
-  client.auth.onAuthStateChange?.(event=>{if(event==='SIGNED_OUT'&&financeChannel){try{client.removeChannel(financeChannel);}catch(_){ }financeChannel=null;financeChannelMess='';}});
+  window.openAccountFundDetails=null;
+  client.auth.onAuthStateChange?.(event=>{if(event==='SIGNED_OUT'&&financeChannel){try{client.removeChannel(financeChannel);}catch(_){ }financeChannel=null;financeMess='';}});
 })();
