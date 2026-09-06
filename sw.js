@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v113-settlement-home-sync';
+const CACHE = 'mess-manager-v114-member-lifecycle-access';
 const SHELL = [
   './',
   './index.html',
@@ -16,6 +16,7 @@ const SHELL = [
   './bazar-finalization-ui-polish.js?v=20260828-finalize2',
   './bazar-finalization-ui-polish.css?v=20260828-finalize2',
   './expense-member-meal-polish.js?v=20260822-meal3',
+  './member-lifecycle-access.js?v=20260906-memberlife1',
   './dashboard-finance-separation.js?v=20260828-finsep1',
   './dashboard-finance-monthly-compat.js?v=20260828-finsep1',
   './dashboard-finance-separation.css?v=20260828-finsep1',
