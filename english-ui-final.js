@@ -67,7 +67,7 @@
     [/কোনো /g,'any '],[/ পাওয়া যায়নি/g,' was not found'],[/ নির্বাচন করুন/g,' choose'],
     [/ select করুন/g,' select'],[/ দিন।/g,'.'],[/ থেকে/g,' from'],[/ পর্যন্ত/g,' through'],
     [/ আগে/g,' first'],[/ পরে/g,' later'],[/ হিসাব/g,' account'],[/ বন্ধ/g,' stopped'],[/ চালু/g,' active'],
-    [/ হবে/g,' will be'],[/ হবে না/g,' will not be'],[/ পরিবর্তন/g,' change'],[/ সদস্য/g,' member'],
+    [/ হবে না/g,' will not be'],[/ হবে/g,' will be'],[/ পরিবর্তন/g,' change'],[/ সদস্য/g,' member'],
     [/ জমা/g,' deposit'],[/ বাজার/g,' Bazar'],[/ খাবার/g,' food'],[/ প্রয়োজনীয়/g,' required'],[/ টাকা/g,' amount']
   ];
 
