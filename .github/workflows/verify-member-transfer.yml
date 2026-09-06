@@ -1,0 +1,18 @@
+name: Verify member transfer
+on:
+  push:
+    branches:
+      - fix/member-only-fund-transfer-utility-finalize
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check fund-transfer.js
+          node --check utility-finalization-compact.js
+          node --check utility-finalization.js
