@@ -5,12 +5,6 @@ on:
     tags:
       - 'android-v*'
       - 'android-ci-*'
-    # TEMPORARY: lets this session validate the pipeline via a normal
-    # branch push, since it can't push tags or use workflow_dispatch
-    # (not yet registered — GitHub requires that on the default branch).
-    # Removed again once the CI smoke test passes.
-    branches:
-      - 'claude/android-remove-chrome-bar-o1ehin'
   workflow_dispatch:
     inputs:
       version_name:
