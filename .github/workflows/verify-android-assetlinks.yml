@@ -1,0 +1,72 @@
+name: Verify Android Asset Links
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read expected package name and fingerprint from repo
+        id: expected
+        run: |
+          PKG=$(jq -r '.[0].target.package_name' .well-known/assetlinks.json)
+          FPR=$(jq -r '.[0].target.sha256_cert_fingerprints[0]' .well-known/assetlinks.json)
+          echo "package=$PKG" >> "$GITHUB_OUTPUT"
+          echo "fingerprint=$FPR" >> "$GITHUB_OUTPUT"
+          echo "Repo assetlinks.json expects package=$PKG fingerprint=$FPR"
+
+      - name: Fetch https://mess-manager.app/.well-known/assetlinks.json
+        run: |
+          HTTP_CODE=$(curl -sS -o live-assetlinks.json -w "%{http_code}" https://mess-manager.app/.well-known/assetlinks.json)
+          echo "HTTP status: $HTTP_CODE"
+          echo "--- content ---"
+          cat live-assetlinks.json
+          echo "---"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::https://mess-manager.app/.well-known/assetlinks.json returned HTTP $HTTP_CODE, not 200. Chrome cannot verify the app without this file being publicly served."
+            exit 1
+          fi
+          if ! jq empty live-assetlinks.json 2>/dev/null; then
+            echo "::error::Response is not valid JSON — check Content-Type and that no HTML error page is being served at this path."
+            exit 1
+          fi
+
+      - name: Compare live file against the repo's copy
+        run: |
+          if diff <(jq -S . live-assetlinks.json) <(jq -S . .well-known/assetlinks.json) > /dev/null; then
+            echo "MATCH: the live file is identical to .well-known/assetlinks.json in this repo."
+          else
+            echo "::error::The live assetlinks.json differs from the repo's copy — the deployed site is out of date."
+            diff <(jq -S . live-assetlinks.json) <(jq -S . .well-known/assetlinks.json) || true
+            exit 1
+          fi
+
+      - name: Check the site itself is reachable over HTTPS
+        run: |
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" https://mess-manager.app/)
+          echo "https://mess-manager.app/ -> HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "::error::The site itself returned HTTP $HTTP_CODE."
+            exit 1
+          fi
+
+      - name: Verify with Google's live Digital Asset Links API
+        run: |
+          PKG="${{ steps.expected.outputs.package }}"
+          FPR="${{ steps.expected.outputs.fingerprint }}"
+          RESPONSE=$(curl -sS -G "https://digitalassetlinks.googleapis.com/v1/statements:list" \
+            --data-urlencode "source.web.site=https://mess-manager.app" \
+            --data-urlencode "relation=delegate_permission/common.handle_all_urls" \
+            --data-urlencode "target.androidApp.packageName=${PKG}" \
+            --data-urlencode "target.androidApp.certificate.sha256Fingerprint=${FPR}")
+          echo "$RESPONSE"
+          COUNT=$(echo "$RESPONSE" | jq '.statements | length' 2>/dev/null || echo 0)
+          if [ "$COUNT" -lt 1 ]; then
+            echo "::error::Google's Digital Asset Links API found no matching statement for package=$PKG fingerprint=$FPR. The TWA will NOT be verified — Chrome will show the address bar (or the app may show a mismatch)."
+            exit 1
+          fi
+          echo "PASS: Digital Asset Links API confirms $COUNT matching statement(s)."

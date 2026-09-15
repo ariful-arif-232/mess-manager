@@ -109,6 +109,32 @@ keyPassword=..." > keystore.properties
 
 The signed APK lands at `app/build/outputs/apk/release/app-release.apk`.
 
+## Why `minifyEnabled`/`shrinkResources` are off
+
+They were briefly on and shipped in the `android-v1.0.0` release, which
+installed but failed to launch. R8 has a well-documented history of
+breaking `androidx.browser`'s Custom Tabs binding at runtime — that code
+talks to Chrome over AIDL/Binder, resolved via reflection R8's static
+analysis doesn't fully see, so it can silently strip or rename what it
+can't trace. The build itself succeeds and prints no warning; the app just
+crashes on launch. Since this project has no custom Kotlin/Java code (it's
+~100% the `androidbrowserhelper` library), there's negligible size to save
+by minifying, so it's left off rather than chasing a complete keep-rule
+set. If you ever turn it back on, `proguard-rules.pro` keeps the full
+`com.google.androidbrowserhelper.**` and `androidx.browser.**` surface,
+not just their `.trusted` sub-packages — but test an install on a real
+device before shipping, since a clean `BUILD SUCCESSFUL` does not prove
+the APK actually launches.
+
+## Verifying Digital Asset Links end-to-end
+
+The `.github/workflows/verify-android-assetlinks.yml` workflow (manual
+`workflow_dispatch`) checks that `.well-known/assetlinks.json` is live at
+the expected URL, matches the copy in this repo, and — via Google's own
+`digitalassetlinks.googleapis.com` API — actually passes verification for
+this app's package name and signing certificate. Run it any time after a
+new release or a redeploy of the site.
+
 ## Files
 
 * `app/src/main/AndroidManifest.xml` — the whole TWA configuration
