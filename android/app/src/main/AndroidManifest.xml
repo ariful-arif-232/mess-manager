@@ -41,9 +41,14 @@
                 android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
                 android:resource="@color/colorPrimary" />
 
+            <!-- A plain PNG under res/drawable, not @mipmap/ic_launcher: that
+                 resolves to the adaptive-icon XML on API 26+, which is not a
+                 valid source for the raw-bitmap inflation this splash overlay
+                 needs (see the note on Theme.SplashScreen in styles.xml for
+                 the exact crash this caused). -->
             <meta-data
                 android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
-                android:resource="@mipmap/ic_launcher" />
+                android:resource="@drawable/splash_icon" />
 
             <meta-data
                 android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"

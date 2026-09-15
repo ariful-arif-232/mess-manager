@@ -147,6 +147,40 @@ the system WebView component present on every real Android device. This
 alone explains why the crash recurred identically across `1.0.0` and
 `1.0.1`: the gap existed in both, untouched by the R8 fix.
 
+## The actual launch crash, from a real device log (fixed in 1.0.3)
+
+`android-v1.0.2` still crashed — but this time the user pulled the real
+stack trace off the device via Android's crash dialog, which made this one
+conclusive instead of another educated guess:
+
+```
+Caused by: android.content.res.Resources$NotFoundException: Drawable
+app.messmanager.twa:drawable/splash with resource ID #0x7f07006b
+Caused by: org.xmlpull.v1.XmlPullParserException: Binary XML file line #7:
+<bitmap> requires a valid 'src' attribute
+  at ... LauncherActivity.onCreate(LauncherActivity.java:136)
+```
+
+The crash happens in `LauncherActivity.onCreate()` before the TWA even
+starts loading — inflating `Theme.SplashScreen`'s `windowBackground`, which
+was `@drawable/splash`, a layer-list with `<bitmap android:src="@mipmap/
+ic_launcher">`. On API 26+ (every real device in the field, MIUI included),
+`@mipmap/ic_launcher` resolves to the *adaptive-icon* XML
+(`mipmap-anydpi-v26/ic_launcher.xml`), not a raw bitmap — and a `<bitmap>`
+tag can't inflate an adaptive icon as its `src`. This is unrelated to
+Custom Tabs, R8, or MIUI's browser handling; it's a plain resource-type
+mismatch that would crash on *any* Android 8.0+ device, every time.
+
+Fixed by removing the custom `<bitmap>` drawable entirely:
+`Theme.SplashScreen`'s `windowBackground` is now a direct `@color`
+reference (can't hit this failure mode — there's no drawable to inflate),
+and the TWA's own `SPLASH_IMAGE_DRAWABLE` meta-data now points at
+`app/src/main/res/drawable/splash_icon.png`, a plain non-adaptive PNG,
+instead of the same ambiguous `@mipmap/ic_launcher` reference. `android:icon`
+/ `android:roundIcon` on the `<application>` tag are untouched — adaptive
+icons are exactly what those attributes are for; the bug was only ever in
+using that resource as a raw bitmap `src`.
+
 ## Verifying Digital Asset Links end-to-end
 
 The `.github/workflows/verify-android-assetlinks.yml` workflow (manual
