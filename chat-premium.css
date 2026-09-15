@@ -1,0 +1,125 @@
+/* Mess Chat: premium surface + the overlay fix for the floating composer.
+ *
+ * Selectors are deliberately prefixed with `html body`. The mobile chat skin in
+ * mobile-shell-final.css is written as `html[data-mm-page="chat"] .x.y .z`,
+ * which outweighs a plain class chain even with !important, so the shorter
+ * form silently lost. Everything here is scoped to .chat-shell-live, which only
+ * the live chat screen renders.
+ */
+
+/* --- the chat composer must never float above an overlay --------------
+   mobile-composer-stability.css pins .chat-compose-pro with position:fixed and
+   z-index:96 so it floats above the bottom nav while the keyboard is closed.
+   Every overlay in the app sits below that — the More sheet at 60, modals at
+   40, the member profile sheet at 92 — so opening any of them from the chat
+   page left the composer hovering on top of the sheet, which is the glitch
+   users saw when they went More -> Chat -> More.
+
+   Fixing it here rather than by raising each overlay keeps the app's stacking
+   order untouched (toasts, for instance, still sit above sheets). The selector
+   has to restate the pinning rule's own prefix because that rule is written
+   with !important at a specificity a short selector cannot reach. */
+html.mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)):has(.sheet-backdrop,.modal-wrap,.mm-member-profile-backdrop) body #app .chat-compose-pro{
+  z-index:1!important;
+}
+
+/* --- shell ------------------------------------------------------------ */
+html body .chat-shell-live{position:relative!important;border:1px solid #e3ebf6!important;box-shadow:0 18px 44px rgba(30,58,110,.09)!important}
+html body .chat-shell-live .chat-head-live{background:linear-gradient(135deg,#f2f8ff 0%,#edf6ff 46%,#eefaf4 100%)!important;border-bottom:1px solid #e6edf6!important}
+
+/* Connection state. Floats in the top-right of the shell so it survives the
+   phone layout hiding the chat header. */
+html body .chat-shell-live .chat-live-dot{position:absolute!important;top:10px!important;right:12px!important;z-index:5!important;display:inline-flex!important;align-items:center!important;gap:6px!important;padding:4px 9px!important;border-radius:999px!important;background:rgba(255,255,255,.94)!important;border:1px solid #e1e9f4!important;font-size:8.5px!important;font-weight:800!important;letter-spacing:.07em!important;text-transform:uppercase!important;color:#8492a8!important;white-space:nowrap!important;box-shadow:0 4px 12px rgba(31,57,101,.07)!important}
+html body .chat-shell-live .chat-live-dot i{width:6px!important;height:6px!important;border-radius:50%!important;background:#c6cfdd!important}
+html body .chat-shell-live .chat-live-dot[data-live="on"]{color:#0b8a5a!important;border-color:#cdeadd!important;background:#f2fbf7!important}
+html body .chat-shell-live .chat-live-dot[data-live="on"] i{background:#12b06f!important;animation:mm-live-pulse 1.9s ease-out infinite!important}
+@keyframes mm-live-pulse{0%{box-shadow:0 0 0 0 rgba(18,176,111,.45)}70%{box-shadow:0 0 0 7px rgba(18,176,111,0)}100%{box-shadow:0 0 0 0 rgba(18,176,111,0)}}
+
+/* --- message area ----------------------------------------------------- */
+/* The chat page lays the shell out as `auto minmax(0,1fr) auto`, but on phones
+   the header is display:none and the composer is position:fixed, so the list
+   was the only in-flow child and fell into the `auto` row — it sized to its
+   content and left the 1fr row below it as dead space. Naming the rows keeps
+   the list on the flexible one however many of its siblings are in flow. */
+html body .chat-shell-live .chat-messages-live{grid-row:2!important}
+html body .chat-shell-live .chat-compose-live{grid-row:3!important}
+html body .chat-shell-live .chat-messages-live{background:
+    radial-gradient(rgba(40,80,150,.05) 1px, transparent 1.3px) 0 0/19px 19px,
+    radial-gradient(circle at 10% 0%, rgba(67,134,255,.08), transparent 44%),
+    radial-gradient(circle at 94% 100%, rgba(24,180,140,.08), transparent 46%),
+    linear-gradient(180deg,#f8fbff 0%,#eff5fd 54%,#f7fbff 100%)!important}
+html body .chat-shell-live .chat-day{display:flex!important;align-items:center!important;justify-content:center!important;margin:2px 0!important}
+html body .chat-shell-live .chat-day span{padding:4px 12px!important;border-radius:999px!important;background:rgba(255,255,255,.94)!important;border:1px solid #e4ebf5!important;font-size:9px!important;font-weight:800!important;letter-spacing:.06em!important;text-transform:uppercase!important;color:#7d8ca4!important;box-shadow:0 3px 10px rgba(31,57,101,.05)!important}
+
+/* Consecutive messages from one sender read as a single block. */
+html body .chat-shell-live .chat-row-live.grouped{margin-top:-9px!important}
+html body .chat-shell-live .chat-avatar-spacer{width:34px!important;flex:0 0 34px!important;align-self:flex-end!important}
+/* Your own avatar adds nothing next to your own messages. */
+html body .chat-shell-live .chat-row-live.mine .chat-profile-avatar,
+html body .chat-shell-live .chat-row-live.mine .chat-avatar-spacer{display:none!important}
+
+/* --- bubbles ---------------------------------------------------------- */
+html body .chat-shell-live .chat-bubble-pro{padding:9px 12px 7px!important;border-radius:18px 18px 18px 6px!important;border:1px solid #e4ebf5!important;background:#fff!important;box-shadow:0 5px 16px rgba(31,57,101,.055)!important}
+html body .chat-shell-live .chat-row-live.grouped .chat-bubble-pro{border-radius:18px!important}
+html body .chat-shell-live .chat-row-live.mine .chat-bubble-pro{background:linear-gradient(135deg,#3b7bf3,#1f52c9)!important;border-color:transparent!important;border-radius:18px 18px 6px 18px!important;box-shadow:0 8px 20px rgba(31,82,201,.2)!important}
+html body .chat-shell-live .chat-row-live.mine.grouped .chat-bubble-pro{border-radius:18px!important}
+html body .chat-shell-live .chat-row-live.mine .chat-bubble-pro p{color:#fff!important}
+html body .chat-shell-live .chat-row-live.is-pending .chat-bubble-pro{opacity:.78!important}
+html body .chat-shell-live .chat-row-live.is-failed .chat-bubble-pro{background:linear-gradient(135deg,#d55b5b,#b53f3f)!important;box-shadow:0 8px 20px rgba(181,63,63,.2)!important;cursor:pointer!important}
+
+html body .chat-shell-live .chat-stamp{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:5px!important;margin-top:3px!important;line-height:1!important}
+html body .chat-shell-live .chat-stamp time{font-size:9px!important;font-weight:600!important;color:#96a4b8!important}
+html body .chat-shell-live .chat-row-live.mine .chat-stamp time{color:rgba(255,255,255,.75)!important}
+html body .chat-shell-live .chat-state{display:inline-flex!important;align-items:center!important;justify-content:center!important;font-style:normal!important;font-size:0!important}
+html body .chat-shell-live .chat-state.sent:after{content:"✓"!important;font-size:10px!important;line-height:1!important;color:rgba(255,255,255,.8)!important}
+html body .chat-shell-live .chat-state.pending{width:9px!important;height:9px!important;border-radius:50%!important;border:1.5px solid rgba(255,255,255,.4)!important;border-top-color:#fff!important;animation:mm-chat-spin .7s linear infinite!important}
+@keyframes mm-chat-spin{to{transform:rotate(360deg)}}
+html body .chat-shell-live .chat-state.failed{font-size:9px!important;font-weight:800!important;letter-spacing:.04em!important;text-transform:uppercase!important;color:#ffe2e2!important;text-decoration:underline!important}
+
+/* --- jump to latest --------------------------------------------------- */
+html body .chat-shell-live .chat-jump{position:absolute!important;left:50%!important;bottom:78px!important;z-index:6!important;opacity:0!important;pointer-events:none!important;transform:translateX(-50%) translateY(6px)!important;transition:opacity .16s ease,transform .16s ease!important;border:1px solid #d4e2fb!important;border-radius:999px!important;background:#fff!important;color:#1a54c4!important;font-size:10.5px!important;font-weight:800!important;padding:7px 13px!important;box-shadow:0 8px 22px rgba(31,57,101,.16)!important}
+html body .chat-shell-live .chat-jump.is-on{opacity:1!important;pointer-events:auto!important;transform:translateX(-50%) translateY(0)!important}
+
+/* --- composer --------------------------------------------------------- */
+html body .chat-shell-live .chat-compose-live{align-items:flex-end!important}
+html body .chat-shell-live .chat-compose-pro textarea{overflow-y:auto!important;line-height:1.4!important}
+html body .chat-shell-live .chat-compose-pro textarea:focus{border-color:#8fb4f5!important;box-shadow:0 0 0 3px rgba(47,109,232,.1)!important}
+
+/* --- light mode: warmer, less flat than plain white ------------------- */
+html:not([data-theme="dark"]) body{
+  background:
+    radial-gradient(circle at 8% -4%, #dfeaff 0, transparent 30%),
+    radial-gradient(circle at 96% 8%, #dbf6ec 0, transparent 26%),
+    radial-gradient(circle at 50% 108%, #e5ecfb 0, transparent 34%),
+    linear-gradient(180deg,#f5f9fe 0%,#eef4fc 55%,#f3f7fd 100%);
+}
+html:not([data-theme="dark"]) .action-sheet{background:linear-gradient(180deg,#fff 0%,#f7fafe 100%)}
+
+/* --- dark mode -------------------------------------------------------- */
+html[data-theme="dark"] body .chat-shell-live{border-color:#27425b!important;box-shadow:0 18px 44px rgba(0,0,0,.34)!important}
+html[data-theme="dark"] body .chat-shell-live .chat-head-live{background:linear-gradient(135deg,#112538,#0e2033)!important;border-bottom-color:#27425b!important}
+html[data-theme="dark"] body .chat-shell-live .chat-live-dot{background:rgba(15,33,51,.94)!important;border-color:#2b4761!important;color:#8ea4bb!important;box-shadow:none!important}
+html[data-theme="dark"] body .chat-shell-live .chat-live-dot[data-live="on"]{background:#0e2b23!important;border-color:#27614a!important;color:#4fd3a0!important}
+html[data-theme="dark"] body .chat-shell-live .chat-messages-live{background:
+    radial-gradient(rgba(150,190,255,.045) 1px, transparent 1.3px) 0 0/19px 19px,
+    radial-gradient(circle at 10% 0%, rgba(47,109,232,.12), transparent 44%),
+    radial-gradient(circle at 94% 100%, rgba(24,180,140,.1), transparent 46%),
+    linear-gradient(180deg,#0a1927 0%,#0b1e30 54%,#0a1927 100%)!important}
+html[data-theme="dark"] body .chat-shell-live .chat-day span{background:rgba(16,34,52,.94)!important;border-color:#27425b!important;color:#8ea4bb!important;box-shadow:none!important}
+html[data-theme="dark"] body .chat-shell-live .chat-bubble-pro{background:#122840!important;border-color:#27455f!important;box-shadow:0 5px 16px rgba(0,0,0,.22)!important}
+html[data-theme="dark"] body .chat-shell-live .chat-row-live.mine .chat-bubble-pro{background:linear-gradient(135deg,#2f6ae0,#1c47a8)!important;border-color:transparent!important}
+html[data-theme="dark"] body .chat-shell-live .chat-row-live.mine .chat-bubble-pro p{color:#fff!important}
+html[data-theme="dark"] body .chat-shell-live .chat-stamp time{color:#7e93aa!important}
+html[data-theme="dark"] body .chat-shell-live .chat-jump{background:#122840!important;border-color:#2c4c68!important;color:#7fb6ff!important}
+
+@media(max-width:900px){
+  /* The header is hidden on phones, so the badge floats over the list; it
+     steps out of the way a few seconds after the connection settles. */
+  html body .chat-shell-live .chat-live-dot[data-live="on"]{animation:mm-live-settle .35s ease 4s forwards!important}
+  @keyframes mm-live-settle{to{opacity:0;visibility:hidden}}
+}
+@media(max-width:430px){
+  html body .chat-shell-live .chat-avatar-spacer{width:34px!important;flex-basis:34px!important}
+  html body .chat-shell-live .chat-row-live.grouped{margin-top:-7px!important}
+  html body .chat-shell-live .chat-jump{bottom:74px!important;font-size:10px!important;padding:6px 12px!important}
+}
