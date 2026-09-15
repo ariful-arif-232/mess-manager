@@ -126,6 +126,27 @@ not just their `.trusted` sub-packages — but test an install on a real
 device before shipping, since a clean `BUILD SUCCESSFUL` does not prove
 the APK actually launches.
 
+## Why `FALLBACK_STRATEGY` is set to `webview`
+
+Even after the R8 fix above, `android-v1.0.1` still crashed on launch on a
+Xiaomi/MIUI device ("Mess Manager keeps stopping"). Investigated with real
+evidence rather than another guess: fetched `androidbrowserhelper 2.7.3`'s
+own published POM in CI and confirmed this project's pinned
+`androidx.browser`/`androidx.appcompat` versions exactly match what the
+library itself declares (no version skew), and dumped the *compiled*
+manifest out of the actual built APK via `aapt2` — structurally correct,
+matching the source XML exactly. Both ruled out.
+
+What was missing: `LauncherActivity` binds to Chrome's Custom Tabs service
+to render the TWA; on a device where that bind fails — Chrome not set as
+default, disabled, or, as on many MIUI builds, the bind blocked outright —
+there was no configured fallback, which is a documented crash source for
+this library. Adding `android.support.customtabs.trusted.FALLBACK_STRATEGY`
+= `webview` makes it degrade to an in-app WebView instead, which only needs
+the system WebView component present on every real Android device. This
+alone explains why the crash recurred identically across `1.0.0` and
+`1.0.1`: the gap existed in both, untouched by the R8 fix.
+
 ## Verifying Digital Asset Links end-to-end
 
 The `.github/workflows/verify-android-assetlinks.yml` workflow (manual

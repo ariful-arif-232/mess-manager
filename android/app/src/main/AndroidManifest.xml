@@ -57,6 +57,17 @@
                 android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
                 android:value="${applicationId}.fileprovider" />
 
+            <!-- Without this, LauncherActivity has no defined behavior when it
+                 can't bind a Custom Tabs provider (Chrome not set as default,
+                 disabled, or — as on many Xiaomi/MIUI builds — the binding is
+                 blocked outright): it crashes instead of degrading gracefully.
+                 "webview" makes it fall back to an in-app WebView, which only
+                 needs the system WebView component that's present on every
+                 real Android device, Custom Tabs support or not. -->
+            <meta-data
+                android:name="android.support.customtabs.trusted.FALLBACK_STRATEGY"
+                android:value="webview" />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
