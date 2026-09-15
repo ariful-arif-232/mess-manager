@@ -1,10 +1,10 @@
-name: Diagnose ManageDataLauncherActivity crash (temporary)
+name: Verify TWA components (temporary)
 
 on:
   workflow_dispatch: {}
 
 jobs:
-  diagnose:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,91 +22,77 @@ jobs:
           chmod +x ./gradlew
           ./gradlew clean :app:assembleRelease --no-daemon --stacktrace
 
-      - name: 1. Exact androidbrowserhelper version on the release classpath
-        working-directory: android
-        run: |
-          ./gradlew :app:dependencies --configuration releaseRuntimeClasspath --no-daemon \
-            | grep -i "androidbrowserhelper" || echo "NOT FOUND"
-
-      - name: 2. Locate the exact AAR the build actually consumed
+      - name: Extract the AAR the build consumed
         run: |
           AAR=$(find ~/.gradle/caches -name "androidbrowserhelper-*.aar" | head -1)
-          if [ -z "$AAR" ]; then echo "::error::AAR not found in Gradle cache"; exit 1; fi
-          echo "AAR path: $AAR"
-          sha256sum "$AAR"
-          echo "AAR_PATH=$AAR" >> "$GITHUB_ENV"
-
-      - name: 3. The library AAR's own AndroidManifest (does IT declare the activity?)
-        run: |
+          echo "AAR: $AAR"
           rm -rf /tmp/aar && mkdir -p /tmp/aar && cd /tmp/aar
-          unzip -o "$AAR_PATH" > /dev/null
-          echo "=== AAR AndroidManifest.xml (verbatim) ==="
-          cat AndroidManifest.xml
-          echo
-          echo "=== Does the AAR manifest mention ManageDataLauncherActivity? ==="
-          grep -c "ManageDataLauncherActivity" AndroidManifest.xml || echo "0 occurrences"
-
-      - name: 4. Does the AAR actually CONTAIN the ManageDataLauncherActivity class?
-        run: |
-          cd /tmp/aar
-          echo "=== classes.jar entries matching ManageData ==="
-          unzip -l classes.jar | grep -i "ManageData" || echo "NOT PRESENT in classes.jar"
-
-      - name: 5. Bytecode of the exact crash path
-        run: |
-          cd /tmp/aar
-          javap -p -c -classpath classes.jar \
-            com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity > /tmp/mdla.txt 2>&1 || true
-          javap -p -c -classpath classes.jar \
-            com.google.androidbrowserhelper.trusted.LauncherActivity > /tmp/la.txt 2>&1 || true
-          echo "=== ManageDataLauncherActivity: method signatures ==="
-          grep -E "^  [a-z].*\(" /tmp/mdla.txt || true
-          echo
-          echo "=== addSiteSettingsShortcut bytecode ==="
-          awk '/addSiteSettingsShortcut/{f=1} f{print} f&&/^$/{c++; if(c>1) exit}' /tmp/mdla.txt | head -150
-          echo
-          echo "=== LauncherActivity.launchTwa bytecode (grep for ManageData / setComponentEnabled) ==="
-          grep -n -B3 -A3 "ManageData" /tmp/la.txt | head -60
-
-      - name: 6. Every component class the library references via ComponentName
-        run: |
-          cd /tmp/aar
+          unzip -o "$AAR" > /dev/null
           rm -rf classes && unzip -o classes.jar -d classes > /dev/null
-          echo "=== All classes shipped in the library ==="
-          find classes -name "*.class" | sed 's|classes/||; s|/|.|g; s|\.class$||' | sort
-          echo
-          echo "=== Classes whose bytecode calls setComponentEnabledSetting ==="
-          for f in $(find classes -name "*.class"); do
-            CLS=$(echo "$f" | sed 's|classes/||; s|/|.|g; s|\.class$||')
-            if javap -p -c -classpath classes "$CLS" 2>/dev/null | grep -q "setComponentEnabledSetting"; then
-              echo "  $CLS"
-            fi
-          done
 
-      - name: 7. MERGED manifest of the built APK — is ManageDataLauncherActivity declared?
+      - name: ASSERT every component the library enables is declared in the merged manifest
         working-directory: android
         run: |
           MERGED=$(find app/build/intermediates -name "AndroidManifest.xml" -path "*merged_manifest*" | head -1)
           echo "Merged manifest: $MERGED"
-          echo "=== All <activity> / <service> / <provider> declarations in the merged manifest ==="
-          grep -E "android:name=\"[a-z]" "$MERGED" | sed 's/^[[:space:]]*//' | sort -u
-          echo
-          echo "=== ManageDataLauncherActivity in merged manifest? ==="
-          if grep -q "ManageDataLauncherActivity" "$MERGED"; then
-            echo "DECLARED"
-          else
-            echo "*** NOT DECLARED *** <- this is why setComponentEnabledSetting throws IllegalArgumentException"
+          FAIL=0
+          FOUND_ANY=0
+          for f in $(find /tmp/aar/classes -name "*.class"); do
+            CLS=$(echo "$f" | sed 's|/tmp/aar/classes/||; s|/|.|g; s|\.class$||')
+            if javap -p -c -classpath /tmp/aar/classes "$CLS" 2>/dev/null | grep -q "setComponentEnabledSetting"; then
+              FOUND_ANY=1
+              echo "Library class toggles a component: $CLS"
+              # every ComponentName(context, X.class) it builds must be declared
+              for COMP in $(javap -p -c -classpath /tmp/aar/classes "$CLS" 2>/dev/null \
+                    | grep -oE "// class [a-zA-Z0-9/$]+" | sed 's|// class ||; s|/|.|g' | sort -u); do
+                case "$COMP" in
+                  *Activity|*Service|*Receiver|*Provider)
+                    if grep -q "$COMP" "$MERGED"; then
+                      echo "  DECLARED in merged manifest: $COMP"
+                    else
+                      echo "::error::NOT DECLARED in merged manifest: $COMP — setComponentEnabledSetting will throw IllegalArgumentException at launch"
+                      FAIL=1
+                    fi
+                    ;;
+                esac
+              done
+            fi
+          done
+          if [ "$FOUND_ANY" = "0" ]; then
+            echo "::error::Found no library class calling setComponentEnabledSetting — the scan is broken, not the app"
+            exit 1
           fi
+          [ "$FAIL" = "0" ] || exit 1
+          echo "PASS: every component the library toggles is declared."
 
-      - name: 8. Is the class present in the final APK's dex (class exists, component does not)?
+      - name: ASSERT the compiled APK manifest declares ManageDataLauncherActivity
         working-directory: android
         run: |
+          AAPT2=$(find "$ANDROID_HOME" -iname aapt2 -type f | sort -V | tail -1)
           APK=$(find "$PWD/app/build/outputs/apk/release" -name "*.apk" | head -1)
           echo "APK: $APK"
-          APKANALYZER=$(find "$ANDROID_HOME" -name "apkanalyzer" -type f 2>/dev/null | head -1)
-          if [ -n "$APKANALYZER" ]; then
-            "$APKANALYZER" dex packages --defined-only "$APK" 2>/dev/null \
-              | grep -i "ManageDataLauncherActivity" || echo "not listed by apkanalyzer"
+          if "$AAPT2" dump xmltree "$APK" --file AndroidManifest.xml | grep -q "ManageDataLauncherActivity"; then
+            echo "PASS: present in the COMPILED APK manifest"
+            "$AAPT2" dump xmltree "$APK" --file AndroidManifest.xml | grep -A4 "ManageDataLauncherActivity"
           else
-            echo "apkanalyzer not available"
+            echo "::error::ManageDataLauncherActivity missing from the compiled APK manifest"
+            exit 1
           fi
+
+      - name: Regression guard — splash fix still intact
+        working-directory: android
+        run: |
+          AAPT2=$(find "$ANDROID_HOME" -iname aapt2 -type f | sort -V | tail -1)
+          APK=$(find "$PWD/app/build/outputs/apk/release" -name "*.apk" | head -1)
+          if "$AAPT2" dump resources "$APK" | grep -q "drawable/splash "; then
+            echo "::error::drawable/splash is back"
+            exit 1
+          fi
+          echo "PASS: no drawable/splash; windowBackground still a color:"
+          "$AAPT2" dump resources "$APK" | grep -A2 "style/Theme.SplashScreen"
+
+      - name: Reference — how the site-settings shortcut intent is built
+        run: |
+          javap -p -c -classpath /tmp/aar/classes \
+            com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity 2>/dev/null \
+            | awk '/getSiteSettingsShortcutOrNull/{f=1} f{print} f&&/^$/{c++; if(c>1) exit}' | head -80

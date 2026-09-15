@@ -90,6 +90,23 @@
             </intent-filter>
         </activity>
 
+        <!-- Required, even though nothing here uses "manage space" directly.
+             LauncherActivity.launchTwa() unconditionally calls
+             ManageDataLauncherActivity.addSiteSettingsShortcut(), which on
+             API >= 25 always calls PackageManager.setComponentEnabledSetting()
+             on this component (both the "supported" and "not supported"
+             branches do, verified in the 2.7.3 bytecode — there is no guard
+             and no config flag to skip it). That call throws
+             IllegalArgumentException for a component the app doesn't declare,
+             which crashed LauncherActivity.onCreate in v1.0.3. The library's
+             own AAR manifest deliberately doesn't declare it, so the app must.
+             Declared disabled: the library flips it on at runtime only when
+             the browser supports site settings. -->
+        <activity
+            android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+            android:enabled="false"
+            android:exported="false" />
+
         <!-- Lets the TWA delegate web push notifications to the app -->
         <service
             android:name="com.google.androidbrowserhelper.trusted.DelegationService"
