@@ -34,6 +34,15 @@ There are no demo PINs or client-side credentials. Users sign in with Supabase e
 
 Recommended production Auth settings include confirmed email, MFA for admins, leaked-password protection, appropriate rate limits, and exact redirect allow-list entries.
 
+## Android app
+
+The `android/` directory contains a Trusted Web Activity (TWA) wrapper that
+launches this same website full-screen, with no Chrome address bar or
+toolbar, while sharing the browser's cookies, `localStorage`, and service
+worker (so login sessions carry over). See
+[`android/README.md`](android/README.md) for setup, signing, and how to
+build the release APK via GitHub Actions.
+
 ## Security notes
 
 * Apply the migration before using a browser key; every business table has RLS enabled.

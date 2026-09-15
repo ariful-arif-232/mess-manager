@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.messmanager.twa",
+      "sha256_cert_fingerprints": [
+        "42:0D:19:91:37:68:7E:3D:BB:3E:87:9C:C0:54:0D:59:3A:6A:98:B6:51:C8:D3:49:99:14:B3:3B:BC:24:54:BD"
+      ]
+    }
+  }
+]

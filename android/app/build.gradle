@@ -1,0 +1,64 @@
+plugins {
+    id 'com.android.application'
+}
+
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasKeystoreProperties = keystorePropertiesFile.exists()
+if (hasKeystoreProperties) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace 'app.messmanager.twa'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "app.messmanager.twa"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        release {
+            if (hasKeystoreProperties) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasKeystoreProperties) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
+            applicationIdSuffix ".debug"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Version ranges: these artifacts are hosted only on Google's Maven repo,
+    // which this build environment could not reach to verify exact latest
+    // patch versions. CI (which does have access) resolves the newest 2.x/1.x
+    // release at build time. Pin to an exact version once verified if you
+    // need fully reproducible builds.
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.+'
+    implementation 'androidx.appcompat:appcompat:1.7.+'
+    implementation 'androidx.browser:browser:1.8.+'
+}
