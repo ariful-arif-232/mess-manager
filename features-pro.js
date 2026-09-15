@@ -5,10 +5,13 @@
   window.loadData = async function loadDataPlus(){
     await baseLoadData();
     const [messages, notices] = await Promise.all([
-      client.from('mess_messages').select('*').order('created_at',{ascending:true}).limit(200),
+      // Newest 200, then flipped back to oldest-first for rendering. Ordering
+      // ascending here would have pinned the page to the first 200 messages the
+      // mess ever sent, so nothing new could ever load.
+      client.from('mess_messages').select('*').order('created_at',{ascending:false}).limit(200),
       client.from('mess_notices').select('*').order('created_at',{ascending:false}).limit(30)
     ]);
-    db.messages = messages.error ? [] : messages.data;
+    db.messages = messages.error ? [] : [...messages.data].reverse();
     db.notices = notices.error ? [] : notices.data;
   };
 
