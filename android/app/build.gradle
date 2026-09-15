@@ -15,7 +15,8 @@ android {
 
     defaultConfig {
         applicationId "app.messmanager.twa"
-        minSdk 21
+        // androidbrowserhelper 2.7.3 (resolved by this build) requires 23.
+        minSdk 23
         targetSdk 36
         versionCode 1
         versionName "1.0.0"
