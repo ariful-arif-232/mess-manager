@@ -35,8 +35,12 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            // Temporarily off while validating the pipeline in CI (R8 full-
+            // program minification is the prime suspect for an unexplained
+            // multi-minute hang on a totally cold cache). Re-enable once a
+            // plain build succeeds — see android/README.md.
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (hasKeystoreProperties) {
                 signingConfig signingConfigs.release
@@ -54,12 +58,9 @@ android {
 }
 
 dependencies {
-    // Version ranges: these artifacts are hosted only on Google's Maven repo,
-    // which this build environment could not reach to verify exact latest
-    // patch versions. CI (which does have access) resolves the newest 2.x/1.x
-    // release at build time. Pin to an exact version once verified if you
-    // need fully reproducible builds.
-    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.+'
-    implementation 'androidx.appcompat:appcompat:1.7.+'
-    implementation 'androidx.browser:browser:1.8.+'
+    // Pinned to exact versions confirmed resolvable by a real CI build
+    // (this sandbox can't reach Google's Maven to verify versions itself).
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.3'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.browser:browser:1.10.0'
 }
