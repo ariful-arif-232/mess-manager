@@ -58,15 +58,18 @@ jobs:
         run: |
           PKG="${{ steps.expected.outputs.package }}"
           FPR="${{ steps.expected.outputs.fingerprint }}"
-          RESPONSE=$(curl -sS -G "https://digitalassetlinks.googleapis.com/v1/statements:list" \
+          # assetlinks:check (not statements:list) is the endpoint that
+          # takes target.* query params for a direct source->target check;
+          # it returns {"linked": true/false}.
+          RESPONSE=$(curl -sS -G "https://digitalassetlinks.googleapis.com/v1/assetlinks:check" \
             --data-urlencode "source.web.site=https://mess-manager.app" \
             --data-urlencode "relation=delegate_permission/common.handle_all_urls" \
             --data-urlencode "target.androidApp.packageName=${PKG}" \
             --data-urlencode "target.androidApp.certificate.sha256Fingerprint=${FPR}")
           echo "$RESPONSE"
-          COUNT=$(echo "$RESPONSE" | jq '.statements | length' 2>/dev/null || echo 0)
-          if [ "$COUNT" -lt 1 ]; then
-            echo "::error::Google's Digital Asset Links API found no matching statement for package=$PKG fingerprint=$FPR. The TWA will NOT be verified — Chrome will show the address bar (or the app may show a mismatch)."
+          LINKED=$(echo "$RESPONSE" | jq -r '.linked // false' 2>/dev/null || echo false)
+          if [ "$LINKED" != "true" ]; then
+            echo "::error::Google's Digital Asset Links API says linked=$LINKED for package=$PKG fingerprint=$FPR. The TWA will NOT be verified — Chrome will show the address bar (or the app may show a mismatch)."
             exit 1
           fi
-          echo "PASS: Digital Asset Links API confirms $COUNT matching statement(s)."
+          echo "PASS: Digital Asset Links API confirms this app/site pairing is linked."
