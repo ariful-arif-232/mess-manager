@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mess Manager</string>
+    <string name="launch_url">https://mess-manager.app/</string>
+    <string name="host_name">mess-manager.app</string>
+    <string name="web_manifest_url">https://mess-manager.app/manifest.json</string>
+    <string name="asset_statements">
+        [{
+        \"relation\": [\"delegate_permission/common.handle_all_urls\"],
+        \"target\": {
+        \"namespace\": \"web\",
+        \"site\": \"https://mess-manager.app\"}
+        }]
+    </string>
+</resources>

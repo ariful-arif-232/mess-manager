@@ -1,0 +1,112 @@
+name: Android Release APK
+
+on:
+  push:
+    tags:
+      - 'android-v*'
+      - 'android-ci-*'
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Override versionName (e.g. 1.0.1). Leave blank to keep the value in android/app/build.gradle.'
+        required: false
+        default: ''
+      version_code:
+        description: 'Override versionCode (integer). Leave blank to keep the value in android/app/build.gradle.'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: android
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # No SDK-setup action here on purpose: GitHub's ubuntu-latest runners
+      # already ship a preinstalled Android SDK (cmdline-tools, platform-tools,
+      # licenses pre-accepted) at $ANDROID_HOME. Gradle/AGP find it via that
+      # env var automatically and fetch any extra platform/build-tools
+      # versions they need. (android-actions/setup-android@v3 was tried here
+      # and fails: it runs `sdkmanager tools`, a standalone package Google
+      # removed from the SDK repository years ago.)
+
+      - name: Override versionName
+        if: ${{ github.event.inputs.version_name != '' }}
+        run: |
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ github.event.inputs.version_name }}\"/" app/build.gradle
+
+      - name: Override versionCode
+        if: ${{ github.event.inputs.version_code != '' }}
+        run: |
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.event.inputs.version_code }}/" app/build.gradle
+
+      # This repo's release keystore is stored only as GitHub Actions secrets
+      # (never committed), which is the standard safe place for a private
+      # signing key. If they aren't configured yet, the build still runs and
+      # produces an UNSIGNED apk so the project can be validated end-to-end;
+      # it only becomes a hard failure when the tag says this is meant to be
+      # a real, distributable release (android-v*).
+      - name: Prepare signing keystore (if configured)
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/release.keystore
+            cat > keystore.properties <<EOF
+          storeFile=release.keystore
+          storePassword=${ANDROID_KEYSTORE_PASSWORD}
+          keyAlias=${ANDROID_KEY_ALIAS}
+          keyPassword=${ANDROID_KEY_PASSWORD}
+          EOF
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "Signing secrets found — building a signed release APK."
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No signing secrets configured (ANDROID_KEYSTORE_BASE64/ANDROID_KEYSTORE_PASSWORD/ANDROID_KEY_ALIAS/ANDROID_KEY_PASSWORD). Building an UNSIGNED apk for validation only — it cannot be installed on a device as-is. See android/README.md to add the secrets for a real, installable, signed release."
+          fi
+
+      - name: Fail fast if a real release tag is unsigned
+        if: ${{ startsWith(github.ref, 'refs/tags/android-v') && steps.signing.outputs.signed != 'true' }}
+        run: |
+          echo "::error::Tag ${{ github.ref_name }} looks like a real release (android-v*) but no signing secrets are configured, so it would only produce an unsigned, uninstallable APK. Add ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD in Settings > Secrets and variables > Actions, then re-run this workflow (or push the tag again)."
+          exit 1
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build release APK
+        timeout-minutes: 15
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      # Unsigned builds produce app-release-unsigned.apk; signed builds
+      # produce app-release.apk. Glob covers both.
+      - name: Upload APK build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mess-manager-${{ steps.signing.outputs.signed == 'true' && 'signed' || 'UNSIGNED' }}-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Attach APK to GitHub Release
+        if: ${{ startsWith(github.ref, 'refs/tags/android-v') && steps.signing.outputs.signed == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/release/*.apk
+          generate_release_notes: true

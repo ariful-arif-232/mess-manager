@@ -1,0 +1,17 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // androidx.browser/androidx.core recently began requiring AGP 8.9.1+
+        // and compileSdk 36 (confirmed by a real CI build's AAR metadata
+        // check); this range picks up any 8.9.x patch, all of which satisfy
+        // that floor.
+        classpath 'com.android.tools.build:gradle:8.9.+'
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
