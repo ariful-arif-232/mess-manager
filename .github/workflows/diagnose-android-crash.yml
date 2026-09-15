@@ -1,0 +1,66 @@
+name: Diagnose Android Launch Crash
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x ./gradlew
+
+      - name: Fetch androidbrowserhelper 2.7.3's own POM (its declared dependency versions)
+        run: |
+          echo "=== androidbrowserhelper 2.7.3 POM ==="
+          curl -sSL "https://dl.google.com/android/maven2/com/google/androidbrowserhelper/androidbrowserhelper/2.7.3/androidbrowserhelper-2.7.3.pom" || true
+          echo
+          echo "=== androidx.browser 1.10.0 POM ==="
+          curl -sSL "https://dl.google.com/android/maven2/androidx/browser/browser/1.10.0/browser-1.10.0.pom" || true
+
+      - name: Print full resolved dependency tree (release runtime classpath)
+        run: ./gradlew :app:dependencies --configuration releaseRuntimeClasspath --no-daemon
+
+      - name: Build unsigned release APK for inspection
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Locate build-tools and dump compiled manifest + badging info
+        run: |
+          AAPT2=$(find "$ANDROID_HOME" -iname "aapt2" -type f 2>/dev/null | sort -V | tail -1)
+          echo "Using aapt2: $AAPT2"
+          APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
+          echo "Inspecting: $APK"
+          echo "=== aapt2 dump badging ==="
+          "$AAPT2" dump badging "$APK" || true
+          echo
+          echo "=== aapt2 dump xmltree AndroidManifest.xml (as compiled into the APK) ==="
+          "$AAPT2" dump xmltree "$APK" --file AndroidManifest.xml || true
+
+      - name: List all classes actually packaged under androidbrowserhelper/androidx.browser
+        run: |
+          APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
+          mkdir -p /tmp/apk-extract
+          cd /tmp/apk-extract
+          unzip -o "$APK" -d extracted > /dev/null
+          echo "=== DEX file count ==="
+          ls extracted/*.dex 2>/dev/null | wc -l
+          echo "=== Top-level dirs inside extracted APK ==="
+          ls extracted
+
+      - name: Check installed Android SDK build-tools / platform versions on this runner
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" 2>/dev/null || true
+          ls "$ANDROID_HOME/build-tools" 2>/dev/null || true
