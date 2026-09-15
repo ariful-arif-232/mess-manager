@@ -41,8 +41,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # No SDK-setup action here on purpose: GitHub's ubuntu-latest runners
+      # already ship a preinstalled Android SDK (cmdline-tools, platform-tools,
+      # licenses pre-accepted) at $ANDROID_HOME. Gradle/AGP find it via that
+      # env var automatically and fetch any extra platform/build-tools
+      # versions they need. (android-actions/setup-android@v3 was tried here
+      # and fails: it runs `sdkmanager tools`, a standalone package Google
+      # removed from the SDK repository years ago.)
 
       - name: Override versionName
         if: ${{ github.event.inputs.version_name != '' }}
