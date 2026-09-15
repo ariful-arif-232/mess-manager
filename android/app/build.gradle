@@ -35,12 +35,8 @@ android {
 
     buildTypes {
         release {
-            // Temporarily off while validating the pipeline in CI (R8 full-
-            // program minification is the prime suspect for an unexplained
-            // multi-minute hang on a totally cold cache). Re-enable once a
-            // plain build succeeds — see android/README.md.
-            minifyEnabled false
-            shrinkResources false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (hasKeystoreProperties) {
                 signingConfig signingConfigs.release

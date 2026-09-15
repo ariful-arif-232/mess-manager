@@ -97,27 +97,22 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
-      # Diagnostic: two prior runs got past dependency resolution and
-      # manifest merge (each under a minute) but then sat inside this task
-      # with zero output for 20+ minutes until manually cancelled, and
-      # logs for a manually-cancelled run aren't retrievable afterward.
-      # A hard timeout here guarantees a completed run with real logs
-      # either way, and --info gives full task-by-task output to see
-      # exactly where it stalls if it happens again.
       - name: Build release APK
-        timeout-minutes: 12
-        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace --info
+        timeout-minutes: 15
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
 
+      # Unsigned builds produce app-release-unsigned.apk; signed builds
+      # produce app-release.apk. Glob covers both.
       - name: Upload APK build artifact
         uses: actions/upload-artifact@v4
         with:
           name: mess-manager-${{ steps.signing.outputs.signed == 'true' && 'signed' || 'UNSIGNED' }}-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
       - name: Attach APK to GitHub Release
         if: ${{ startsWith(github.ref, 'refs/tags/android-v') && steps.signing.outputs.signed == 'true' }}
         uses: softprops/action-gh-release@v2
         with:
-          files: android/app/build/outputs/apk/release/app-release.apk
+          files: android/app/build/outputs/apk/release/*.apk
           generate_release_notes: true
