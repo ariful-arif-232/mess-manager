@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="twa_launcher" path="." />
+<!--
+    Scoped to exactly one directory on purpose.
+
+    SplashImageTransferTask writes the TWA splash image to
+    getFilesDir()/twa_splash/splash_image.png, then hands it to Chrome via
+    FileProvider.getUriForFile(). FileProvider's SimplePathStrategy only
+    resolves a file if some configured root is a path prefix of it, and it
+    throws IllegalArgumentException ("Failed to find configured root that
+    contains ...") otherwise — which crashed v1.0.4.
+
+    This previously declared <external-path path="."/>, which is both the
+    wrong storage area (external storage, not /data/data/<pkg>/files) and
+    far broader than anything here needs. <files-path> maps to
+    getFilesDir(), and path="twa_splash/" narrows the root to the single
+    subdirectory the library actually uses — nothing else in the app's
+    internal storage is exposed.
+-->
+<paths>
+    <files-path name="twa_splash" path="twa_splash/" />
 </paths>
