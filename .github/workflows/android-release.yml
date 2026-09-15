@@ -97,8 +97,16 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
+      # Diagnostic: two prior runs got past dependency resolution and
+      # manifest merge (each under a minute) but then sat inside this task
+      # with zero output for 20+ minutes until manually cancelled, and
+      # logs for a manually-cancelled run aren't retrievable afterward.
+      # A hard timeout here guarantees a completed run with real logs
+      # either way, and --info gives full task-by-task output to see
+      # exactly where it stalls if it happens again.
       - name: Build release APK
-        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+        timeout-minutes: 12
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace --info
 
       - name: Upload APK build artifact
         uses: actions/upload-artifact@v4
