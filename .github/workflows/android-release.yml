@@ -88,6 +88,12 @@ jobs:
           echo "::error::Tag ${{ github.ref_name }} looks like a real release (android-v*) but no signing secrets are configured, so it would only produce an unsigned, uninstallable APK. Add ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD in Settings > Secrets and variables > Actions, then re-run this workflow (or push the tag again)."
           exit 1
 
+      - name: Read app version
+        id: version
+        run: |
+          VERSION_NAME=$(grep -oP 'versionName\s+"\K[^"]+' app/build.gradle)
+          echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
 
@@ -104,9 +110,15 @@ jobs:
           path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
+      # Runs for a real release tag push (android-v*) or a manual
+      # "Run workflow" dispatch, as long as signing secrets are configured.
+      # A manual dispatch has no tag of its own, so it targets an explicit
+      # android-v<versionName> tag; softprops/action-gh-release creates
+      # that tag (pointing at the dispatched commit) if it doesn't exist.
       - name: Attach APK to GitHub Release
-        if: ${{ startsWith(github.ref, 'refs/tags/android-v') && steps.signing.outputs.signed == 'true' }}
+        if: ${{ steps.signing.outputs.signed == 'true' && (startsWith(github.ref, 'refs/tags/android-v') || github.event_name == 'workflow_dispatch') }}
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('android-v{0}', steps.version.outputs.name) }}
           files: android/app/build/outputs/apk/release/*.apk
           generate_release_notes: true
