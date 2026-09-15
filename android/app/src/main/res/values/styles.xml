@@ -6,7 +6,14 @@
         <item name="android:navigationBarColor">@color/colorPrimary</item>
     </style>
 
+    <!-- A plain color, not a drawable file: @mipmap/ic_launcher resolves to
+         the adaptive-icon XML on API 26+ (every real device in the field),
+         and a <bitmap> tag referencing that as its src crashes with
+         Resources$NotFoundException ("<bitmap> requires a valid 'src'
+         attribute") the instant this theme's windowBackground is inflated
+         in LauncherActivity.onCreate — confirmed from a real device crash
+         log. A color reference can't hit that failure mode at all. -->
     <style name="Theme.SplashScreen" parent="Theme.Launcher">
-        <item name="android:windowBackground">@drawable/splash</item>
+        <item name="android:windowBackground">@color/backgroundColor</item>
     </style>
 </resources>
