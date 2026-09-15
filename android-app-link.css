@@ -1,0 +1,17 @@
+/* "Download Android App" link. Sized and coloured to sit inside the existing
+   auth page, sidebar footer and More sheet without changing their layout. */
+.mm-apk-link{display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;font-family:Inter,"Noto Sans Bengali",system-ui,sans-serif;font-weight:700;white-space:nowrap}
+.mm-apk-icon{width:14px;height:14px;flex:0 0 auto}
+
+/* Login / signup screens */
+.mm-apk-auth{align-self:center;margin:8px auto 0;padding:0 12px;height:29px;border:1px solid #dbe5f2;border-radius:999px;background:rgba(255,255,255,.94);color:#0f66d0;font-size:10.5px;box-shadow:0 5px 14px rgba(41,76,123,.08)}
+
+/* Signed-in desktop sidebar footer */
+.mm-apk-side{margin-top:10px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font-size:13px}
+
+/* Signed-in mobile "More" sheet */
+.mm-apk-sheet{width:100%;margin-top:10px;padding:10px 12px;border:1px solid #d9e4f6;border-radius:14px;background:#f6faff;color:#1a54c4;font-size:12px}
+.mm-apk-sheet .mm-apk-icon{width:15px;height:15px}
+
+html[data-theme="dark"] .mm-apk-auth{background:rgba(17,38,58,.96);border-color:#294a64;color:#69adff;box-shadow:none}
+html[data-theme="dark"] .mm-apk-sheet{background:#13243a;border-color:#2c4864;color:#7fb6ff}
