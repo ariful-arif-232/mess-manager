@@ -1,0 +1,58 @@
+name: Verify FileProvider splash path (temporary)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Clean build
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Prove the path constants from the androidbrowserhelper AAR itself
+        run: |
+          AAR=$(find ~/.gradle/caches -name "androidbrowserhelper-*.aar" | head -1)
+          echo "AAR: $AAR"
+          rm -rf /tmp/aar && mkdir -p /tmp/aar && cd /tmp/aar
+          unzip -o "$AAR" > /dev/null
+          unzip -o classes.jar -d classes > /dev/null
+          echo
+          echo "=== String constants in SplashImageTransferTask (where the file is written) ==="
+          javap -p -c -classpath classes \
+            com.google.androidbrowserhelper.trusted.splashscreens.SplashImageTransferTask 2>/dev/null \
+            | grep -E "String |getFilesDir|mkdir|FileOutputStream|File\." | sort -u
+          echo
+          echo "=== String constants in PwaWrapperSplashScreenStrategy ==="
+          javap -p -c -classpath classes \
+            com.google.androidbrowserhelper.trusted.splashscreens.PwaWrapperSplashScreenStrategy 2>/dev/null \
+            | grep -E "String " | sort -u
+
+      - name: Prove what TrustedWebUtils.transferSplashImage does with it
+        run: |
+          BROWSER_AAR=$(find ~/.gradle/caches -name "browser-*.aar" | head -1)
+          echo "androidx.browser AAR: $BROWSER_AAR"
+          rm -rf /tmp/browser && mkdir -p /tmp/browser && cd /tmp/browser
+          unzip -o "$BROWSER_AAR" > /dev/null
+          unzip -o classes.jar -d classes > /dev/null
+          javap -p -c -classpath classes androidx.browser.customtabs.TrustedWebUtils 2>/dev/null \
+            | awk '/transferSplashImage/{f=1} f{print} f&&/^$/{c++; if(c>1) exit}' | head -60
+
+      - name: Run the real verification gate against the built APK
+        working-directory: android
+        run: |
+          chmod +x scripts/verify-apk.sh
+          APK=$(find "$PWD/app/build/outputs/apk/release" -name "*.apk" | head -1)
+          scripts/verify-apk.sh "$APK"

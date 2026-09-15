@@ -99,7 +99,17 @@ jobs:
 
       - name: Build release APK
         timeout-minutes: 15
-        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+        run: ./gradlew clean :app:assembleRelease --no-daemon --stacktrace
+
+      # Hard gate before anything is uploaded or published. Checks the built
+      # APK for the exact configuration mistakes that shipped broken releases
+      # before (FileProvider roots, splash windowBackground, declared
+      # components) — a clean build caught none of them.
+      - name: Verify the built APK
+        run: |
+          chmod +x scripts/verify-apk.sh
+          APK=$(find "$PWD/app/build/outputs/apk/release" -name "*.apk" | head -1)
+          scripts/verify-apk.sh "$APK"
 
       # Unsigned builds produce app-release-unsigned.apk; signed builds
       # produce app-release.apk. Glob covers both.
