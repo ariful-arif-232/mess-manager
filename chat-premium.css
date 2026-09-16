@@ -85,15 +85,56 @@ html body .chat-shell-live .chat-compose-live{align-items:flex-end!important}
 html body .chat-shell-live .chat-compose-pro textarea{overflow-y:auto!important;line-height:1.4!important}
 html body .chat-shell-live .chat-compose-pro textarea:focus{border-color:#8fb4f5!important;box-shadow:0 0 0 3px rgba(47,109,232,.1)!important}
 
-/* --- light mode: warmer, less flat than plain white ------------------- */
-html:not([data-theme="dark"]) body{
-  background:
-    radial-gradient(circle at 8% -4%, #dfeaff 0, transparent 30%),
-    radial-gradient(circle at 96% 8%, #dbf6ec 0, transparent 26%),
-    radial-gradient(circle at 50% 108%, #e5ecfb 0, transparent 34%),
-    linear-gradient(180deg,#f5f9fe 0%,#eef4fc 55%,#f3f7fd 100%);
+/* --- composer: a floating pill, not a white band ----------------------
+   In keyboard mode mobile-shell-final.css stretched the composer edge to edge
+   with a flat white background and a hard top rule, which is the white block
+   under the message box users complained about. It becomes a rounded, blurred
+   card that sits over the conversation instead.
+
+   Each selector below restates the prefix of the rule it has to outrank:
+   the pinning rules in mobile-composer-stability.css are written at a
+   specificity a short selector cannot reach. */
+@media(max-width:900px){
+  html.mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)) body #app .chat-compose-pro.chat-compose-live,
+  html.mm-chat-keyboard body #app .chat-compose-pro.chat-compose-live{
+    left:10px!important;right:10px!important;width:auto!important;
+    border:1px solid rgba(255,255,255,.72)!important;
+    border-radius:22px!important;
+    padding:7px 8px 7px 10px!important;
+    gap:8px!important;
+    background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(240,246,255,.88))!important;
+    backdrop-filter:blur(20px) saturate(155%)!important;
+    -webkit-backdrop-filter:blur(20px) saturate(155%)!important;
+    box-shadow:0 14px 34px rgba(24,48,88,.16),inset 0 1px 0 rgba(255,255,255,.75)!important;
+  }
+  html.mm-chat-keyboard body #app .chat-compose-pro.chat-compose-live{
+    bottom:calc(var(--mm-keyboard-bottom,0px) + 8px)!important;
+  }
+  /* Room for the keyboard AND the floating composer, so the newest messages
+     stay reachable by scrolling instead of sitting under both. */
+  html.mm-chat-keyboard body .chat-shell-live .chat-messages-live{
+    padding-bottom:calc(var(--mm-keyboard-bottom,0px) + 86px)!important;
+    scroll-padding-bottom:calc(var(--mm-keyboard-bottom,0px) + 86px)!important;
+  }
+  html[data-theme="dark"].mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)) body #app .chat-compose-pro.chat-compose-live,
+  html[data-theme="dark"].mm-chat-keyboard body #app .chat-compose-pro.chat-compose-live{
+    border-color:rgba(70,104,138,.5)!important;
+    background:linear-gradient(135deg,rgba(17,38,58,.93),rgba(11,26,41,.9))!important;
+    box-shadow:0 14px 34px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06)!important;
+  }
 }
-html:not([data-theme="dark"]) .action-sheet{background:linear-gradient(180deg,#fff 0%,#f7fafe 100%)}
+/* Desktop keeps the composer in flow; it just loses the hard white edge. */
+@media(min-width:901px){
+  html body .chat-shell-live .chat-compose-pro.chat-compose-live{
+    background:transparent!important;
+    border-top:1px solid rgba(214,226,243,.7)!important;
+    box-shadow:none!important;
+  }
+  html[data-theme="dark"] body .chat-shell-live .chat-compose-pro.chat-compose-live{border-top-color:rgba(60,92,124,.5)!important}
+}
+html body .chat-shell-live .chat-compose-pro textarea{border:1px solid rgba(203,219,240,.95)!important;border-radius:17px!important;background:rgba(255,255,255,.97)!important;box-shadow:inset 0 1px 2px rgba(31,57,101,.045)!important}
+html body .chat-shell-live .chat-compose-pro .btn.primary{border-radius:17px!important;background:linear-gradient(135deg,#3b7bf3,#1f52c9)!important;box-shadow:0 8px 18px rgba(31,82,201,.28)!important;border:0!important}
+html[data-theme="dark"] body .chat-shell-live .chat-compose-pro textarea{background:rgba(16,36,56,.96)!important;border-color:rgba(60,92,124,.75)!important;box-shadow:none!important}
 
 /* --- dark mode -------------------------------------------------------- */
 html[data-theme="dark"] body .chat-shell-live{border-color:#27425b!important;box-shadow:0 18px 44px rgba(0,0,0,.34)!important}

@@ -140,6 +140,27 @@
     if (keepBottom) { toBottom(el); hideJump(); } else { el.scrollTop = previousTop; }
   }
 
+  /* When the keyboard opens, the composer becomes a fixed bar above it and the
+     list keeps its full height, so the newest messages end up hidden behind
+     both. mobile-shell-final.js publishes the obscured height as
+     --mm-keyboard-bottom; chat-premium.css turns that into bottom padding on
+     the list, and this re-pins the view to the latest message whenever that
+     height changes. */
+  let bottomTimer = null;
+  function keepBottomInView() {
+    const el = listEl();
+    if (!el || !nearBottom(el)) return;
+    clearTimeout(bottomTimer);
+    [0, 120, 320, 600].forEach(delay => setTimeout(() => {
+      const target = listEl();
+      if (target && onChatPage()) toBottom(target);
+    }, delay));
+  }
+  window.visualViewport?.addEventListener('resize', keepBottomInView);
+  document.addEventListener('focusin', event => {
+    if (event.target?.matches?.('.chat-compose-pro textarea')) keepBottomInView();
+  });
+
   const jumpEl = () => document.getElementById('chatJump');
   const showJump = () => jumpEl()?.classList.add('is-on');
   const hideJump = () => jumpEl()?.classList.remove('is-on');
@@ -308,8 +329,12 @@
       <span class="chat-live-dot" data-live="${live ? 'on' : 'off'}"><i></i>Live</span>
       <div class="chat-messages chat-messages-pro chat-messages-live" id="chatMessages">${listHtml()}</div>
       <button type="button" class="chat-jump" id="chatJump" aria-label="Jump to latest message">New messages ↓</button>
-      <form class="chat-compose chat-compose-pro chat-compose-live" id="chatForm">
-        <textarea name="body" rows="1" maxlength="2000" placeholder="Message লিখুন…" required></textarea>
+      <!-- novalidate, and no "required" on the textarea: Send fires on
+           pointerdown and clears the box, so the click that follows submitted
+           an empty form and the browser popped its own "Fill out this field"
+           bubble over the chat. send() already ignores an empty body. -->
+      <form class="chat-compose chat-compose-pro chat-compose-live" id="chatForm" novalidate>
+        <textarea name="body" rows="1" maxlength="2000" placeholder="Message লিখুন…" aria-label="Message"></textarea>
         <button class="btn primary" aria-label="Send">Send</button>
       </form>
     </div>`;
@@ -317,6 +342,7 @@
     const list = listEl();
     if (list) {
       toBottom(list);
+      keepBottomInView();
       list.addEventListener('scroll', () => { if (nearBottom(list)) hideJump(); }, {passive: true});
       list.addEventListener('click', event => {
         const target = event.target.closest?.('[data-retry]');

@@ -1,0 +1,87 @@
+/* Light-mode surface theme.
+ *
+ * The app's light mode was a white page with white cards on it, so everything
+ * read as one flat sheet. This gives the page a tinted backdrop and lifts the
+ * surfaces off it — cards keep a near-white top edge for legibility but sit on
+ * a cool porcelain gradient with a real border and a layered shadow, so the
+ * hierarchy is visible instead of implied.
+ *
+ * Scoped to :not([data-theme="dark"]) throughout, so dark mode is untouched.
+ * Prefixed with `html ... body` because most surfaces are painted with
+ * !important by the per-feature stylesheets loaded before this one.
+ */
+html:not([data-theme="dark"]){
+  --mm-surface:linear-gradient(162deg,#fff 0%,#f7faff 52%,#f2f7fe 100%);
+  --mm-surface-line:rgba(198,214,240,.85);
+  --mm-surface-shadow:0 14px 34px rgba(28,54,105,.085);
+  --mm-surface-raised:0 20px 46px rgba(28,54,105,.12);
+}
+
+/* --- page backdrop ----------------------------------------------------
+   !important because nav-reference.css paints `body` with its own
+   !important gradient, which specificity alone cannot outrank. */
+html:not([data-theme="dark"]) body{
+  background:
+    radial-gradient(circle at 4% -8%, #cfe0ff 0, transparent 34%),
+    radial-gradient(circle at 99% 2%, #c8eee1 0, transparent 28%),
+    radial-gradient(circle at 48% 114%, #d7e2f7 0, transparent 40%),
+    linear-gradient(176deg,#e9f0fb 0%,#dee8f7 50%,#e6edfa 100%)!important;
+  background-attachment:fixed!important;
+}
+html:not([data-theme="dark"]) :is(html,#app,.layout,.main,#content){background-color:transparent}
+
+/* --- surfaces --------------------------------------------------------- */
+html:not([data-theme="dark"]) body :is(.card,.utility-card,.report-card,.chat-shell,.member-clean-card,.member-summary-card,.settings-card,.pro-item,.bazar-entry,.activity-card){
+  background:var(--mm-surface)!important;
+  border:1px solid var(--mm-surface-line)!important;
+  box-shadow:var(--mm-surface-shadow)!important;
+}
+html:not([data-theme="dark"]) body .modal,
+html:not([data-theme="dark"]) body .action-sheet{
+  background:linear-gradient(180deg,#fff 0%,#f6faff 100%)!important;
+  box-shadow:0 -18px 60px rgba(17,34,68,.18)!important;
+}
+html:not([data-theme="dark"]) body .sheet-grid button,
+html:not([data-theme="dark"]) body .choice-chip{
+  background:linear-gradient(160deg,#fff,#f2f7fe)!important;
+  border-color:var(--mm-surface-line)!important;
+  box-shadow:0 4px 12px rgba(28,54,105,.05)!important;
+}
+
+/* --- header ----------------------------------------------------------- */
+html:not([data-theme="dark"]) body .topbar{
+  background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(241,247,255,.92))!important;
+  border:1px solid var(--mm-surface-line)!important;
+  box-shadow:var(--mm-surface-shadow)!important;
+}
+html:not([data-theme="dark"]) body .top-chip{
+  background:linear-gradient(160deg,#fff,#f3f8ff)!important;
+  border-color:var(--mm-surface-line)!important;
+}
+
+/* --- tables ----------------------------------------------------------- */
+html:not([data-theme="dark"]) body table{
+  background:var(--mm-surface)!important;
+  border-color:var(--mm-surface-line)!important;
+  box-shadow:var(--mm-surface-shadow)!important;
+}
+html:not([data-theme="dark"]) body th{background:linear-gradient(180deg,#eef4fd,#e7eefa)!important;color:#5a6b87!important}
+html:not([data-theme="dark"]) body :is(th,td){border-bottom-color:rgba(206,219,238,.75)!important}
+html:not([data-theme="dark"]) body .meal-table :is(th,td):first-child{background:linear-gradient(180deg,#f6f9ff,#f1f6fe)!important}
+
+/* --- inputs ----------------------------------------------------------- */
+html:not([data-theme="dark"]) body :is(.field input,.field select,.field textarea,.select-button){
+  background:linear-gradient(180deg,#fff,#fbfdff)!important;
+  border-color:rgba(203,218,238,.95)!important;
+}
+html:not([data-theme="dark"]) body :is(.field input,.field select,.field textarea):focus{
+  border-color:#8fb4f5!important;
+  box-shadow:0 0 0 3px rgba(47,109,232,.1)!important;
+}
+
+/* --- sidebar / bottom nav: deeper, so surfaces read against them ------ */
+html:not([data-theme="dark"]) body .sidebar{background:linear-gradient(180deg,#1b3f92 0%,#132f6f 55%,#0e2455 100%)}
+html:not([data-theme="dark"]) body .mobilebar{
+  background:linear-gradient(135deg,#1c48a4,#102e70 62%,#0d2760)!important;
+  box-shadow:0 16px 40px rgba(16,46,112,.34)!important;
+}
