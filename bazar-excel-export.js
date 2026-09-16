@@ -1,12 +1,15 @@
-/* Bazar workbook export (.xlsx).
+/* Mess workbook export (.xlsx).
  *
- * Settings > Data backup used to promise "separate sheets for every section"
- * and its handler was a stub that only raised a toast. It now writes a real
- * three-sheet workbook modelled on the mess's own August Bazar sheet:
+ * Modelled on the mess's own Google Sheet, which has two tabs:
  *
- *   1. Bazar Schedule  — Schedule | Present / Absent | Date & Bazar List
- *   2. Bazar List      — every item bought in the month, with cost
- *   3. Bazar Summary   — per-buyer totals for the month
+ *   Bazar         — Date | Chal | Murgi | Mach | Tel | Dim | Mosla |
+ *                   Kacha Bazar | Others | Taka, each cell carrying the item
+ *                   with its quantity and price together ("Chal 10 kg = 600"),
+ *                   and a grand total under the Taka column.
+ *   Khawa & Taka  — a Taka Joma block (one column per member, their deposits
+ *                   down the column), the Wifi / Current / Gas bill block, and
+ *                   the Name | Khawa Bill | Wifi | Gas | Current | Total | Due
+ *                   table.
  *
  * The file is assembled here rather than with a library: an .xlsx is a ZIP of
  * XML parts, and a stored (uncompressed) ZIP is a few dozen lines, which is
@@ -102,47 +105,54 @@
     return name;
   };
 
-  /* Style ids used by the builders below, in the order they appear in
-     styles.xml cellXfs. */
-  const S = {plain: 0, title: 1, subtitle: 2, head: 3, text: 4, mid: 5, money: 6,
-    totalText: 7, totalMoney: 8, present: 9, absent: 10};
+  /* Style ids, in the order they appear in cellXfs below. */
+  const S = {plain: 0, title: 1, subtitle: 2, banner: 3, head: 4, headGreen: 5,
+    date: 6, cell: 7, money: 8, totalText: 9, totalMoney: 10, member: 11,
+    tint: 12, tintMoney: 13};
 
   const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00"/></numFmts>
+<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.##"/></numFmts>
 <fonts count="7">
 <font><sz val="11"/><name val="Calibri"/></font>
 <font><b/><sz val="16"/><color rgb="FF10285F"/><name val="Calibri"/></font>
 <font><sz val="10"/><color rgb="FF6B7A92"/><name val="Calibri"/></font>
 <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
 <font><b/><sz val="11"/><color rgb="FF10285F"/><name val="Calibri"/></font>
-<font><b/><sz val="11"/><color rgb="FF0B7A4B"/><name val="Calibri"/></font>
-<font><b/><sz val="11"/><color rgb="FFB23A3A"/><name val="Calibri"/></font>
+<font><b/><sz val="12"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+<font><b/><sz val="11"/><color rgb="FF1B2A44"/><name val="Calibri"/></font>
 </fonts>
-<fills count="5">
+<fills count="9">
 <fill><patternFill patternType="none"/></fill>
 <fill><patternFill patternType="gray125"/></fill>
 <fill><patternFill patternType="solid"><fgColor rgb="FF2457D6"/><bgColor indexed="64"/></patternFill></fill>
 <fill><patternFill patternType="solid"><fgColor rgb="FFEAF0FB"/><bgColor indexed="64"/></patternFill></fill>
-<fill><patternFill patternType="solid"><fgColor rgb="FFF5F8FD"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFD93A3A"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF1E9E5A"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFE9FBFC"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFEEF0FF"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFFFF6E6"/><bgColor indexed="64"/></patternFill></fill>
 </fills>
 <borders count="2">
 <border><left/><right/><top/><bottom/><diagonal/></border>
 <border><left style="thin"><color rgb="FFD3DEEE"/></left><right style="thin"><color rgb="FFD3DEEE"/></right><top style="thin"><color rgb="FFD3DEEE"/></top><bottom style="thin"><color rgb="FFD3DEEE"/></bottom><diagonal/></border>
 </borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="11">
+<cellXfs count="14">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
-<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment vertical="center"/></xf>
-<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment vertical="center"/></xf>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="center"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
 <xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="3" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
 <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
 <xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>
 <xf numFmtId="0" fontId="4" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>
 <xf numFmtId="164" fontId="4" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>
-<xf numFmtId="0" fontId="5" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
-<xf numFmtId="0" fontId="6" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="6" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="0" fillId="6" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="164" fontId="0" fillId="6" borderId="1" xfId="0" applyNumberFormat="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>
 </cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
@@ -156,6 +166,8 @@
       : '<sheetViews><sheetView workbookViewId="0"/></sheetViews>';
     const body = rows.map((cells, r) => {
       const number = r + 1;
+      const tall = (cells || []).some(cell => typeof cell?.v === 'string' && cell.v.includes('\n'));
+      const height = tall ? ' ht="34" customHeight="1"' : '';
       const painted = (cells || []).map((cell, c) => {
         if (cell === null || cell === undefined) return '';
         const ref = `${colName(c)}${number}`;
@@ -167,7 +179,7 @@
         if (text === '') return `<c r="${ref}"${style}/>`;
         return `<c r="${ref}"${style} t="inlineStr"><is><t xml:space="preserve">${xml(text)}</t></is></c>`;
       }).join('');
-      return `<row r="${number}">${painted}</row>`;
+      return `<row r="${number}"${height}>${painted}</row>`;
     }).join('');
     const merged = merges?.length
       ? `<mergeCells count="${merges.length}">${merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>`
@@ -217,134 +229,175 @@ ${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.open
     if (!y || !m) return String(month || '');
     return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', {month: 'long', year: 'numeric', timeZone: 'UTC'});
   };
-  const buyerName = entry => {
-    const member = (db.members || []).find(m => m.id === entry.buyer_member_id);
-    return member?.name || entry.buyer || 'Unknown';
-  };
+  const activeList = () => (db.members || []).filter(m => m.active !== false);
 
-  function scheduleSheet(title) {
-    const rows = [
-      [{v: title, s: S.title}],
-      [{v: 'Bazar Schedule', s: S.subtitle}],
-      [],
-      [{v: 'Schedule', s: S.head}, {v: 'Present / Absent', s: S.head}, {v: 'Date & Bazar List', s: S.head}],
-    ];
-    const list = [...(db.schedules || [])].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-    for (const entry of list) {
-      const detail = [shortDate(entry.date), String(entry.bazar_list || '').trim()].filter(Boolean).join(' — ');
-      rows.push([
-        {v: entry.names || '', s: S.text},
-        {v: entry.done ? 'Present' : 'Absent', s: entry.done ? S.present : S.absent},
-        {v: detail, s: S.text},
-      ]);
-    }
-    if (!list.length) rows.push([{v: 'No bazar schedule for this month', s: S.text}, {v: '', s: S.text}, {v: '', s: S.text}]);
-    const done = list.filter(x => x.done).length;
-    rows.push([]);
-    rows.push([{v: 'Total turns', s: S.totalText}, {v: `${done} / ${list.length} done`, s: S.totalText}, {v: '', s: S.totalText}]);
-    return {name: 'Bazar Schedule', rows, widths: [26, 18, 42], freeze: 4,
-      merges: ['A1:C1', 'A2:C2']};
+  /* The sheet's columns, and how an app item lands in one. Staples match on
+     the category the editor stores; spices are matched on the item name
+     because the app has no মসলা category and the sheet keeps holud, jira and
+     lobon together in Mosla rather than under Kacha Bazar. */
+  const SPICE = /হলুদ|মরিচ|জিরা|ধনিয়া|লবণ|দারচিনি|এলাচ|তেজপাতা|গরম\s*মসলা|মসলা|holud|moris|morich|zira|jira|dhon|dhun|lobon|salt|darchini|elach|tejpata|mosla|masala|spice/i;
+  const COLUMNS = [
+    {key: 'Chal', category: 'চাল'},
+    {key: 'Murgi', category: 'মুরগি'},
+    {key: 'Mach', category: 'মাছ'},
+    {key: 'Tel', category: 'তেল'},
+    {key: 'Dim', category: 'ডিম'},
+    {key: 'Mosla', category: 'মসলা'},
+    {key: 'Kacha Bazar', category: 'কাঁচাবাজার'},
+    {key: 'Others', category: null},
+  ];
+  function columnFor(item) {
+    const name = String(item.item_name || '');
+    const category = String(item.category || '');
+    const staple = COLUMNS.findIndex(col => col.category && col.category === category && col.key !== 'Mosla' && col.key !== 'Kacha Bazar');
+    if (staple >= 0) return staple;
+    if (SPICE.test(name) || SPICE.test(category)) return COLUMNS.findIndex(col => col.key === 'Mosla');
+    const kacha = COLUMNS.findIndex(col => col.category === category);
+    return kacha >= 0 ? kacha : COLUMNS.length - 1;
+  }
+  const itemTotal = item => num(item.entered_total ?? item.total ?? (Number(item.quantity) * Number(item.unit_price)));
+  /* "Chal 10 kg = 600" — quantity and price in the one cell, as in the sheet. */
+  function itemLabel(item) {
+    const total = itemTotal(item);
+    const quantity = Number(item.quantity);
+    const unit = String(item.unit || '').trim();
+    const size = Number.isFinite(quantity) && quantity > 0 ? `${quantity}${unit ? ' ' + unit : ''} ` : '';
+    return `${item.item_name || 'Item'} ${size}= ${total}`.replace(/\s+/g, ' ');
   }
 
-  function listSheet(title) {
+  function bazarSheet() {
+    const head = [{v: 'Date', s: S.head}, ...COLUMNS.map(col => ({v: col.key, s: S.head})), {v: 'Taka', s: S.head}];
     const rows = [
-      [{v: title, s: S.title}],
-      [{v: 'Bazar List — every item bought this month', s: S.subtitle}],
-      [],
-      ['Date', 'Buyer', 'Item', 'Category', 'Qty', 'Unit', 'Unit Price', 'Total'].map(v => ({v, s: S.head})),
+      [{v: 'Bazar List', s: S.banner}, ...Array(COLUMNS.length + 1).fill({v: '', s: S.banner})],
+      head,
     ];
     let grand = 0;
     const entries = [...(db.bazar || [])].sort((a, b) => String(a.date).localeCompare(String(b.date)));
     for (const entry of entries) {
-      const who = buyerName(entry);
+      const buckets = COLUMNS.map(() => []);
+      let total = 0;
       const items = entry.items || [];
-      if (!items.length) {
-        const total = num(entry.amount);
-        grand += total;
-        rows.push([
-          {v: shortDate(entry.date), s: S.mid}, {v: who, s: S.text},
-          {v: String(entry.note || 'Bazar'), s: S.text}, {v: '', s: S.text},
-          {v: '', s: S.mid}, {v: '', s: S.mid}, {v: '', s: S.money}, {n: total, s: S.money},
-        ]);
-        continue;
+      if (items.length) {
+        for (const item of items) {
+          buckets[columnFor(item)].push(itemLabel(item));
+          total += itemTotal(item);
+        }
+      } else {
+        total = num(entry.amount);
+        buckets[COLUMNS.length - 1].push(`${entry.note || 'Bazar'} = ${total}`);
       }
-      for (const item of items) {
-        const total = num(item.entered_total ?? item.total ?? (Number(item.quantity) * Number(item.unit_price)));
-        grand += total;
-        rows.push([
-          {v: shortDate(entry.date), s: S.mid},
-          {v: who, s: S.text},
-          {v: item.item_name || '', s: S.text},
-          {v: item.category || '', s: S.text},
-          {n: num(item.quantity), s: S.mid},
-          {v: item.unit || '', s: S.mid},
-          {n: num(item.unit_price), s: S.money},
-          {n: total, s: S.money},
-        ]);
-      }
-    }
-    if (!entries.length) rows.push([{v: 'No bazar this month', s: S.text}, ...Array(7).fill({v: '', s: S.text})]);
-    rows.push([]);
-    rows.push([
-      {v: 'Grand total', s: S.totalText}, {v: '', s: S.totalText}, {v: '', s: S.totalText},
-      {v: '', s: S.totalText}, {v: '', s: S.totalText}, {v: '', s: S.totalText},
-      {v: '', s: S.totalText}, {n: num(grand), s: S.totalMoney},
-    ]);
-    return {name: 'Bazar List', rows, widths: [10, 18, 30, 16, 9, 10, 13, 14], freeze: 4,
-      merges: ['A1:H1', 'A2:H2']};
-  }
-
-  function summarySheet(title) {
-    const rows = [
-      [{v: title, s: S.title}],
-      [{v: 'Bazar Summary — who spent what', s: S.subtitle}],
-      [],
-      ['Member', 'Bazar days', 'Items', 'Total Spent'].map(v => ({v, s: S.head})),
-    ];
-    const totals = new Map();
-    for (const entry of db.bazar || []) {
-      const who = buyerName(entry);
-      const current = totals.get(who) || {days: 0, items: 0, amount: 0};
-      current.days += 1;
-      current.items += (entry.items || []).length;
-      current.amount += (entry.items || []).length
-        ? (entry.items || []).reduce((sum, item) =>
-            sum + num(item.entered_total ?? item.total ?? (Number(item.quantity) * Number(item.unit_price))), 0)
-        : num(entry.amount);
-      totals.set(who, current);
-    }
-    const ranked = [...totals.entries()].sort((a, b) => b[1].amount - a[1].amount);
-    for (const [who, value] of ranked) {
+      grand += total;
       rows.push([
-        {v: who, s: S.text}, {n: value.days, s: S.mid},
-        {n: value.items, s: S.mid}, {n: num(value.amount), s: S.money},
+        {v: shortDate(entry.date), s: S.date},
+        ...buckets.map(lines => ({v: lines.join('\n'), s: S.cell})),
+        {n: num(total), s: S.money},
       ]);
     }
-    if (!ranked.length) rows.push([{v: 'No bazar this month', s: S.text}, {v: '', s: S.mid}, {v: '', s: S.mid}, {v: '', s: S.money}]);
-    const grand = ranked.reduce((sum, [, value]) => sum + value.amount, 0);
-    const days = ranked.reduce((sum, [, value]) => sum + value.days, 0);
-    rows.push([]);
+    if (!entries.length) {
+      rows.push([{v: '', s: S.date}, ...COLUMNS.map(() => ({v: '', s: S.cell})), {v: '', s: S.money}]);
+    }
     rows.push([
-      {v: 'Total', s: S.totalText}, {n: days, s: S.totalText},
-      {n: ranked.reduce((sum, [, v]) => sum + v.items, 0), s: S.totalText},
+      {v: 'Total', s: S.totalText},
+      ...COLUMNS.map(() => ({v: '', s: S.totalText})),
       {n: num(grand), s: S.totalMoney},
     ]);
+    const last = rows.length;
+    return {
+      name: 'Bazar',
+      rows,
+      widths: [10, 16, 16, 16, 14, 14, 18, 22, 20, 11],
+      freeze: 2,
+      merges: [`A1:${colName(COLUMNS.length + 1)}1`, `A${last}:${colName(COLUMNS.length)}${last}`],
+    };
+  }
+
+  function khawaSheet() {
+    const members = activeList();
+    const span = Math.max(members.length, 1);
+    const rows = [];
+    const merges = [];
+
+    /* --- Taka Joma: one column per member ------------------------------- */
+    rows.push([{v: 'Taka Joma', s: S.banner}, ...Array(span - 1).fill({v: '', s: S.banner})]);
+    merges.push(`A1:${colName(span - 1)}1`);
+    rows.push(members.map(m => ({v: m.name, s: S.member})));
+    const perMember = members.map(m =>
+      (db.deposits || []).filter(d => d.memberId === m.id).map(d => num(d.amount)));
+    const deepest = Math.max(1, ...perMember.map(list => list.length));
+    for (let i = 0; i < deepest; i += 1) {
+      rows.push(perMember.map(list =>
+        i < list.length ? {n: list[i], s: S.tintMoney} : {v: '', s: S.tint}));
+    }
+    rows.push(perMember.map(list => ({n: num(list.reduce((sum, x) => sum + x, 0)), s: S.totalMoney})));
     rows.push([]);
-    rows.push([{v: 'Average per bazar', s: S.text}, {v: '', s: S.text}, {v: '', s: S.text},
-      {n: days ? num(grand / days) : 0, s: S.money}]);
-    return {name: 'Bazar Summary', rows, widths: [26, 14, 12, 16], freeze: 4,
-      merges: ['A1:D1', 'A2:D2']};
+
+    /* --- the bill block ------------------------------------------------- */
+    const billsTop = rows.length + 1;
+    rows.push([{v: 'Wifi & Current Bill & Gas', s: S.banner}, ...Array(3).fill({v: '', s: S.banner})]);
+    merges.push(`A${billsTop}:D${billsTop}`);
+    rows.push(['Bill', 'Date', 'Taka', 'Per head'].map(v => ({v, s: S.head})));
+    const bills = [...(db.utilities || [])].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    for (const bill of bills) {
+      const heads = (bill.memberIds || []).length || span;
+      rows.push([
+        {v: bill.type || 'Bill', s: S.cell},
+        {v: shortDate(bill.date), s: S.date},
+        {n: num(bill.amount), s: S.money},
+        {n: num(Number(bill.amount || 0) / heads), s: S.money},
+      ]);
+    }
+    if (!bills.length) rows.push([{v: 'No bills this month', s: S.cell}, {v: '', s: S.date}, {v: '', s: S.money}, {v: '', s: S.money}]);
+    rows.push([
+      {v: 'Total', s: S.totalText}, {v: '', s: S.totalText},
+      {n: num(bills.reduce((sum, b) => sum + Number(b.amount || 0), 0)), s: S.totalMoney},
+      {v: '', s: S.totalText},
+    ]);
+    rows.push([]);
+
+    /* --- the settlement table ------------------------------------------- */
+    const calc = typeof calcMonth === 'function' ? (calcMonth() || []) : [];
+    const ledger = typeof utilityLedger === 'function' ? utilityLedger()
+      : (typeof window.mmUtilityLedger === 'function' ? window.mmUtilityLedger() : {categories: []});
+    const charge = (key, memberId) => {
+      const category = (ledger.categories || []).find(c => c.key === key);
+      return num(category?.memberCharges?.get(memberId) || 0);
+    };
+    rows.push(['Name', 'Khawa Bill', 'Wifi Bill', 'Gas Bill', 'Current Bill', 'Total', 'Due']
+      .map(v => ({v, s: S.headGreen})));
+    const totals = {food: 0, wifi: 0, gas: 0, current: 0, all: 0, due: 0};
+    for (const row of calc) {
+      const wifi = charge('WiFi', row.member.id);
+      const gas = charge('Gas', row.member.id);
+      const current = charge('Current', row.member.id);
+      const due = Math.max(0, -Number(row.balance || 0));
+      totals.food += num(row.food); totals.wifi += wifi; totals.gas += gas;
+      totals.current += current; totals.all += num(row.total); totals.due += num(due);
+      rows.push([
+        {v: row.member.name, s: S.member},
+        {n: num(row.food), s: S.tintMoney}, {n: wifi, s: S.tintMoney},
+        {n: gas, s: S.tintMoney}, {n: current, s: S.tintMoney},
+        {n: num(row.total), s: S.tintMoney}, {n: num(due), s: S.tintMoney},
+      ]);
+    }
+    if (!calc.length) rows.push([{v: 'No members', s: S.member}, ...Array(6).fill({v: '', s: S.tint})]);
+    rows.push([
+      {v: 'Total', s: S.totalText},
+      {n: num(totals.food), s: S.totalMoney}, {n: num(totals.wifi), s: S.totalMoney},
+      {n: num(totals.gas), s: S.totalMoney}, {n: num(totals.current), s: S.totalMoney},
+      {n: num(totals.all), s: S.totalMoney}, {n: num(totals.due), s: S.totalMoney},
+    ]);
+    return {name: 'Khawa & Taka', rows, widths: Array(Math.max(7, span)).fill(0).map((_, i) => i === 0 ? 20 : 15), merges};
   }
 
   function buildWorkbook() {
     const month = monthLabel(typeof state !== 'undefined' ? state.month : '');
-    const title = `${(typeof mess !== 'undefined' && mess?.name) || 'Mess'} — ${month}`;
+    const name = ((typeof mess !== 'undefined' && mess?.name) || 'Mess').replace(/[^\w\s-]/g, '').trim() || 'Mess';
     return {
-      blob: workbook([scheduleSheet(title), listSheet(title), summarySheet(title)]),
-      filename: `${((typeof mess !== 'undefined' && mess?.name) || 'Mess').replace(/[^\w\s-]/g, '').trim() || 'Mess'} Bazar ${month}.xlsx`,
+      blob: workbook([bazarSheet(), khawaSheet()]),
+      filename: `${name} Bazar ${month}.xlsx`,
     };
   }
-  window.mmBuildBazarWorkbook = buildWorkbook;
+  window.mmBuildMessWorkbook = buildWorkbook;
 
   function download() {
     try {
@@ -363,7 +416,7 @@ ${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.open
       if (typeof notify === 'function') notify('Excel তৈরি করা যায়নি। আবার চেষ্টা করুন।');
     }
   }
-  window.mmDownloadBazarWorkbook = download;
+  window.mmDownloadMessWorkbook = download;
 
   /* settings-pro.js renders the button and wires it to its own stub, so the
      handler is replaced after that render rather than in place of it. */
