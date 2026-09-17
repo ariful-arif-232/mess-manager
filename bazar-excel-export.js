@@ -399,21 +399,55 @@ ${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.open
   }
   window.mmBuildMessWorkbook = buildWorkbook;
 
-  function download() {
+  /* Plain 2D value arrays (no cell styling) for the two sheets — reused by
+     mess-sheet-sync.js to push the exact same rows to the live Google Sheet,
+     so the workbook download and the live sheet can never disagree. A styled
+     {v,n,s} cell collapses to its number if it has one, else its text. */
+  const plainValue = cell => (cell && cell.n !== undefined ? cell.n : (cell?.v ?? ''));
+  function plainRows(sheet) {
+    return sheet.rows.map(row => row.map(plainValue));
+  }
+  window.mmBuildSheetSnapshotRows = () => ({bazar: plainRows(bazarSheet()), khawa: plainRows(khawaSheet())});
+
+  /* On a phone, a plain <a download> just drops the file in Downloads, where
+     nothing opens it automatically — there is no "Excel" app to hand off to.
+     The Web Share API instead opens the OS share sheet, and Android/iOS both
+     list every installed app that can take an .xlsx (Google Sheets, Excel,
+     Drive…), so tapping Sheets there opens the file straight into it. Where
+     the browser doesn't support sharing files (most desktops), this falls
+     back to the ordinary download link. */
+  async function shareOrDownload(blob, filename) {
+    if (navigator.canShare && navigator.share) {
+      try {
+        const file = new File([blob], filename, {type: blob.type});
+        if (navigator.canShare({files: [file]})) {
+          await navigator.share({files: [file], title: filename});
+          return true;
+        }
+      } catch (error) {
+        if (error?.name === 'AbortError') return true; // user cancelled the share sheet, not a failure
+        console.warn('Web Share failed, falling back to a direct download.', error);
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return false;
+  }
+
+  async function download() {
     try {
       const {blob, filename} = buildWorkbook();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-      if (typeof notify === 'function') notify('Bazar workbook downloaded.', 'success');
+      const shared = await shareOrDownload(blob, filename);
+      if (typeof notify === 'function') notify(shared ? 'Sheet ready to open.' : 'Sheet downloaded.', 'success');
     } catch (error) {
-      console.error('Bazar export failed', error);
-      if (typeof notify === 'function') notify('Excel তৈরি করা যায়নি। আবার চেষ্টা করুন।');
+      console.error('Sheet export failed', error);
+      if (typeof notify === 'function') notify('Sheet তৈরি করা যায়নি। আবার চেষ্টা করুন।');
     }
   }
   window.mmDownloadMessWorkbook = download;
