@@ -213,7 +213,11 @@ async function writeSheetTab(spreadsheetId: string, tabTitle: string, rows: stri
   );
 }
 
-async function getOrCreateSheet(admin: ReturnType<typeof createAdminClient>, messId: string) {
+async function getOrCreateSheet(
+  admin: ReturnType<typeof createAdminClient>,
+  messId: string,
+  initialRows: { bazar: string[][]; khawa: string[][] } | null,
+) {
   const mess = await admin.from('messes').select('id,name,gsheet_id').eq('id', messId).single();
   if (mess.error) throw mess.error;
   if (mess.data.gsheet_id) return mess.data.gsheet_id as string;
@@ -230,7 +234,25 @@ async function getOrCreateSheet(admin: ReturnType<typeof createAdminClient>, mes
     .select('gsheet_id')
     .maybeSingle();
   if (saved.error) throw saved.error;
-  if (saved.data) return spreadsheetId;
+  if (saved.data) {
+    // Only this call actually won the create race, so it's the only one
+    // that should fill the brand-new Sheet — write it before returning
+    // rather than leaving it to a separate, unawaited push that a fast
+    // tab-switch could otherwise beat.
+    if (initialRows) {
+      try {
+        await writeSheetTab(spreadsheetId, 'Bazar', initialRows.bazar);
+        await writeSheetTab(spreadsheetId, 'Khawa & Taka', initialRows.khawa);
+        await admin.from('mess_sheet_snapshots').upsert(
+          { mess_id: messId, month: `${new Date().toISOString().slice(0, 7)}-01`, bazar: initialRows.bazar, khawa: initialRows.khawa, updated_at: new Date().toISOString() },
+          { onConflict: 'mess_id' },
+        );
+      } catch (sheetError) {
+        console.warn('mess-sheet: initial Sheet write failed, Sheet stays blank until the next data change', sheetError);
+      }
+    }
+    return spreadsheetId;
+  }
 
   const recheck = await admin.from('messes').select('gsheet_id').eq('id', messId).single();
   if (recheck.error) throw recheck.error;
@@ -271,7 +293,10 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === 'open') {
-      const spreadsheetId = await getOrCreateSheet(admin, messId);
+      const bazar = sanitizeRows(body?.bazar, 'bazar');
+      const khawa = sanitizeRows(body?.khawa, 'khawa');
+      const initialRows = bazar && khawa ? { bazar, khawa } : null;
+      const spreadsheetId = await getOrCreateSheet(admin, messId, initialRows);
       return json({ ok: true, url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit` });
     }
 

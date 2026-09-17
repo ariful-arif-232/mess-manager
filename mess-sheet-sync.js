@@ -76,21 +76,27 @@
   };
 
   /* --------------------------------------------------------- open the sheet
-     get-or-create, then a real anchor click — see file header for why. */
+     get-or-create, then a real anchor click, same tab — see file header for
+     why an anchor at all. target="_blank" specifically is what iOS Safari
+     silently blocks after an await (it treats a new browsing context the
+     same as window.open for user-gesture purposes), so this navigates the
+     current tab instead; docs.google.com is a Universal Link either way. */
   async function openLiveSheet(button) {
     const old = button.innerHTML;
     button.disabled = true;
     button.innerHTML = '<span class="mm-sheet-spin" aria-hidden="true"></span><span>Opening…</span>';
     try {
-      const data = await call({action: 'open'});
+      // Sent along so a Sheet created for the very first time already has
+      // real rows in it — waiting on a separate push afterwards raced with
+      // the tab switch and could leave the Sheet looking empty on open.
+      const rows = typeof window.mmBuildSheetSnapshotRows === 'function' ? window.mmBuildSheetSnapshotRows() : null;
+      const data = await call({action: 'open', bazar: rows?.bazar, khawa: rows?.khawa});
       const link = document.createElement('a');
       link.href = data.url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
+      link.rel = 'noopener';
       document.body.appendChild(link);
       link.click();
       link.remove();
-      void pushSnapshotNow(); // make sure a freshly-created Sheet isn't empty on first open
     } catch (error) {
       if (typeof notify === 'function') notify(error?.message || 'Sheet খোলা যায়নি। আবার চেষ্টা করুন।');
     } finally {
