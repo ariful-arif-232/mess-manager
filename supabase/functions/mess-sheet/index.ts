@@ -3,31 +3,14 @@
 // "Download Sheets" (and every data change afterwards) never asks anyone to
 // create a Sheet or paste a script: the first time a mess needs one, this
 // function creates it itself, using whichever real Google account an admin
-// connected once in Settings. From then on:
-//
-//   open  (session)  -> returns the mess's Sheet URL, creating the Sheet
-//                       (two tabs, Bazar + Khawa & Taka, shared "anyone with
-//                       the link can view") the first time it's called.
-//                       docs.google.com links are handled by the OS on both
-//                       Android and iOS, so opening this URL hands off
-//                       straight to the installed Sheets app when there is
-//                       one — nothing web-share-based to fail silently.
-//   push  (session)  -> stores the caller's already-computed Bazar and
-//                       Khawa & Taka rows (calcMonth()/utilityLedger() — the
-//                       same maths the Dashboard/Settlement pages use, never
-//                       reimplemented here) as the mess's latest snapshot,
-//                       and — once the Sheet already exists — writes those
-//                       same rows straight into it via the Sheets API, so
-//                       the Sheet is live within seconds of anyone using the
-//                       app, not just when it happens to be opened.
+// connected once in Settings.
 //
 // Every Sheet is created and owned by a real Google account (whoever
 // clicked "Connect Google Drive" in Settings once — see
 // mess-oauth-callback), not a service account: a service account's own
 // Drive storage is always 0 bytes off a Workspace domain, and placing a
 // file inside someone else's folder does not change who Drive bills the
-// storage to — the file's *creator* stays its owner either way. A real
-// account's own OAuth connection sidesteps that entirely.
+// storage to — the file's *creator* stays its owner either way.
 //
 // Requires two Edge Function secrets this code cannot supply itself:
 //   GOOGLE_OAUTH_CLIENT_ID     — from a Google Cloud OAuth 2.0 Web
@@ -207,10 +190,11 @@ async function writeSheetTab(spreadsheetId: string, tabTitle: string, rows: stri
     body: '{}',
   });
   if (!rows.length) return;
-  await googleFetch(
+  const written = await googleFetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}!A1?valueInputOption=RAW`,
     { method: 'PUT', body: JSON.stringify({ values: rows }) },
   );
+  console.log('mess-sheet: wrote tab', tabTitle, JSON.stringify(written));
 }
 
 async function getOrCreateSheet(admin: ReturnType<typeof createAdminClient>, messId: string) {
@@ -238,12 +222,15 @@ async function getOrCreateSheet(admin: ReturnType<typeof createAdminClient>, mes
 }
 
 // Shared by 'open' and 'push': saves the caller's rows as the mess's latest
-// snapshot and, when they actually changed, writes them into the live
-// Sheet. 'open' calls this unconditionally (not just for a Sheet it just
-// created) so a Sheet that already existed — from before this app tracked
-// initial data, or just because nobody had changed anything since it was
-// made — never opens looking stale or blank; relying on some separate,
-// unrelated future data change to eventually populate it was the bug.
+// snapshot and writes them into the live Sheet.
+//
+// The write is skipped only when these exact rows are already known to be
+// in *this* spreadsheet — synced_gsheet_id, not just "the snapshot looks
+// the same". A snapshot is saved on every data change, including while the
+// mess still has no Sheet at all, so matching on the rows alone made every
+// later call decide there was nothing to do and leave the Sheet blank
+// forever. 'open' forces the write regardless: it is a deliberate tap on
+// "Download Sheets", rare enough to always cost one write and be certain.
 async function syncSheetData(
   admin: ReturnType<typeof createAdminClient>,
   messId: string,
@@ -251,32 +238,47 @@ async function syncSheetData(
   month: string,
   bazar: string[][],
   khawa: string[][],
+  force = false,
 ) {
   const previous = await admin
     .from('mess_sheet_snapshots')
-    .select('bazar,khawa')
+    .select('bazar,khawa,synced_gsheet_id')
     .eq('mess_id', messId)
     .maybeSingle();
   if (previous.error) throw previous.error;
-  const unchanged = previous.data
+  const alreadyInSheet = !force
+    && previous.data
+    && previous.data.synced_gsheet_id === spreadsheetId
     && JSON.stringify(previous.data.bazar) === JSON.stringify(bazar)
     && JSON.stringify(previous.data.khawa) === JSON.stringify(khawa);
 
-  const upserted = await admin
-    .from('mess_sheet_snapshots')
-    .upsert({ mess_id: messId, month, bazar, khawa, updated_at: new Date().toISOString() }, { onConflict: 'mess_id' });
-  if (upserted.error) throw upserted.error;
+  const snapshot: Record<string, unknown> = {
+    mess_id: messId,
+    month,
+    bazar,
+    khawa,
+    updated_at: new Date().toISOString(),
+  };
 
-  if (unchanged) return;
+  if (alreadyInSheet) {
+    snapshot.synced_gsheet_id = spreadsheetId;
+    const upserted = await admin.from('mess_sheet_snapshots').upsert(snapshot, { onConflict: 'mess_id' });
+    if (upserted.error) throw upserted.error;
+    return;
+  }
+
   try {
     await writeSheetTab(spreadsheetId, 'Bazar', bazar);
     await writeSheetTab(spreadsheetId, 'Khawa & Taka', khawa);
+    snapshot.synced_gsheet_id = spreadsheetId;
   } catch (sheetError) {
-    // The snapshot is already saved either way, so a transient Google
-    // hiccup here just means the next push (or open) catches up — never
-    // fail the whole request over it.
+    // Leave synced_gsheet_id untouched so the next call retries the write
+    // instead of assuming these rows made it into the Sheet.
     console.warn('mess-sheet: live Sheet write failed, snapshot still saved', sheetError);
   }
+
+  const upserted = await admin.from('mess_sheet_snapshots').upsert(snapshot, { onConflict: 'mess_id' });
+  if (upserted.error) throw upserted.error;
 }
 
 Deno.serve(async (req: Request) => {
@@ -318,7 +320,7 @@ Deno.serve(async (req: Request) => {
       const khawa = sanitizeRows(body?.khawa, 'khawa');
       if (bazar && khawa) {
         const month = `${new Date().toISOString().slice(0, 7)}-01`;
-        await syncSheetData(admin, messId, spreadsheetId, month, bazar, khawa);
+        await syncSheetData(admin, messId, spreadsheetId, month, bazar, khawa, true);
       }
       return json({ ok: true, url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit` });
     }
