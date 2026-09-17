@@ -139,7 +139,10 @@
     try {
       const data = await call({action: 'oauth-status'});
       if (data.connected) {
-        statusEl.textContent = `Connected${data.email ? ' as ' + data.email : ''}`;
+        // Compact, like every other status pill on this page — the full
+        // address goes in the title tooltip instead of forcing the row wide.
+        statusEl.textContent = '✓ Connected';
+        statusEl.title = data.email ? `Connected as ${data.email}` : '';
         statusEl.style.display = '';
         button.textContent = 'Reconnect';
       } else {

@@ -213,11 +213,7 @@ async function writeSheetTab(spreadsheetId: string, tabTitle: string, rows: stri
   );
 }
 
-async function getOrCreateSheet(
-  admin: ReturnType<typeof createAdminClient>,
-  messId: string,
-  initialRows: { bazar: string[][]; khawa: string[][] } | null,
-) {
+async function getOrCreateSheet(admin: ReturnType<typeof createAdminClient>, messId: string) {
   const mess = await admin.from('messes').select('id,name,gsheet_id').eq('id', messId).single();
   if (mess.error) throw mess.error;
   if (mess.data.gsheet_id) return mess.data.gsheet_id as string;
@@ -234,29 +230,53 @@ async function getOrCreateSheet(
     .select('gsheet_id')
     .maybeSingle();
   if (saved.error) throw saved.error;
-  if (saved.data) {
-    // Only this call actually won the create race, so it's the only one
-    // that should fill the brand-new Sheet — write it before returning
-    // rather than leaving it to a separate, unawaited push that a fast
-    // tab-switch could otherwise beat.
-    if (initialRows) {
-      try {
-        await writeSheetTab(spreadsheetId, 'Bazar', initialRows.bazar);
-        await writeSheetTab(spreadsheetId, 'Khawa & Taka', initialRows.khawa);
-        await admin.from('mess_sheet_snapshots').upsert(
-          { mess_id: messId, month: `${new Date().toISOString().slice(0, 7)}-01`, bazar: initialRows.bazar, khawa: initialRows.khawa, updated_at: new Date().toISOString() },
-          { onConflict: 'mess_id' },
-        );
-      } catch (sheetError) {
-        console.warn('mess-sheet: initial Sheet write failed, Sheet stays blank until the next data change', sheetError);
-      }
-    }
-    return spreadsheetId;
-  }
+  if (saved.data) return spreadsheetId;
 
   const recheck = await admin.from('messes').select('gsheet_id').eq('id', messId).single();
   if (recheck.error) throw recheck.error;
   return (recheck.data.gsheet_id as string) || spreadsheetId;
+}
+
+// Shared by 'open' and 'push': saves the caller's rows as the mess's latest
+// snapshot and, when they actually changed, writes them into the live
+// Sheet. 'open' calls this unconditionally (not just for a Sheet it just
+// created) so a Sheet that already existed — from before this app tracked
+// initial data, or just because nobody had changed anything since it was
+// made — never opens looking stale or blank; relying on some separate,
+// unrelated future data change to eventually populate it was the bug.
+async function syncSheetData(
+  admin: ReturnType<typeof createAdminClient>,
+  messId: string,
+  spreadsheetId: string,
+  month: string,
+  bazar: string[][],
+  khawa: string[][],
+) {
+  const previous = await admin
+    .from('mess_sheet_snapshots')
+    .select('bazar,khawa')
+    .eq('mess_id', messId)
+    .maybeSingle();
+  if (previous.error) throw previous.error;
+  const unchanged = previous.data
+    && JSON.stringify(previous.data.bazar) === JSON.stringify(bazar)
+    && JSON.stringify(previous.data.khawa) === JSON.stringify(khawa);
+
+  const upserted = await admin
+    .from('mess_sheet_snapshots')
+    .upsert({ mess_id: messId, month, bazar, khawa, updated_at: new Date().toISOString() }, { onConflict: 'mess_id' });
+  if (upserted.error) throw upserted.error;
+
+  if (unchanged) return;
+  try {
+    await writeSheetTab(spreadsheetId, 'Bazar', bazar);
+    await writeSheetTab(spreadsheetId, 'Khawa & Taka', khawa);
+  } catch (sheetError) {
+    // The snapshot is already saved either way, so a transient Google
+    // hiccup here just means the next push (or open) catches up — never
+    // fail the whole request over it.
+    console.warn('mess-sheet: live Sheet write failed, snapshot still saved', sheetError);
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -293,10 +313,13 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === 'open') {
+      const spreadsheetId = await getOrCreateSheet(admin, messId);
       const bazar = sanitizeRows(body?.bazar, 'bazar');
       const khawa = sanitizeRows(body?.khawa, 'khawa');
-      const initialRows = bazar && khawa ? { bazar, khawa } : null;
-      const spreadsheetId = await getOrCreateSheet(admin, messId, initialRows);
+      if (bazar && khawa) {
+        const month = `${new Date().toISOString().slice(0, 7)}-01`;
+        await syncSheetData(admin, messId, spreadsheetId, month, bazar, khawa);
+      }
       return json({ ok: true, url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit` });
     }
 
@@ -307,40 +330,18 @@ Deno.serve(async (req: Request) => {
       const khawa = sanitizeRows(body?.khawa, 'khawa');
       if (!bazar || !khawa) return json({ error: 'Invalid sheet data' }, 400);
 
-      const previous = await admin
-        .from('mess_sheet_snapshots')
-        .select('bazar,khawa')
-        .eq('mess_id', messId)
-        .maybeSingle();
-      if (previous.error) throw previous.error;
-      const unchanged = previous.data
-        && JSON.stringify(previous.data.bazar) === JSON.stringify(bazar)
-        && JSON.stringify(previous.data.khawa) === JSON.stringify(khawa);
-
-      const upserted = await admin
-        .from('mess_sheet_snapshots')
-        .upsert({ mess_id: messId, month, bazar, khawa, updated_at: new Date().toISOString() }, { onConflict: 'mess_id' });
-      if (upserted.error) throw upserted.error;
-
-      // Only write to Google once a Sheet actually exists for this mess, and
-      // only when the data actually changed — every mess member's browser
-      // can call this after every data change, and Sheets API quota is not
-      // infinite.
-      if (!unchanged) {
-        const mess = await admin.from('messes').select('gsheet_id').eq('id', messId).single();
-        if (mess.error) throw mess.error;
-        if (mess.data.gsheet_id) {
-          try {
-            await writeSheetTab(mess.data.gsheet_id, 'Bazar', bazar);
-            await writeSheetTab(mess.data.gsheet_id, 'Khawa & Taka', khawa);
-          } catch (sheetError) {
-            // The snapshot is already saved either way, so a transient Google
-            // hiccup here just means the next push (or the next open, which
-            // always fetches the live Sheet) catches up — never fail the
-            // whole request over it.
-            console.warn('mess-sheet: live Sheet write failed, snapshot still saved', sheetError);
-          }
-        }
+      // Only write to Google once a Sheet actually exists for this mess —
+      // every mess member's browser can call this after every data change,
+      // long before anyone has ever pressed "Download Sheets".
+      const mess = await admin.from('messes').select('gsheet_id').eq('id', messId).single();
+      if (mess.error) throw mess.error;
+      if (mess.data.gsheet_id) {
+        await syncSheetData(admin, messId, mess.data.gsheet_id, month, bazar, khawa);
+      } else {
+        const upserted = await admin
+          .from('mess_sheet_snapshots')
+          .upsert({ mess_id: messId, month, bazar, khawa, updated_at: new Date().toISOString() }, { onConflict: 'mess_id' });
+        if (upserted.error) throw upserted.error;
       }
 
       return json({ ok: true });
