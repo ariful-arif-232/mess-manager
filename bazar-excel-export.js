@@ -141,18 +141,20 @@
       const category = (ledger.categories || []).find(c => c.key === key);
       return num(category?.memberCharges?.get(memberId) || 0);
     };
-    rows.push(['Name', 'Khawa Bill', 'Wifi Bill', 'Gas Bill', 'Current Bill', 'Total', 'Due']);
-    const totals = {food: 0, wifi: 0, gas: 0, current: 0, all: 0, due: 0};
+    rows.push(['Name', 'Khawa Bill', 'Wifi Bill', 'Gas Bill', 'Current Bill', 'Total', 'Due / Advance']);
+    const totals = {food: 0, wifi: 0, gas: 0, current: 0, all: 0, balance: 0};
     for (const row of calc) {
       const wifi = charge('WiFi', row.member.id);
       const gas = charge('Gas', row.member.id);
       const current = charge('Current', row.member.id);
-      const due = Math.max(0, -Number(row.balance || 0));
+      // Carries its sign rather than hiding it: negative is still owed,
+      // positive is paid ahead. The Sheet prints negatives in red.
+      const balance = num(row.balance);
       totals.food += num(row.food); totals.wifi += wifi; totals.gas += gas;
-      totals.current += current; totals.all += num(row.total); totals.due += num(due);
-      rows.push([row.member.name, num(row.food), wifi, gas, current, num(row.total), num(due)]);
+      totals.current += current; totals.all += num(row.total); totals.balance += balance;
+      rows.push([row.member.name, num(row.food), wifi, gas, current, num(row.total), balance]);
     }
-    rows.push(['Total', num(totals.food), num(totals.wifi), num(totals.gas), num(totals.current), num(totals.all), num(totals.due)]);
+    rows.push(['Total', num(totals.food), num(totals.wifi), num(totals.gas), num(totals.current), num(totals.all), num(totals.balance)]);
     return rows;
   }
 
