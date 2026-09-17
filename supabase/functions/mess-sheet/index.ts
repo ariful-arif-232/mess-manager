@@ -22,12 +22,23 @@
 //                       the Sheet is live within seconds of anyone using the
 //                       app, not just when it happens to be opened.
 //
-// Requires two Edge Function secrets this code cannot supply itself:
+// Requires three Edge Function secrets this code cannot supply itself:
 //   GOOGLE_SERVICE_ACCOUNT_EMAIL     — the service account's client_email
 //   GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY — its private_key (the PEM string,
 //                                        newlines included)
-// Both come from one Google Cloud service account JSON key file; see
-// android/README.md-style setup notes in the PR/commit that added this.
+//   GOOGLE_DRIVE_FOLDER_ID           — a Drive folder owned by a real Google
+//                                       account that has shared it with the
+//                                       service account as Editor. Service
+//                                       accounts have no Drive storage of
+//                                       their own (0 bytes, unless on a
+//                                       Workspace domain), so creating a
+//                                       Sheet directly as the service account
+//                                       fails with "The caller does not have
+//                                       permission" — creating it inside a
+//                                       folder a real account owns charges
+//                                       the storage there instead.
+// The first two come from one Google Cloud service account JSON key file;
+// see android/README.md-style setup notes in the PR/commit that added this.
 import { createClient } from 'npm:@supabase/supabase-js@2.55.0';
 
 const cors = {
@@ -115,7 +126,10 @@ async function authenticate(req: Request) {
    bearer" flow), no interactive consent and no separate OAuth client — it is
    its own Google identity. Implemented on Web Crypto only (RS256 = RSASSA-
    PKCS1-v1_5 + SHA-256), so this needs no Google client library at all. */
-const SHEETS_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+// Full drive scope (not drive.file): the service account has to write into
+// a folder it did not itself create — a folder a real Google account shared
+// with it — and drive.file only ever covers files/folders the app created.
+const SHEETS_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
 
 function base64Url(bytes: ArrayBuffer | Uint8Array): string {
   const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
@@ -199,21 +213,41 @@ async function googleFetch(url: string, init: RequestInit = {}) {
 }
 
 async function createMessSheet(messName: string) {
-  const created = await googleFetch('https://sheets.googleapis.com/v4/spreadsheets', {
+  const folderId = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID');
+  if (!folderId) {
+    throw new Error(
+      'Live Google Sheet is not configured yet: GOOGLE_DRIVE_FOLDER_ID secret is missing.',
+    );
+  }
+
+  // Create the file itself via the Drive API, inside a folder a real Google
+  // account owns (see file header) — spreadsheets.create would try to place
+  // it in the service account's own (storage-less) Drive and fail.
+  const created = await googleFetch('https://www.googleapis.com/drive/v3/files', {
     method: 'POST',
     body: JSON.stringify({
-      properties: { title: `${messName} — Mess Manager` },
-      sheets: [
-        { properties: { title: 'Bazar', gridProperties: { rowCount: 400, columnCount: 12 } } },
-        { properties: { title: 'Khawa & Taka', gridProperties: { rowCount: 400, columnCount: 12 } } },
+      name: `${messName} — Mess Manager`,
+      mimeType: 'application/vnd.google-apps.spreadsheet',
+      parents: [folderId],
+    }),
+  });
+  const spreadsheetId = created.id as string;
+
+  // A file created this way starts as a single default "Sheet1" tab — set
+  // up the same two tabs (Bazar + Khawa & Taka) the rest of this file writes
+  // to, via the Sheets API now that the file itself exists.
+  await googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    body: JSON.stringify({
+      requests: [
+        { updateSheetProperties: { properties: { sheetId: 0, title: 'Bazar' }, fields: 'title' } },
+        { addSheet: { properties: { title: 'Khawa & Taka', gridProperties: { rowCount: 400, columnCount: 12 } } } },
       ],
     }),
   });
-  const spreadsheetId = created.spreadsheetId as string;
 
-  // "anyone with the link can view" — the service account owns the file in
-  // its own Drive, so every mess member (who has no access to that Drive
-  // account) still needs this to open it at all.
+  // "anyone with the link can view" — every mess member other than the
+  // folder's owner still needs this to open it at all.
   await googleFetch(`https://www.googleapis.com/drive/v3/files/${spreadsheetId}/permissions`, {
     method: 'POST',
     body: JSON.stringify({ type: 'anyone', role: 'reader' }),
