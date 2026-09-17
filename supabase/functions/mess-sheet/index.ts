@@ -244,8 +244,10 @@ function tabStyleRequests(sheetId: number, rows: Cell[][], headerRows: number[],
             wrapStrategy: 'WRAP',
             // Text cells ignore a number format, so this is safe to apply
             // across the whole sheet rather than guessing which columns
-            // hold money in each of the two very different layouts.
-            numberFormat: { type: 'NUMBER', pattern: '#,##0.##' },
+            // hold money in each of the two very different layouts. The
+            // second clause prints anything owed (a negative Due / Advance)
+            // in red.
+            numberFormat: { type: 'NUMBER', pattern: '#,##0.##;[Red]-#,##0.##' },
             textFormat: { bold: false, fontSize: 10, foregroundColor: INK },
             padding: { top: 4, right: 8, bottom: 4, left: 8 },
           },
