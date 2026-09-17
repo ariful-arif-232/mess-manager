@@ -34,24 +34,27 @@
      because the app has no মসলা category and the sheet keeps holud, jira and
      lobon together in Mosla rather than under Kacha Bazar. */
   const SPICE = /হলুদ|মরিচ|জিরা|ধনিয়া|লবণ|দারচিনি|এলাচ|তেজপাতা|গরম\s*মসলা|মসলা|holud|moris|morich|zira|jira|dhon|dhun|lobon|salt|darchini|elach|tejpata|mosla|masala|spice/i;
+  /* The editor stores vegetables under the category "Vegetable", so the
+     Kacha Bazar column has to match that — matching the Bengali label alone
+     sent every vegetable into Others and left the column empty. Mosla has no
+     category of its own: spices are logged under অন্যান্য and can only be
+     recognised by name, which is why the category check runs first. */
   const COLUMNS = [
-    {key: 'Chal', category: 'চাল'},
-    {key: 'Murgi', category: 'মুরগি'},
-    {key: 'Mach', category: 'মাছ'},
-    {key: 'Tel', category: 'তেল'},
-    {key: 'Dim', category: 'ডিম'},
-    {key: 'Mosla', category: 'মসলা'},
-    {key: 'Kacha Bazar', category: 'কাঁচাবাজার'},
-    {key: 'Others', category: null},
+    {key: 'Chal', categories: ['চাল']},
+    {key: 'Murgi', categories: ['মুরগি']},
+    {key: 'Mach', categories: ['মাছ']},
+    {key: 'Tel', categories: ['তেল']},
+    {key: 'Dim', categories: ['ডিম']},
+    {key: 'Mosla', categories: ['মসলা']},
+    {key: 'Kacha Bazar', categories: ['Vegetable', 'কাঁচাবাজার', 'সবজি']},
+    {key: 'Others', categories: []},
   ];
   function columnFor(item) {
-    const name = String(item.item_name || '');
-    const category = String(item.category || '');
-    const staple = COLUMNS.findIndex(col => col.category && col.category === category && col.key !== 'Mosla' && col.key !== 'Kacha Bazar');
-    if (staple >= 0) return staple;
-    if (SPICE.test(name) || SPICE.test(category)) return COLUMNS.findIndex(col => col.key === 'Mosla');
-    const kacha = COLUMNS.findIndex(col => col.category === category);
-    return kacha >= 0 ? kacha : COLUMNS.length - 1;
+    const category = String(item.category || '').trim();
+    const matched = COLUMNS.findIndex(col => col.categories.includes(category));
+    if (matched >= 0) return matched;
+    if (SPICE.test(String(item.item_name || ''))) return COLUMNS.findIndex(col => col.key === 'Mosla');
+    return COLUMNS.length - 1;
   }
   const itemTotal = item => num(item.entered_total ?? item.total ?? (Number(item.quantity) * Number(item.unit_price)));
   /* "Chal 10 kg = 600" — quantity and price in the one cell, as in the sheet. */
@@ -91,26 +94,44 @@
     const members = activeList();
     const rows = [];
 
-    rows.push(['Taka Joma', ...Array(Math.max(0, members.length - 1)).fill('')]);
-    rows.push(members.map(m => m.name));
-    const perMember = members.map(m =>
-      (db.deposits || []).filter(d => d.memberId === m.id).map(d => num(d.amount)));
+    /* Each member gets two columns — what they put in, and what it was for.
+       The amount stays a bare number in its own cell so the Total row below
+       still adds up; writing "344 Gas" into one cell would break that. */
+    const perMember = members.map(m => (db.deposits || [])
+      .filter(d => d.memberId === m.id)
+      .map(d => ({amount: num(d.amount), purpose: String(d.purpose || '').trim()})));
     const deepest = Math.max(1, ...perMember.map(list => list.length));
+
+    rows.push(['Taka Joma']);
+    rows.push(['', ...members.flatMap(m => [m.name, ''])]);
     for (let i = 0; i < deepest; i += 1) {
-      rows.push(perMember.map(list => (i < list.length ? list[i] : '')));
+      rows.push(['', ...perMember.flatMap(list => (i < list.length ? [list[i].amount, list[i].purpose] : ['', '']))]);
     }
-    rows.push(perMember.map(list => num(list.reduce((sum, x) => sum + x, 0))));
+    rows.push(['Total', ...perMember.flatMap(list => [num(list.reduce((sum, d) => sum + d.amount, 0)), ''])]);
     rows.push([]);
 
-    rows.push(['Wifi & Current Bill & Gas', '', '', '']);
-    rows.push(['Bill', 'Date', 'Taka', 'Per head']);
+    rows.push(['Wifi & Current Bill & Gas']);
+    rows.push(['Bill', 'Date', 'Taka', 'Members', 'Per head']);
     const bills = [...(db.utilities || [])].sort((a, b) => String(a.date).localeCompare(String(b.date)));
     const span = Math.max(members.length, 1);
+    let billTotal = 0;
     for (const bill of bills) {
       const heads = (bill.memberIds || []).length || span;
-      rows.push([bill.type || 'Bill', shortDate(bill.date), num(bill.amount), num(Number(bill.amount || 0) / heads)]);
+      // A fixed bill charges each listed member the full amount; a shared one
+      // splits it between them. Showing the same "Taka" for both would make
+      // the column disagree with what members are actually billed below.
+      const fixed = bill.mode === 'fixed';
+      const charged = num(fixed ? Number(bill.amount || 0) * heads : Number(bill.amount || 0));
+      billTotal += charged;
+      rows.push([
+        bill.type || 'Bill',
+        shortDate(bill.date),
+        charged,
+        `${heads} member${heads === 1 ? '' : 's'} · ${fixed ? 'fixed' : 'shared'}`,
+        num(fixed ? Number(bill.amount || 0) : Number(bill.amount || 0) / heads),
+      ]);
     }
-    rows.push(['Total', '', num(bills.reduce((sum, b) => sum + Number(b.amount || 0), 0)), '']);
+    rows.push(['Total', '', num(billTotal), '', '']);
     rows.push([]);
 
     const calc = typeof calcMonth === 'function' ? (calcMonth() || []) : [];
