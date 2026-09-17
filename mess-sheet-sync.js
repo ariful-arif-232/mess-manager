@@ -100,7 +100,10 @@
   }
 
   /* ------------------------------------------------- connect Google Drive
-     One admin, one time: opens Google's consent screen in a new tab; the
+     One admin, one time: navigates to Google's consent screen (same tab,
+     via a real anchor click — window.open() after an await loses the user-
+     gesture context in most mobile browsers/WebViews and gets silently
+     blocked, exactly like the Web Share bug this whole file replaced). The
      status row below is refreshed on every Settings visit so it reflects
      whatever mess-oauth-callback last recorded. */
   async function connectGoogleDrive(button) {
@@ -109,7 +112,12 @@
     button.textContent = 'Opening…';
     try {
       const data = await call({action: 'oauth-start'});
-      window.open(data.url, '_blank', 'noopener');
+      const link = document.createElement('a');
+      link.href = data.url;
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     } catch (error) {
       if (typeof notify === 'function') notify(error?.message || 'Could not start the Google connection.');
     } finally {
