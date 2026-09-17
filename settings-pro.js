@@ -8,27 +8,33 @@
   const manager=()=>db?.members?.find?.(m=>m.role==='admin'&&m.active!==false)||db?.members?.find?.(m=>m.role==='admin')||profile;
   const personPhoto=p=>p?.avatar_url?`<img src="${esc(p.avatar_url)}" alt="${esc(p.name||'Member')}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">`:icon('home');
   const workspaceHero=()=>{const admin=manager();return `<section class="settings-hero"><div class="settings-hero-mark">${personPhoto(admin)}</div><div><span>MESS WORKSPACE</span><h2>${esc(mess?.name||'Mess Manager')}</h2><p>${activeMembers().length} active members · Managed by ${esc(admin?.name||'Admin')}</p></div>${profile?.role==='admin'?'<span class="settings-admin-badge">Admin</span>':''}</section>`};
-  /* Premium is a skin, not a third light/dark mode: it keeps data-theme="dark"
-     so every existing dark rule still applies as its base, and adds
-     data-skin="premium" for premium-theme.css to repaint on top. */
-  function applyTheme(theme=read().theme||'system'){
+  /* Premium is the theme a device sees before it has ever chosen one — the
+     first-run showcase. Once someone taps Light/Dark/System that explicit
+     choice is what write() persists, and it wins over this default on every
+     later load; this constant only fills in when read().theme is empty.
+     Premium is also its own light-based look, not a dark-mode skin: it sets
+     data-theme="light" (so the normal light-mode dark-on-cream text/contrast
+     rules apply) plus data-skin="premium" for premium-theme.css to repaint
+     surfaces, accents and navigation on top. */
+  const DEFAULT_THEME='premium';
+  function applyTheme(theme=read().theme||DEFAULT_THEME){
     const premium=theme==='premium';
-    const dark=premium||theme==='dark'||(theme==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);
+    const dark=!premium&&(theme==='dark'||(theme==='system'&&matchMedia('(prefers-color-scheme: dark)').matches));
     document.documentElement.dataset.theme=dark?'dark':'light';
     if(premium)document.documentElement.dataset.skin='premium';
     else document.documentElement.removeAttribute('data-skin');
     document.documentElement.style.colorScheme=dark?'dark':'light';
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content',premium?'#0a0e29':(dark?'#091426':'#f7f9ff'));
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content',premium?'#fff3e1':(dark?'#091426':'#f7f9ff'));
   }
   applyTheme();
-  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{if((read().theme||'system')==='system')applyTheme('system')});
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{if((read().theme||DEFAULT_THEME)==='system')applyTheme('system')});
   if(typeof adminPages!=='undefined'&&adminPages?.delete)adminPages.delete('settings');
   const row=(title,text,control,kind='')=>`<div class="setting-row ${kind}"><div class="setting-copy"><b>${title}</b>${text?`<small>${text}</small>`:''}</div>${control}</div>`;
   const toggle=(key,label)=>`<label class="setting-switch" aria-label="${label}"><input type="checkbox" data-pref="${key}" ${read()[key]!==false?'checked':''}><span></span></label>`;
   const themePicker=theme=>`<section class="settings-card"><header><i>${icon('moon')}</i><div><h3>Appearance</h3><p>Choose how Mess Manager looks on this device</p></div></header><div class="theme-picker" role="radiogroup">${[['light','☀','Light'],['dark','◐','Dark'],['system','◒','System'],['premium','✦','Premium']].map(([v,i,l])=>`<button type="button" data-theme-choice="${v}" class="${theme===v?'selected':''}" role="radio" aria-checked="${theme===v}"><i>${i}</i><b>${l}</b></button>`).join('')}</div></section>`;
   function bindCommonSettings(c){c.querySelectorAll('[data-theme-choice]').forEach(b=>b.onclick=()=>{write({theme:b.dataset.themeChoice});applyTheme(b.dataset.themeChoice);settingsPage(c)});c.querySelectorAll('[data-pref]').forEach(x=>x.onchange=()=>{write({[x.dataset.pref]:x.checked});notify('Preference saved.','success')});}
   function settingsPage(c){
-    const prefs=read(),theme=prefs.theme||'system',email=session?.user?.email||profile?.email||'';
+    const prefs=read(),theme=prefs.theme||DEFAULT_THEME,email=session?.user?.email||profile?.email||'';
     if(profile?.role!=='admin'){
       c.innerHTML=`${workspaceHero()}<div class="settings-grid">${themePicker(theme)}<section class="settings-card"><header><i>${icon('bell')}</i><div><h3>Notifications</h3><p>Control reminders on this device</p></div></header>${row('Deposit reminders','Payment reminder এবং due alerts.',toggle('depositAlerts','Deposit reminders'))}${row('Bazar schedule alerts','Assigned Bazar date alerts.',toggle('bazarAlerts','Bazar schedule alerts'))}${row('Monthly statement','Settlement ready হলে notification.',toggle('statementAlerts','Monthly statement alerts'))}</section><section class="settings-card"><header><i>${icon('shield')}</i><div><h3>Account</h3><p>Your signed-in member account</p></div></header>${row('Signed-in account',esc(email),'<span class="settings-verified">✓ Verified</span>')}${row('Role & access','Standard member permissions','<span class="settings-value">Member</span>')}</section></div>`;bindCommonSettings(c);return;
     }

@@ -1,121 +1,151 @@
-/* "Premium" skin — the fourth choice in Settings > Appearance.
+/* "Premium" — the fourth choice in Settings > Appearance, and the theme a
+ * device opens into before it has ever picked one (see DEFAULT_THEME in
+ * settings-pro.js). Warm marigold-orange hero accent, cream/white surfaces,
+ * a violet secondary accent, and a deep plum navigation band — the same
+ * family of colours as the reference app: an orange hero against cream and
+ * white, with a purple accent doing secondary work (course cards, chart
+ * segments) rather than competing with the orange for attention.
  *
- * It is not a third light/dark mode. settings-pro.js keeps data-theme="dark"
- * when Premium is picked, so every existing dark rule still applies as the
- * base and text contrast is inherited rather than re-derived; this file only
- * repaints on top via data-skin="premium".
+ * Unlike the retired build of this file, Premium is not a dark-mode skin:
+ * settings-pro.js gives it data-theme="light" as its base (so the normal
+ * light-mode dark-on-cream text and contrast rules already apply correctly)
+ * and only adds data-skin="premium" for this file to repaint surfaces,
+ * accents and navigation on top.
  *
- * Selectors carry the [data-theme="dark"][data-skin="premium"] ... body prefix
- * because dark-theme-final.css and the per-feature stylesheets paint the same
- * surfaces with !important, and a shorter selector loses to them.
- *
- * Palette: midnight indigo ground, violet-to-azure accent, aurora teal
- * highlight, glass surfaces.
+ * Selectors carry the [data-skin="premium"] ... body prefix because several
+ * per-feature stylesheets (page-detail-fixes.css, mobile-shell-final.css,
+ * chat-premium.css, dark-theme-final.css…) paint the same surfaces with
+ * !important, and a shorter selector loses to them.
  */
 html[data-skin="premium"]{
-  --mm-p-ink:#eef1ff;
-  --mm-p-muted:#9aa4d8;
-  --mm-p-line:rgba(139,152,255,.2);
-  --mm-p-surface:linear-gradient(160deg,rgba(32,38,84,.82) 0%,rgba(20,24,58,.86) 100%);
-  --mm-p-accent:linear-gradient(135deg,#7c5cff,#3d8bff);
-  --mm-p-shadow:0 18px 44px rgba(4,6,26,.55);
+  --mm-p-ink:#241b3d;
+  --mm-p-muted:#9c8874;
+  --mm-p-line:rgba(255,158,66,.26);
+  --mm-p-surface:linear-gradient(165deg,#ffffff 0%,#fff8ee 100%);
+  --mm-p-accent:linear-gradient(135deg,#ffb238,#ff6f4b);
+  --mm-p-violet:#8b7ff0;
+  --mm-p-shadow:0 18px 40px rgba(255,130,60,.16);
 }
 
-/* --- ground ----------------------------------------------------------- */
-html[data-theme="dark"][data-skin="premium"] body{
+/* --- ground ------------------------------------------------------------- */
+html[data-skin="premium"]{background:#fff8ee!important}
+html[data-skin="premium"] body{
   background:
-    radial-gradient(circle at 6% -8%, rgba(124,92,255,.32), transparent 38%),
-    radial-gradient(circle at 98% 4%, rgba(18,182,160,.22), transparent 32%),
-    radial-gradient(circle at 52% 112%, rgba(61,139,255,.2), transparent 42%),
-    linear-gradient(176deg,#0a0e29 0%,#0b1033 52%,#090c24 100%)!important;
+    radial-gradient(circle at 8% -8%, rgba(255,158,66,.26), transparent 36%),
+    radial-gradient(circle at 96% 6%, rgba(139,127,240,.20), transparent 32%),
+    radial-gradient(circle at 50% 112%, rgba(255,196,120,.22), transparent 42%),
+    linear-gradient(180deg,#fff8ee 0%,#fff1de 46%,#fdeedd 100%)!important;
   background-attachment:fixed!important;
-  color:var(--mm-p-ink)!important;
 }
-html[data-theme="dark"][data-skin="premium"]:is(html),
-html[data-theme="dark"][data-skin="premium"] :is(#app,.layout,.main,#content){background:transparent!important}
+html[data-skin="premium"] :is(#app,.layout,.main,#content){background:transparent!important}
 
-/* --- surfaces --------------------------------------------------------- */
-html[data-theme="dark"][data-skin="premium"] body :is(.card,.utility-card,.report-card,.chat-shell,.member-clean-card,.member-summary-card,.settings-card,.pro-item,.bazar-entry,.topbar,table,.modal,.action-sheet){
+/* --- surfaces ------------------------------------------------------------ */
+html[data-skin="premium"] body :is(.card,.utility-card,.report-card,.chat-shell,.member-clean-card,.member-summary-card,.settings-card,.pro-item,.bazar-entry,.topbar,table,.modal,.action-sheet){
   background:var(--mm-p-surface)!important;
   border:1px solid var(--mm-p-line)!important;
   box-shadow:var(--mm-p-shadow)!important;
-  backdrop-filter:blur(18px) saturate(140%);
-  -webkit-backdrop-filter:blur(18px) saturate(140%);
 }
-html[data-theme="dark"][data-skin="premium"] body :is(.sheet-grid button,.choice-chip,.top-chip,.badge,.member-chip,.report-mini span,.profile-info>div){
-  background:rgba(124,92,255,.12)!important;
+html[data-skin="premium"] body :is(.sheet-grid button,.choice-chip,.top-chip,.badge,.member-chip,.report-mini span,.profile-info>div){
+  background:rgba(255,158,66,.1)!important;
   border-color:var(--mm-p-line)!important;
-  color:var(--mm-p-ink)!important;
+  color:#6b4a2b!important;
 }
-html[data-theme="dark"][data-skin="premium"] body :is(th,.meal-table :is(th,td):first-child){
-  background:rgba(124,92,255,.18)!important;color:#c3ccff!important;border-bottom-color:var(--mm-p-line)!important;
+html[data-skin="premium"] body :is(th,.meal-table :is(th,td):first-child){
+  background:linear-gradient(135deg,rgba(255,178,74,.18),rgba(139,127,240,.14))!important;
+  color:#6b4a2b!important;
+  border-bottom-color:var(--mm-p-line)!important;
 }
-html[data-theme="dark"][data-skin="premium"] body :is(td,th){border-bottom-color:rgba(139,152,255,.14)!important}
-html[data-theme="dark"][data-skin="premium"] body .muted,
-html[data-theme="dark"][data-skin="premium"] body :is(.eyebrow,.kpi .label,.member-identity small,.setting-copy small){color:var(--mm-p-muted)!important}
+html[data-skin="premium"] body :is(td,th){border-bottom-color:rgba(255,158,66,.16)!important}
+html[data-skin="premium"] body .muted,
+html[data-skin="premium"] body :is(.eyebrow,.kpi .label,.member-identity small,.setting-copy small){color:var(--mm-p-muted)!important}
 
-/* --- navigation ------------------------------------------------------- */
-html[data-theme="dark"][data-skin="premium"] body .sidebar{
-  background:linear-gradient(180deg,#261c6b 0%,#171346 55%,#0d0c2c 100%)!important;
-  border-right:1px solid var(--mm-p-line)!important;
-}
-html[data-theme="dark"][data-skin="premium"] body .mobilebar{
-  background:linear-gradient(135deg,#2a1f7a,#161240 62%,#100e30)!important;
-  border:1px solid var(--mm-p-line)!important;
-  box-shadow:0 18px 44px rgba(6,8,32,.6)!important;
-}
-html[data-theme="dark"][data-skin="premium"] body :is(.nav button.active,.mobilebar button.active){
-  background:rgba(124,92,255,.3)!important;color:#fff!important;
-}
+/* --- brand mark & avatars ------------------------------------------------ */
+html[data-skin="premium"] body .brand-mark{background:var(--mm-p-accent)!important;color:#fff!important}
+html[data-skin="premium"] body :is(.avatar,.chat-avatar){background:linear-gradient(135deg,#ffe1b8,#ffd0c2)!important;color:#b9581f!important}
 
-/* --- accents ---------------------------------------------------------- */
-html[data-theme="dark"][data-skin="premium"] body :is(.btn.primary,.auth-main-btn,.kpi-icon){
-  background:var(--mm-p-accent)!important;color:#fff!important;border:0!important;
-  box-shadow:0 10px 26px rgba(92,64,220,.42)!important;
+/* --- navigation: deep plum band so the cream/white content pops --------- */
+html[data-skin="premium"] body .sidebar{
+  background:linear-gradient(180deg,#3e2e68 0%,#2b2150 55%,#1c1638 100%)!important;
+  border-right:1px solid rgba(255,158,66,.2)!important;
 }
-html[data-theme="dark"][data-skin="premium"] body .btn:not(.primary):not(.danger):not(.good){
-  background:rgba(124,92,255,.14)!important;color:#d5dbff!important;border-color:var(--mm-p-line)!important;
+html[data-skin="premium"] body .mobilebar{
+  background:linear-gradient(135deg,#4a3777,#2b2150 60%,#1c1638)!important;
+  border:1px solid rgba(255,158,66,.24)!important;
+  box-shadow:0 18px 40px rgba(28,22,56,.4)!important;
 }
-html[data-theme="dark"][data-skin="premium"] body :is(.pill.advance,.settings-live,.settings-verified){background:rgba(18,182,160,.18)!important;color:#5fe6cd!important}
-html[data-theme="dark"][data-skin="premium"] body .pill.due{background:rgba(255,105,140,.16)!important;color:#ff9bb4!important}
-html[data-theme="dark"][data-skin="premium"] body :is(.field input,.field select,.field textarea,.select-button,.settings-text){
-  background:rgba(12,16,44,.72)!important;border-color:var(--mm-p-line)!important;color:var(--mm-p-ink)!important;
-}
-html[data-theme="dark"][data-skin="premium"] body :is(.field input,.field textarea):focus{
-  border-color:#8b74ff!important;box-shadow:0 0 0 3px rgba(124,92,255,.22)!important;
+html[data-skin="premium"] body :is(.nav button,.mobilebar button){color:#c9bdf0!important}
+html[data-skin="premium"] body :is(.nav button.active,.mobilebar button.active){
+  background:var(--mm-p-accent)!important;color:#fff!important;
 }
 
-/* --- chat ------------------------------------------------------------- */
-html[data-theme="dark"][data-skin="premium"] body .chat-shell-live .chat-messages-live{
+/* --- accents -------------------------------------------------------------- */
+html[data-skin="premium"] body :is(.btn.primary,.auth-main-btn,.settings-hero){
+  background:linear-gradient(135deg,#ffb238 0%,#ff6f4b 55%,#8b7ff0 140%)!important;
+  color:#fff!important;border:0!important;
+  box-shadow:0 10px 26px rgba(255,111,75,.35)!important;
+}
+html[data-skin="premium"] body .btn:not(.primary):not(.danger):not(.good){
+  background:rgba(139,127,240,.12)!important;color:#5b4c9e!important;border-color:rgba(139,127,240,.24)!important;
+}
+html[data-skin="premium"] body :is(.pill.advance,.settings-live,.settings-verified){background:rgba(46,196,146,.14)!important;color:#1b8f68!important}
+html[data-skin="premium"] body .pill.due{background:rgba(255,111,75,.16)!important;color:#d1502e!important}
+html[data-skin="premium"] body :is(.field input,.field select,.field textarea,.select-button,.settings-text){
+  background:#fffdf9!important;border-color:var(--mm-p-line)!important;color:var(--mm-p-ink)!important;
+}
+html[data-skin="premium"] body :is(.field input,.field textarea):focus{
+  border-color:#ff9e42!important;box-shadow:0 0 0 3px rgba(255,158,66,.18)!important;
+}
+
+/* --- chat ------------------------------------------------------------------ */
+html[data-skin="premium"] body .chat-shell-live .chat-messages-live{
   background:
-    radial-gradient(rgba(170,185,255,.06) 1px, transparent 1.3px) 0 0/19px 19px,
-    radial-gradient(circle at 10% 0%, rgba(124,92,255,.2), transparent 46%),
-    radial-gradient(circle at 94% 100%, rgba(18,182,160,.16), transparent 46%),
-    linear-gradient(180deg,#0b0f2e 0%,#0d1238 54%,#0a0e29 100%)!important;
+    radial-gradient(rgba(255,158,66,.07) 1px, transparent 1.3px) 0 0/19px 19px,
+    radial-gradient(circle at 10% 0%, rgba(255,158,66,.16), transparent 46%),
+    radial-gradient(circle at 94% 100%, rgba(139,127,240,.14), transparent 46%),
+    linear-gradient(180deg,#fff8ee 0%,#fff3e1 54%,#fff8ee 100%)!important;
 }
-html[data-theme="dark"][data-skin="premium"] body .chat-shell-live .chat-bubble-pro{background:rgba(32,38,84,.86)!important;border-color:var(--mm-p-line)!important}
-html[data-theme="dark"][data-skin="premium"] body .chat-shell-live .chat-row-live.mine .chat-bubble-pro{background:var(--mm-p-accent)!important;border-color:transparent!important;box-shadow:0 10px 26px rgba(92,64,220,.4)!important}
-html[data-theme="dark"][data-skin="premium"] body .chat-shell-live .chat-day span{background:rgba(32,38,84,.9)!important;border-color:var(--mm-p-line)!important;color:#a9b3e8!important}
-html[data-theme="dark"][data-skin="premium"] body .chat-shell-live .chat-compose-pro.chat-compose-live{
-  background:linear-gradient(135deg,rgba(32,38,84,.92),rgba(18,22,56,.9))!important;
+html[data-skin="premium"] body .chat-shell-live .chat-bubble-pro{background:#fff!important;border-color:var(--mm-p-line)!important}
+html[data-skin="premium"] body .chat-shell-live .chat-row-live.mine .chat-bubble-pro{background:var(--mm-p-accent)!important;border-color:transparent!important;box-shadow:0 10px 26px rgba(255,111,75,.3)!important}
+html[data-skin="premium"] body .chat-shell-live .chat-day span{background:#fff!important;border-color:var(--mm-p-line)!important;color:var(--mm-p-muted)!important}
+html[data-skin="premium"] body .chat-shell-live .chat-compose-pro.chat-compose-live{
+  background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(255,246,232,.92))!important;
   border-color:var(--mm-p-line)!important;
 }
-html[data-theme="dark"][data-skin="premium"] body .chat-shell-live .chat-compose-pro textarea{background:rgba(12,16,44,.8)!important;border-color:var(--mm-p-line)!important}
+html[data-skin="premium"] body .chat-shell-live .chat-compose-pro textarea{background:#fff!important;border-color:var(--mm-p-line)!important}
 
-/* --- sign-in ---------------------------------------------------------- */
-html[data-theme="dark"][data-skin="premium"] body .auth-page{
+/* --- sign-in --------------------------------------------------------------- */
+html[data-skin="premium"] body .auth-page{
   background:
-    radial-gradient(circle at 0% 30%, rgba(124,92,255,.3), transparent 36%),
-    radial-gradient(circle at 104% 80%, rgba(18,182,160,.22), transparent 34%),
-    linear-gradient(180deg,#0a0e29,#0b1033 58%,#090c24)!important;
+    radial-gradient(circle at 0% 20%, rgba(255,158,66,.26), transparent 38%),
+    radial-gradient(circle at 100% 85%, rgba(139,127,240,.2), transparent 36%),
+    linear-gradient(180deg,#fff8ee,#fff1de 58%,#fdeedd)!important;
 }
-html[data-theme="dark"][data-skin="premium"] body :is(.auth-card,.auth-member-card){background:var(--mm-p-surface)!important;border-color:var(--mm-p-line)!important}
+html[data-skin="premium"] body :is(.auth-card,.auth-member-card){background:var(--mm-p-surface)!important;border-color:var(--mm-p-line)!important}
 
-/* --- the picker itself ------------------------------------------------
-   Four choices read better two-up than squeezed into the original three
-   columns. */
-.theme-picker:has(button:nth-child(4)){grid-template-columns:repeat(2,1fr)!important}
-html[data-theme="dark"][data-skin="premium"] body .theme-picker button.selected{
-  border-color:#8b74ff!important;background:rgba(124,92,255,.2)!important;color:#d9dcff!important;
-  box-shadow:inset 0 0 0 1px #8b74ff!important;
+/* --- the appearance picker ------------------------------------------------
+   Always one row of four, on every theme — this is layout, not colour, so it
+   is not scoped to data-skin="premium". A live gradient swatch on the
+   Premium button itself previews the palette even while another theme is
+   active, so it is worth switching to. */
+.theme-picker{grid-template-columns:repeat(4,1fr)!important;gap:7px!important}
+.theme-picker button{min-height:76px!important;padding:6px 2px!important}
+.theme-picker button i{font-size:18px!important}
+.theme-picker button b{font-size:10.5px!important;white-space:nowrap!important}
+@media(max-width:380px){
+  .theme-picker button i{font-size:16px!important}
+  .theme-picker button b{font-size:9.5px!important}
+}
+.theme-picker button[data-theme-choice="premium"]{
+  background:linear-gradient(135deg,rgba(255,178,74,.16),rgba(139,127,240,.13))!important;
+  border-color:rgba(255,158,66,.32)!important;
+}
+.theme-picker button[data-theme-choice="premium"] i{
+  background:linear-gradient(135deg,#ffb238,#ff6f4b 60%,#8b7ff0);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+html[data-skin="premium"] body .theme-picker button.selected{
+  border-color:#ff9e42!important;
+  background:linear-gradient(135deg,rgba(255,178,74,.2),rgba(139,127,240,.16))!important;
+  color:#b9581f!important;
+  box-shadow:inset 0 0 0 1px #ff9e42!important;
 }
