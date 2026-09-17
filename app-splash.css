@@ -1,5 +1,6 @@
 :root{--splash-base:#f7f9ff;--splash-card:rgba(255,255,255,.78);--splash-text:#10254a;--splash-muted:#7185a3;--splash-line:#dbe5f1;--splash-blue:#2d7cf0;--splash-mint:#22c89f}
 html[data-theme="dark"]{--splash-base:#07111d;--splash-card:rgba(8,25,40,.82);--splash-text:#f5f9ff;--splash-muted:#9eb1c8;--splash-line:#20394e;--splash-blue:#3792ff;--splash-mint:#24d1a2}
+html[data-skin="premium"]{--splash-base:#fff3e1;--splash-card:rgba(255,255,255,.85);--splash-text:#241b3d;--splash-muted:#9c8874;--splash-line:rgba(255,158,66,.3);--splash-blue:#ff9e42;--splash-mint:#8b7ff0}
 html,body,#app{margin:0;min-width:100%;min-height:100%;background:var(--splash-base)}
 .app-splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;overflow:hidden;box-sizing:border-box;width:100vw;height:100dvh;min-height:100vh;padding:calc(24px + env(safe-area-inset-top)) 22px calc(25px + env(safe-area-inset-bottom));background:var(--splash-base);color:var(--splash-text);font-family:Inter,"Noto Sans Bengali","Hind Siliguri",system-ui,sans-serif;isolation:isolate}
 .app-splash:before{content:"";position:absolute;inset:0;z-index:-4;pointer-events:none;background:radial-gradient(circle at 8% 28%,rgba(61,132,244,.16),transparent 30%),radial-gradient(circle at 91% 77%,rgba(34,200,159,.20),transparent 33%),linear-gradient(180deg,#f8faff 0%,#f6f9ff 48%,#eefaf6 100%)}
@@ -42,6 +43,29 @@ html[data-theme="dark"] .splash-progress,.app-splash.splash-dark .splash-progres
 html[data-theme="dark"] .splash-status,.app-splash.splash-dark .splash-status{color:#9fb4cb}
 html[data-theme="dark"] .splash-foot,.app-splash.splash-dark .splash-foot{color:#71879f}
 html[data-theme="dark"] .splash-foot b,.app-splash.splash-dark .splash-foot b{color:#a2bedc}
+/* Premium splash: warm cream ground with orange/violet accents, mirroring the
+   dark block above rule-for-rule so the boot screen already looks like the
+   theme the app is about to open into (no first-paint flash to a different
+   palette). --splash-blue/--splash-mint already carry the premium orange and
+   violet via the html[data-skin="premium"] variables above, so the orbit dot,
+   halo and progress fill recolor for free through those custom properties. */
+html[data-skin="premium"] .app-splash,.app-splash.splash-premium{background:#fff3e1;color:#241b3d}
+html[data-skin="premium"] .app-splash:before,.app-splash.splash-premium:before{background:radial-gradient(circle at 8% 26%,rgba(255,158,66,.24),transparent 32%),radial-gradient(circle at 92% 78%,rgba(139,127,240,.20),transparent 34%),linear-gradient(180deg,#fff8ee 0%,#fff3e1 50%,#ffeedd 100%)}
+html[data-skin="premium"] .app-splash:after,.app-splash.splash-premium:after{background:radial-gradient(circle,rgba(255,158,66,.20),rgba(255,158,66,.05) 48%,transparent 72%)}
+html[data-skin="premium"] .splash-shell,.app-splash.splash-premium .splash-shell{background:linear-gradient(155deg,rgba(255,255,255,.92),rgba(255,246,232,.68));border-color:rgba(255,158,66,.3);box-shadow:0 32px 95px rgba(255,130,60,.16),0 0 60px rgba(139,127,240,.08),inset 0 1px 0 rgba(255,255,255,.95)}
+html[data-skin="premium"] .splash-shell:before,.app-splash.splash-premium .splash-shell:before{background:radial-gradient(circle at 50% 20%,rgba(255,158,66,.14),transparent 33%),radial-gradient(circle at 83% 72%,rgba(139,127,240,.11),transparent 36%)}
+html[data-skin="premium"] .splash-shell:after,.app-splash.splash-premium .splash-shell:after{background:radial-gradient(115% 72% at 8% 100%,rgba(255,178,90,.30) 0 42%,transparent 43%),radial-gradient(95% 72% at 91% 100%,rgba(155,141,255,.26) 0 45%,transparent 46%),linear-gradient(180deg,transparent 0 34%,rgba(255,238,216,.7) 35% 100%);opacity:.9}
+html[data-skin="premium"] .splash-logo-wrap:before,.app-splash.splash-premium .splash-logo-wrap:before{border-color:rgba(255,158,66,.28);box-shadow:0 0 0 25px rgba(255,158,66,.045),0 0 0 48px rgba(139,127,240,.028)}
+html[data-skin="premium"] .splash-logo-glow,.app-splash.splash-premium .splash-logo-glow{background:radial-gradient(circle,rgba(255,178,74,.34) 0%,rgba(139,127,240,.14) 48%,transparent 74%)}
+html[data-skin="premium"] .splash-logo,.app-splash.splash-premium .splash-logo{background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(255,248,238,.97));border-color:rgba(255,178,90,.4);box-shadow:0 24px 60px rgba(255,130,60,.2),0 9px 24px rgba(139,127,240,.1),inset 0 1px 0 rgba(255,255,255,.98)}
+html[data-skin="premium"] .splash-logo:before,.app-splash.splash-premium .splash-logo:before{border-color:rgba(255,158,66,.14);box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
+html[data-skin="premium"] .splash-brand h1,.app-splash.splash-premium .splash-brand h1{background:linear-gradient(90deg,#241b3d 0 42%,#ff9e42 64%,#8b7ff0 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+html[data-skin="premium"] .splash-progress,.app-splash.splash-premium .splash-progress{background:rgba(255,158,66,.2);box-shadow:inset 0 1px 2px rgba(255,130,60,.1)}
+html[data-skin="premium"] .splash-progress span,.app-splash.splash-premium .splash-progress span{background:linear-gradient(90deg,var(--splash-blue),#ffcf7a 48%,var(--splash-mint))}
+html[data-skin="premium"] .splash-status,.app-splash.splash-premium .splash-status{color:#9c8874}
+html[data-skin="premium"] .splash-status i,.app-splash.splash-premium .splash-status i{box-shadow:0 0 0 7px rgba(139,127,240,.12),0 0 18px rgba(139,127,240,.26)}
+html[data-skin="premium"] .splash-foot,.app-splash.splash-premium .splash-foot{color:#a3927e}
+html[data-skin="premium"] .splash-foot b,.app-splash.splash-premium .splash-foot b{color:#c8641f}
 @keyframes splash-card-in{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes splash-halo{0%,100%{transform:scale(.94);opacity:.58}50%{transform:scale(1.08);opacity:1}}
 @keyframes splash-logo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
