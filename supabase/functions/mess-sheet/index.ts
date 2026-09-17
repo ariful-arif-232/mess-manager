@@ -2,9 +2,8 @@
 //
 // "Download Sheets" (and every data change afterwards) never asks anyone to
 // create a Sheet or paste a script: the first time a mess needs one, this
-// function creates it itself, using a Google *service account* — a robot
-// Google identity we hold the credentials for, completely separate from
-// every member's own Google account. From then on:
+// function creates it itself, using whichever real Google account an admin
+// connected once in Settings. From then on:
 //
 //   open  (session)  -> returns the mess's Sheet URL, creating the Sheet
 //                       (two tabs, Bazar + Khawa & Taka, shared "anyone with
@@ -22,12 +21,21 @@
 //                       the Sheet is live within seconds of anyone using the
 //                       app, not just when it happens to be opened.
 //
+// Every Sheet is created and owned by a real Google account (whoever
+// clicked "Connect Google Drive" in Settings once — see
+// mess-oauth-callback), not a service account: a service account's own
+// Drive storage is always 0 bytes off a Workspace domain, and placing a
+// file inside someone else's folder does not change who Drive bills the
+// storage to — the file's *creator* stays its owner either way. A real
+// account's own OAuth connection sidesteps that entirely.
+//
 // Requires two Edge Function secrets this code cannot supply itself:
-//   GOOGLE_SERVICE_ACCOUNT_EMAIL     — the service account's client_email
-//   GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY — its private_key (the PEM string,
-//                                        newlines included)
-// Both come from one Google Cloud service account JSON key file; see
-// android/README.md-style setup notes in the PR/commit that added this.
+//   GOOGLE_OAUTH_CLIENT_ID     — from a Google Cloud OAuth 2.0 Web
+//                                application client
+//   GOOGLE_OAUTH_CLIENT_SECRET — that same client's secret
+// The actual per-account connection (a refresh token) lives in the
+// app_google_connection table, written by mess-oauth-callback once an
+// admin completes the one-time "Connect Google Drive" flow in Settings.
 import { createClient } from 'npm:@supabase/supabase-js@2.55.0';
 
 const cors = {
@@ -98,7 +106,7 @@ async function authenticate(req: Request) {
 
   const memberResult = await admin
     .from('members')
-    .select('id')
+    .select('id,role')
     .eq('user_id', user.id)
     .eq('mess_id', messId)
     .eq('active', true)
@@ -107,78 +115,47 @@ async function authenticate(req: Request) {
   if (memberResult.error) throw memberResult.error;
   if (!memberResult.data) return { error: json({ error: 'Active mess membership required' }, 403) } as const;
 
-  return { admin, messId } as const;
+  return { admin, messId, role: memberResult.data.role as string } as const;
 }
 
-/* -------------------------------------------------- Google service account
-   A service account authenticates itself with a self-signed JWT ("JWT
-   bearer" flow), no interactive consent and no separate OAuth client — it is
-   its own Google identity. Implemented on Web Crypto only (RS256 = RSASSA-
-   PKCS1-v1_5 + SHA-256), so this needs no Google client library at all. */
-const SHEETS_SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-
-function base64Url(bytes: ArrayBuffer | Uint8Array): string {
-  const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  let binary = '';
-  for (const byte of view) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-function pemToKey(pem: string): Promise<CryptoKey> {
-  const body = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\s+/g, '');
-  const raw = Uint8Array.from(atob(body), (c) => c.charCodeAt(0));
-  return crypto.subtle.importKey(
-    'pkcs8',
-    raw,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
-}
+// Requested once, at "Connect Google Drive" time — see mess-oauth-callback.
+const GOOGLE_OAUTH_SCOPES = 'openid email https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
 async function getGoogleAccessToken(): Promise<string> {
   if (cachedToken && cachedToken.expiresAt > Date.now() + 30_000) return cachedToken.token;
 
-  const clientEmail = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL');
-  const privateKeyPem = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY');
-  if (!clientEmail || !privateKeyPem) {
+  const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID');
+  const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET');
+  if (!clientId || !clientSecret) {
     throw new Error(
-      'Live Google Sheet is not configured yet: GOOGLE_SERVICE_ACCOUNT_EMAIL and ' +
-      'GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY secrets are missing.',
+      'Live Google Sheet is not configured yet: GOOGLE_OAUTH_CLIENT_ID and ' +
+      'GOOGLE_OAUTH_CLIENT_SECRET secrets are missing.',
     );
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: 'RS256', typ: 'JWT' };
-  const claims = {
-    iss: clientEmail,
-    scope: SHEETS_SCOPES,
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now,
-    exp: now + 3600,
-  };
-  const unsigned = `${base64Url(new TextEncoder().encode(JSON.stringify(header)))}.${base64Url(new TextEncoder().encode(JSON.stringify(claims)))}`;
-  const key = await pemToKey(privateKeyPem.replace(/\\n/g, '\n'));
-  const signature = await crypto.subtle.sign({ name: 'RSASSA-PKCS1-v1_5' }, key, new TextEncoder().encode(unsigned));
-  const assertion = `${unsigned}.${base64Url(signature)}`;
+  const admin = createAdminClient();
+  const connection = await admin.from('app_google_connection').select('refresh_token').eq('id', true).maybeSingle();
+  if (connection.error) throw connection.error;
+  if (!connection.data) {
+    throw new Error("Google Drive isn't connected yet — an admin needs to connect it once from Settings.");
+  }
 
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion,
+      grant_type: 'refresh_token',
+      refresh_token: connection.data.refresh_token as string,
+      client_id: clientId,
+      client_secret: clientSecret,
     }),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data.access_token) {
-    console.error('Google token exchange failed', response.status, data);
-    throw new Error('Unable to authenticate with Google Sheets right now.');
+    console.error('Google token refresh failed', response.status, data);
+    throw new Error('Unable to authenticate with Google Drive right now — try reconnecting it from Settings.');
   }
   cachedToken = { token: data.access_token as string, expiresAt: Date.now() + (Number(data.expires_in || 3600) * 1000) };
   return cachedToken.token;
@@ -211,9 +188,8 @@ async function createMessSheet(messName: string) {
   });
   const spreadsheetId = created.spreadsheetId as string;
 
-  // "anyone with the link can view" — the service account owns the file in
-  // its own Drive, so every mess member (who has no access to that Drive
-  // account) still needs this to open it at all.
+  // "anyone with the link can view" — every mess member other than whoever
+  // connected Google Drive still needs this to open it at all.
   await googleFetch(`https://www.googleapis.com/drive/v3/files/${spreadsheetId}/permissions`, {
     method: 'POST',
     body: JSON.stringify({ type: 'anyone', role: 'reader' }),
@@ -271,7 +247,28 @@ Deno.serve(async (req: Request) => {
 
     const authenticated = await authenticate(req);
     if ('error' in authenticated) return authenticated.error;
-    const { admin, messId } = authenticated;
+    const { admin, messId, role } = authenticated;
+
+    if (action === 'oauth-start') {
+      if (role !== 'admin') return json({ error: 'Admin access required' }, 403);
+      const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID');
+      if (!clientId) return json({ error: 'GOOGLE_OAUTH_CLIENT_ID secret is missing.' }, 500);
+      const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/mess-oauth-callback`;
+      const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+      authUrl.searchParams.set('client_id', clientId);
+      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('scope', GOOGLE_OAUTH_SCOPES);
+      authUrl.searchParams.set('access_type', 'offline');
+      authUrl.searchParams.set('prompt', 'consent');
+      return json({ ok: true, url: authUrl.toString() });
+    }
+
+    if (action === 'oauth-status') {
+      const connection = await admin.from('app_google_connection').select('connected_email').eq('id', true).maybeSingle();
+      if (connection.error) throw connection.error;
+      return json({ ok: true, connected: !!connection.data, email: connection.data?.connected_email || null });
+    }
 
     if (action === 'open') {
       const spreadsheetId = await getOrCreateSheet(admin, messId);

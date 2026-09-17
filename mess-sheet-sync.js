@@ -1,11 +1,12 @@
-/* Live Google Sheet: fully automatic, no setup screen.
+/* Live Google Sheet: no per-mess setup screen, one one-time app-wide step.
  *
  * Tapping "Download Sheets" asks the mess-sheet edge function to open the
- * mess's own Google Sheet, creating it the first time (via a Google service
- * account the function holds credentials for — nobody pastes anything).
- * From then on, every data change in the app pushes fresh rows to that same
- * function, which writes them straight into the live Sheet, so the Sheet is
- * already current by the time anyone opens it.
+ * mess's own Google Sheet, creating it the first time — as whichever real
+ * Google account an admin connected once via the "Connect Google Drive"
+ * button in Settings (see connectGoogleDrive() below and
+ * mess-oauth-callback). From then on, every data change in the app pushes
+ * fresh rows to that same function, which writes them straight into the
+ * live Sheet, so the Sheet is already current by the time anyone opens it.
  *
  * A real <a href="https://docs.google.com/..."> click, not window.open() or
  * the Web Share API, is what actually hands off to an installed Sheets app:
@@ -98,11 +99,56 @@
     }
   }
 
+  /* ------------------------------------------------- connect Google Drive
+     One admin, one time: opens Google's consent screen in a new tab; the
+     status row below is refreshed on every Settings visit so it reflects
+     whatever mess-oauth-callback last recorded. */
+  async function connectGoogleDrive(button) {
+    const old = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Opening…';
+    try {
+      const data = await call({action: 'oauth-start'});
+      window.open(data.url, '_blank', 'noopener');
+    } catch (error) {
+      if (typeof notify === 'function') notify(error?.message || 'Could not start the Google connection.');
+    } finally {
+      button.disabled = false;
+      button.textContent = old;
+    }
+  }
+
+  async function refreshGoogleDriveStatus() {
+    const statusEl = document.getElementById('googleDriveStatus');
+    const button = document.getElementById('connectGoogleDrive');
+    if (!statusEl || !button) return;
+    try {
+      const data = await call({action: 'oauth-status'});
+      if (data.connected) {
+        statusEl.textContent = `Connected${data.email ? ' as ' + data.email : ''}`;
+        statusEl.style.display = '';
+        button.textContent = 'Reconnect';
+      } else {
+        statusEl.style.display = 'none';
+        button.textContent = 'Connect Google Drive';
+      }
+    } catch (error) {
+      statusEl.style.display = 'none';
+    } finally {
+      button.style.display = '';
+    }
+  }
+
   const baseSettings = window.settings;
   window.settings = function settingsWithLiveSheet(container) {
     const result = typeof baseSettings === 'function' ? baseSettings(container) : undefined;
-    const button = document.getElementById('exportMessData');
-    if (button) button.onclick = () => openLiveSheet(button);
+    const exportButton = document.getElementById('exportMessData');
+    if (exportButton) exportButton.onclick = () => openLiveSheet(exportButton);
+    const connectButton = document.getElementById('connectGoogleDrive');
+    if (connectButton) {
+      connectButton.onclick = () => connectGoogleDrive(connectButton);
+      refreshGoogleDriveStatus();
+    }
     return result;
   };
 })();
