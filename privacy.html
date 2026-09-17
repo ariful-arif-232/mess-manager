@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Mess Manager</title>
+<meta name="description" content="What Mess Manager collects, why, and how Google Drive access is used.">
+<style>
+  :root{color-scheme:light dark}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:720px;margin:0 auto;padding:32px 20px 80px;line-height:1.65;color:#2b2118;background:#fffaf2}
+  h1{font-size:26px;margin:0 0 4px}
+  .updated{color:#8a7a68;font-size:14px;margin:0 0 32px}
+  h2{font-size:19px;margin:32px 0 8px;color:#1f1710}
+  p,li{color:#3a2e22;font-size:15px}
+  ul{padding-left:20px}
+  a{color:#c9622c}
+  .card{background:#fff;border:1px solid #f0e2cf;border-radius:14px;padding:20px 22px;margin-top:20px}
+</style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Mess Manager · Last updated 18 September 2026</p>
+
+  <p>Mess Manager is a shared-living expense and meal management app for a single household ("mess"). This page explains what information the app handles and, specifically, how it uses Google account access.</p>
+
+  <h2>What the app stores</h2>
+  <ul>
+    <li>Member accounts: name, email or phone used to sign in, and role (admin or member).</li>
+    <li>Mess records: bazar (grocery) entries, meal counts, deposits, utility bills, and the settlement figures calculated from them.</li>
+    <li>Notification preferences you choose on your own device.</li>
+  </ul>
+  <p>This data is stored in a Supabase project dedicated to this app, transmitted over encrypted connections, and visible only to the members of the same mess workspace. An admin can permanently delete all of it at any time from Settings → Reset workspace.</p>
+
+  <h2>Google Drive and Google Sheets access</h2>
+  <p>An admin may connect a Google account once, from Settings → "Connect Google Drive". This is entirely optional and only affects the "Download Sheets" feature.</p>
+  <p>When connected, the app is granted permission to:</p>
+  <ul>
+    <li>Create a new Google Sheet for the mess (one per mess), and read/write to files it has created — nothing else in that Google account's Drive.</li>
+    <li>Read the account's basic profile (name/email), only to show which account is connected.</li>
+  </ul>
+  <p>The app never reads, lists, or modifies any other file already in that Google account's Drive. The only files it ever touches are the Sheets it created itself for mess bazar and settlement data. This connection can be revoked at any time from <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>, which immediately stops the app from creating or updating any further Sheets.</p>
+
+  <h2>What the app does not do</h2>
+  <ul>
+    <li>It does not sell or share your data with third parties.</li>
+    <li>It does not use Google account data for advertising.</li>
+    <li>It does not access Gmail, Google Photos, Google Contacts, or any Drive file the app did not itself create.</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy or your data can be sent to <a href="mailto:arifwahid2020@gmail.com">arifwahid2020@gmail.com</a>.</p>
+</body>
+</html>
