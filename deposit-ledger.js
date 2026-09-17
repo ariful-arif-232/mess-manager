@@ -86,7 +86,6 @@
       <div>
         <span class="eyebrow">${esc(state.month)} overview</span>
         <h2>Member Deposits</h2>
-        <p>Bazar এবং Utility deposit আলাদা fund হিসেবে track হবে। Member card tap করলে purpose-wise history দেখবেন।</p>
       </div>
       ${controls?'<button type="button" class="btn primary mm-deposit-add" data-deposit-add><span aria-hidden="true">+</span> Add Deposit</button>':''}
     </section>
