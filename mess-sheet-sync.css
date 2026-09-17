@@ -1,10 +1,7 @@
-/* Live Google Sheet setup panel inside the "Live Google Sheet" settings
-   card — the copyable Apps Script box, its steps and the copy button. */
-.mm-sheet-details{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
-.mm-sheet-steps{margin:0 0 12px;padding-left:20px;display:grid;gap:7px;font-size:12.5px;line-height:1.5;color:var(--text)}
-.mm-sheet-steps li::marker{color:var(--muted);font-weight:800}
-.mm-sheet-script{width:100%;box-sizing:border-box;min-height:150px;padding:12px 13px;border:1px solid var(--line);border-radius:14px;background:#0d1729;color:#d6e4ff;font:12px/1.55 "SFMono-Regular",Consolas,Menlo,monospace;resize:vertical;white-space:pre;overflow:auto}
-.mm-sheet-note{margin:10px 0 0;font-size:11px;color:var(--muted);line-height:1.5}
-html[data-theme="dark"] .mm-sheet-script{background:#060c17;border-color:#22344a}
-html[data-skin="premium"] body .mm-sheet-script{background:#20143a!important;border-color:rgba(139,127,240,.32)!important;color:#e4dcff!important}
-html[data-skin="premium"] body .mm-sheet-steps li::marker{color:#9c8874!important}
+/* "Download Sheets" button's loading spinner while it asks the edge
+   function for the mess's Google Sheet URL. currentColor so it matches
+   whatever the button's text colour already is in light/dark/Premium,
+   rather than assuming a specific background. */
+.mm-sheet-spin{width:12px;height:12px;display:inline-block;margin-right:6px;vertical-align:-2px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;border-bottom-color:transparent;animation:mmSheetSpin .7s linear infinite}
+@keyframes mmSheetSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.mm-sheet-spin{animation-duration:1.4s}}
