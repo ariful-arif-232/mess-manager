@@ -37,7 +37,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const MAX_ROWS = 400;
-const MAX_COLS = 24;
+const MAX_COLS = 40;
 const MAX_CELL_CHARS = 500;
 
 type Cell = string | number;
@@ -107,6 +107,12 @@ async function authenticate(req: Request) {
   return { admin, messId } as const;
 }
 
+const BAZAR_TAB = 'Bazar Cost';
+const JOMA_TAB = 'Taka Joma';
+// Tabs created before these were renamed; existing spreadsheets are migrated
+// in prepareTabs() rather than being left with the old names.
+const LEGACY_TAB_NAMES: Record<string, string> = { 'Bazar': BAZAR_TAB, 'Khawa & Taka': JOMA_TAB };
+
 // Requested once, at "Connect Google Drive" time — see mess-oauth-callback.
 const GOOGLE_OAUTH_SCOPES = 'openid email https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 
@@ -170,8 +176,8 @@ async function createMessSheet(messName: string) {
     body: JSON.stringify({
       properties: { title: `${messName} — Mess Manager` },
       sheets: [
-        { properties: { title: 'Bazar', gridProperties: { rowCount: 400, columnCount: 12 } } },
-        { properties: { title: 'Khawa & Taka', gridProperties: { rowCount: 400, columnCount: 12 } } },
+        { properties: { title: BAZAR_TAB, gridProperties: { rowCount: 400, columnCount: 14 } } },
+        { properties: { title: JOMA_TAB, gridProperties: { rowCount: 400, columnCount: 40 } } },
       ],
     }),
   });
@@ -239,7 +245,7 @@ function tabStyleRequests(sheetId: number, rows: Cell[][], headerRows: number[],
             // Text cells ignore a number format, so this is safe to apply
             // across the whole sheet rather than guessing which columns
             // hold money in each of the two very different layouts.
-            numberFormat: { type: 'NUMBER', pattern: '#,##0' },
+            numberFormat: { type: 'NUMBER', pattern: '#,##0.##' },
             textFormat: { bold: false, fontSize: 10, foregroundColor: INK },
             padding: { top: 4, right: 8, bottom: 4, left: 8 },
           },
@@ -301,16 +307,16 @@ function tabStyleRequests(sheetId: number, rows: Cell[][], headerRows: number[],
 
 const firstCell = (row: Cell[] | undefined) => String(row?.[0] ?? '').trim();
 
-// Khawa & Taka is three stacked blocks rather than one table, so its header
+// Taka Joma is three stacked blocks rather than one table, so its header
 // and total rows are found by their labels instead of fixed positions.
-const KHAWA_HEADINGS = new Set(['Taka Joma', 'Wifi & Current Bill & Gas', 'Bill', 'Name']);
+const JOMA_HEADINGS = new Set(['Taka Joma', 'Wifi & Current Bill & Gas', 'Bill', 'Name']);
 
-function khawaRowRoles(rows: Cell[][]) {
+function jomaRowRoles(rows: Cell[][]) {
   const headerRows: number[] = [];
   const totalRows: number[] = [];
   rows.forEach((row, index) => {
     const label = firstCell(row);
-    if (KHAWA_HEADINGS.has(label)) headerRows.push(index);
+    if (JOMA_HEADINGS.has(label)) headerRows.push(index);
     else if (label === 'Total') totalRows.push(index);
   });
   // The member-name row sits directly under the "Taka Joma" heading.
@@ -318,32 +324,109 @@ function khawaRowRoles(rows: Cell[][]) {
   return { headerRows, totalRows };
 }
 
-async function styleSpreadsheet(spreadsheetId: string, bazar: Cell[][], khawa: Cell[][]) {
+// Each member's name sits over their amount + purpose pair, so those two
+// header cells are merged into one rather than leaving a blank beside it.
+function jomaMergeRequests(sheetId: number, rows: Cell[][]) {
+  if (firstCell(rows[0]) !== 'Taka Joma' || rows.length < 2) return [];
+  const columns = Math.max(1, ...rows.map((row) => row.length));
+  // Old merges first: the member count changes when someone joins or leaves.
+  const requests: unknown[] = [{ unmergeCells: { range: gridRange(sheetId, 0, rows.length, columns) } }];
+  for (let column = 1; column + 1 < columns; column += 2) {
+    requests.push({
+      mergeCells: {
+        mergeType: 'MERGE_ALL',
+        range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: column, endColumnIndex: column + 2 },
+      },
+    });
+  }
+  return requests;
+}
+
+type SheetMeta = { properties: { sheetId: number; title: string; gridProperties?: { rowCount?: number; columnCount?: number } } };
+
+// Renames tabs left over from before they were called Bazar Cost / Taka
+// Joma, grows any grid too small for the rows about to be written (a value
+// write past the last column is rejected outright, and Taka Joma widens by
+// two columns for every member), and hands back each tab's sheet id so
+// styling needs no second metadata round trip.
+async function prepareTabs(spreadsheetId: string, needs: { title: string; rows: number; columns: number }[]) {
   const meta = await googleFetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title,gridProperties(rowCount,columnCount)))`,
   );
-  const idByTitle = new Map<string, number>();
-  for (const sheet of (meta.sheets || []) as { properties: { sheetId: number; title: string } }[]) {
-    idByTitle.set(sheet.properties.title, sheet.properties.sheetId);
+  const sheets = (meta.sheets || []) as SheetMeta[];
+  const present = new Set(sheets.map((sheet) => sheet.properties.title));
+  const requests: unknown[] = [];
+
+  for (const sheet of sheets) {
+    const renamed = LEGACY_TAB_NAMES[sheet.properties.title];
+    if (!renamed || present.has(renamed)) continue;
+    requests.push({
+      updateSheetProperties: { properties: { sheetId: sheet.properties.sheetId, title: renamed }, fields: 'title' },
+    });
+    sheet.properties.title = renamed;
   }
 
+  for (const need of needs) {
+    const sheet = sheets.find((candidate) => candidate.properties.title === need.title);
+    if (!sheet) continue;
+    const grid = sheet.properties.gridProperties || {};
+    const rowCount = Math.max(grid.rowCount || 0, need.rows + 20);
+    const columnCount = Math.max(grid.columnCount || 0, need.columns + 2);
+    if (rowCount === grid.rowCount && columnCount === grid.columnCount) continue;
+    requests.push({
+      updateSheetProperties: {
+        properties: { sheetId: sheet.properties.sheetId, gridProperties: { rowCount, columnCount } },
+        fields: 'gridProperties.rowCount,gridProperties.columnCount',
+      },
+    });
+  }
+
+  if (requests.length) {
+    await googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+      method: 'POST',
+      body: JSON.stringify({ requests }),
+    });
+  }
+
+  const idByTitle = new Map<string, number>();
+  for (const sheet of sheets) idByTitle.set(sheet.properties.title, sheet.properties.sheetId);
+  return idByTitle;
+}
+
+async function styleSpreadsheet(idByTitle: Map<string, number>, spreadsheetId: string, bazar: Cell[][], khawa: Cell[][]) {
   const requests: unknown[] = [];
-  const bazarId = idByTitle.get('Bazar');
+  const merges: unknown[] = [];
+
+  const bazarId = idByTitle.get(BAZAR_TAB);
   if (bazarId !== undefined && bazar.length) {
     const totals = bazar.map((row, index) => (firstCell(row) === 'Total' ? index : -1)).filter((index) => index >= 0);
     requests.push(...tabStyleRequests(bazarId, bazar, [0], totals, 78, 150));
   }
-  const khawaId = idByTitle.get('Khawa & Taka');
-  if (khawaId !== undefined && khawa.length) {
-    const { headerRows, totalRows } = khawaRowRoles(khawa);
-    requests.push(...tabStyleRequests(khawaId, khawa, headerRows, totalRows, 120, 115));
-  }
-  if (!requests.length) return;
 
-  await googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
-    method: 'POST',
-    body: JSON.stringify({ requests }),
-  });
+  const jomaId = idByTitle.get(JOMA_TAB);
+  if (jomaId !== undefined && khawa.length) {
+    const { headerRows, totalRows } = jomaRowRoles(khawa);
+    requests.push(...tabStyleRequests(jomaId, khawa, headerRows, totalRows, 92, 105));
+    merges.push(...jomaMergeRequests(jomaId, khawa));
+  }
+
+  if (requests.length) {
+    await googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+      method: 'POST',
+      body: JSON.stringify({ requests }),
+    });
+  }
+  // Separately, so a rejected merge can never cost the whole styling pass.
+  if (merges.length) {
+    try {
+      await googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+        method: 'POST',
+        body: JSON.stringify({ requests: merges }),
+      });
+    } catch (mergeError) {
+      console.warn('mess-sheet: header merge failed', mergeError);
+    }
+  }
 }
 
 async function getOrCreateSheet(admin: ReturnType<typeof createAdminClient>, messId: string) {
@@ -417,11 +500,18 @@ async function syncSheetData(
   }
 
   try {
-    await writeSheetTab(spreadsheetId, 'Bazar', bazar);
-    await writeSheetTab(spreadsheetId, 'Khawa & Taka', khawa);
+    // Renaming and grid growth first: the writes below address tabs by their
+    // current title and fail outright past the last column.
+    const widest = (rows: Cell[][]) => Math.max(1, ...rows.map((row) => row.length));
+    const tabs = await prepareTabs(spreadsheetId, [
+      { title: BAZAR_TAB, rows: bazar.length, columns: widest(bazar) },
+      { title: JOMA_TAB, rows: khawa.length, columns: widest(khawa) },
+    ]);
+    await writeSheetTab(spreadsheetId, BAZAR_TAB, bazar);
+    await writeSheetTab(spreadsheetId, JOMA_TAB, khawa);
     snapshot.synced_gsheet_id = spreadsheetId;
     try {
-      await styleSpreadsheet(spreadsheetId, bazar, khawa);
+      await styleSpreadsheet(tabs, spreadsheetId, bazar, khawa);
     } catch (styleError) {
       // Appearance is not worth losing a good data write over.
       console.warn('mess-sheet: Sheet styling failed, values are still correct', styleError);
