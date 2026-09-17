@@ -40,15 +40,21 @@ const MAX_ROWS = 400;
 const MAX_COLS = 24;
 const MAX_CELL_CHARS = 500;
 
-function sanitizeRows(value: unknown, label: string): string[][] | null {
+type Cell = string | number;
+
+// Numbers stay numbers (not String()d) so the Sheet holds real numeric
+// cells: right-aligned, thousands-separated by the number format below,
+// and summable by whoever opens it — a column of text that looks like
+// money is useless in a spreadsheet.
+function sanitizeRows(value: unknown, label: string): Cell[][] | null {
   if (!Array.isArray(value) || value.length > MAX_ROWS) return null;
-  const rows: string[][] = [];
+  const rows: Cell[][] = [];
   for (const row of value) {
     if (!Array.isArray(row) || row.length > MAX_COLS) return null;
-    const cells: string[] = [];
+    const cells: Cell[] = [];
     for (const cell of row) {
       if (cell === null || cell === undefined) { cells.push(''); continue; }
-      if (typeof cell === 'number' && Number.isFinite(cell)) { cells.push(String(cell)); continue; }
+      if (typeof cell === 'number' && Number.isFinite(cell)) { cells.push(cell); continue; }
       if (typeof cell === 'string') { cells.push(cell.slice(0, MAX_CELL_CHARS)); continue; }
       console.warn(`mess-sheet: rejected non-primitive cell in ${label}`);
       return null;
@@ -89,7 +95,7 @@ async function authenticate(req: Request) {
 
   const memberResult = await admin
     .from('members')
-    .select('id,role')
+    .select('id')
     .eq('user_id', user.id)
     .eq('mess_id', messId)
     .eq('active', true)
@@ -98,7 +104,7 @@ async function authenticate(req: Request) {
   if (memberResult.error) throw memberResult.error;
   if (!memberResult.data) return { error: json({ error: 'Active mess membership required' }, 403) } as const;
 
-  return { admin, messId, role: memberResult.data.role as string } as const;
+  return { admin, messId } as const;
 }
 
 // Requested once, at "Connect Google Drive" time — see mess-oauth-callback.
@@ -122,7 +128,7 @@ async function getGoogleAccessToken(): Promise<string> {
   const connection = await admin.from('app_google_connection').select('refresh_token').eq('id', true).maybeSingle();
   if (connection.error) throw connection.error;
   if (!connection.data) {
-    throw new Error("Google Drive isn't connected yet — an admin needs to connect it once from Settings.");
+    throw new Error("Google Drive isn't connected yet — connect it once from Settings.");
   }
 
   const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -181,7 +187,7 @@ async function createMessSheet(messName: string) {
   return spreadsheetId;
 }
 
-async function writeSheetTab(spreadsheetId: string, tabTitle: string, rows: string[][]) {
+async function writeSheetTab(spreadsheetId: string, tabTitle: string, rows: Cell[][]) {
   const range = encodeURIComponent(tabTitle);
   // Clear first: a month that shrinks (fewer bazar days than last push)
   // must not leave stale rows behind from the previous write.
@@ -195,6 +201,149 @@ async function writeSheetTab(spreadsheetId: string, tabTitle: string, rows: stri
     { method: 'PUT', body: JSON.stringify({ values: rows }) },
   );
   console.log('mess-sheet: wrote tab', tabTitle, JSON.stringify(written));
+}
+
+/* ------------------------------------------------------- Sheet appearance
+   The rows above are only values; without this pass the Sheet opens as
+   naked text on a plain grid. One batchUpdate per sync styles both tabs:
+   banded headers, bordered cells, bold totals, sensible column widths and
+   a thousands separator on every numeric cell. */
+const INK = { red: 0.13, green: 0.20, blue: 0.33 };
+const PAPER_WHITE = { red: 1, green: 1, blue: 1 };
+const HEADER_FILL = { red: 0.13, green: 0.20, blue: 0.33 };
+const TOTAL_FILL = { red: 0.92, green: 0.94, blue: 0.98 };
+const GRID_LINE = { style: 'SOLID', width: 1, color: { red: 0.82, green: 0.85, blue: 0.90 } };
+
+function gridRange(sheetId: number, startRow: number, endRow: number, columns: number) {
+  return { sheetId, startRowIndex: startRow, endRowIndex: endRow, startColumnIndex: 0, endColumnIndex: columns };
+}
+
+function tabStyleRequests(sheetId: number, rows: Cell[][], headerRows: number[], totalRows: number[], firstColumnWidth: number, columnWidth: number) {
+  const rowCount = rows.length;
+  const columns = Math.max(1, ...rows.map((row) => row.length));
+  const requests: unknown[] = [
+    {
+      updateSheetProperties: {
+        properties: { sheetId, gridProperties: { frozenRowCount: headerRows.includes(0) ? 1 : 0 } },
+        fields: 'gridProperties.frozenRowCount',
+      },
+    },
+    {
+      repeatCell: {
+        range: gridRange(sheetId, 0, rowCount, columns),
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: PAPER_WHITE,
+            verticalAlignment: 'MIDDLE',
+            wrapStrategy: 'WRAP',
+            // Text cells ignore a number format, so this is safe to apply
+            // across the whole sheet rather than guessing which columns
+            // hold money in each of the two very different layouts.
+            numberFormat: { type: 'NUMBER', pattern: '#,##0' },
+            textFormat: { bold: false, fontSize: 10, foregroundColor: INK },
+            padding: { top: 4, right: 8, bottom: 4, left: 8 },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,verticalAlignment,wrapStrategy,numberFormat,textFormat,padding)',
+      },
+    },
+    {
+      updateBorders: {
+        range: gridRange(sheetId, 0, rowCount, columns),
+        top: GRID_LINE, bottom: GRID_LINE, left: GRID_LINE, right: GRID_LINE,
+        innerHorizontal: GRID_LINE, innerVertical: GRID_LINE,
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 },
+        properties: { pixelSize: firstColumnWidth },
+        fields: 'pixelSize',
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: 'COLUMNS', startIndex: 1, endIndex: columns },
+        properties: { pixelSize: columnWidth },
+        fields: 'pixelSize',
+      },
+    },
+  ];
+
+  for (const index of headerRows) {
+    requests.push({
+      repeatCell: {
+        range: gridRange(sheetId, index, index + 1, columns),
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: HEADER_FILL,
+            horizontalAlignment: 'CENTER',
+            textFormat: { bold: true, fontSize: 10, foregroundColor: PAPER_WHITE },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,textFormat)',
+      },
+    });
+  }
+
+  for (const index of totalRows) {
+    requests.push({
+      repeatCell: {
+        range: gridRange(sheetId, index, index + 1, columns),
+        cell: { userEnteredFormat: { backgroundColor: TOTAL_FILL, textFormat: { bold: true, fontSize: 10, foregroundColor: INK } } },
+        fields: 'userEnteredFormat(backgroundColor,textFormat)',
+      },
+    });
+  }
+
+  return requests;
+}
+
+const firstCell = (row: Cell[] | undefined) => String(row?.[0] ?? '').trim();
+
+// Khawa & Taka is three stacked blocks rather than one table, so its header
+// and total rows are found by their labels instead of fixed positions.
+const KHAWA_HEADINGS = new Set(['Taka Joma', 'Wifi & Current Bill & Gas', 'Bill', 'Name']);
+
+function khawaRowRoles(rows: Cell[][]) {
+  const headerRows: number[] = [];
+  const totalRows: number[] = [];
+  rows.forEach((row, index) => {
+    const label = firstCell(row);
+    if (KHAWA_HEADINGS.has(label)) headerRows.push(index);
+    else if (label === 'Total') totalRows.push(index);
+  });
+  // The member-name row sits directly under the "Taka Joma" heading.
+  if (firstCell(rows[0]) === 'Taka Joma' && rows.length > 1) headerRows.push(1);
+  return { headerRows, totalRows };
+}
+
+async function styleSpreadsheet(spreadsheetId: string, bazar: Cell[][], khawa: Cell[][]) {
+  const meta = await googleFetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
+  );
+  const idByTitle = new Map<string, number>();
+  for (const sheet of (meta.sheets || []) as { properties: { sheetId: number; title: string } }[]) {
+    idByTitle.set(sheet.properties.title, sheet.properties.sheetId);
+  }
+
+  const requests: unknown[] = [];
+  const bazarId = idByTitle.get('Bazar');
+  if (bazarId !== undefined && bazar.length) {
+    const totals = bazar.map((row, index) => (firstCell(row) === 'Total' ? index : -1)).filter((index) => index >= 0);
+    requests.push(...tabStyleRequests(bazarId, bazar, [0], totals, 78, 150));
+  }
+  const khawaId = idByTitle.get('Khawa & Taka');
+  if (khawaId !== undefined && khawa.length) {
+    const { headerRows, totalRows } = khawaRowRoles(khawa);
+    requests.push(...tabStyleRequests(khawaId, khawa, headerRows, totalRows, 120, 115));
+  }
+  if (!requests.length) return;
+
+  await googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    body: JSON.stringify({ requests }),
+  });
 }
 
 async function getOrCreateSheet(admin: ReturnType<typeof createAdminClient>, messId: string) {
@@ -236,8 +385,8 @@ async function syncSheetData(
   messId: string,
   spreadsheetId: string,
   month: string,
-  bazar: string[][],
-  khawa: string[][],
+  bazar: Cell[][],
+  khawa: Cell[][],
   force = false,
 ) {
   const previous = await admin
@@ -271,6 +420,12 @@ async function syncSheetData(
     await writeSheetTab(spreadsheetId, 'Bazar', bazar);
     await writeSheetTab(spreadsheetId, 'Khawa & Taka', khawa);
     snapshot.synced_gsheet_id = spreadsheetId;
+    try {
+      await styleSpreadsheet(spreadsheetId, bazar, khawa);
+    } catch (styleError) {
+      // Appearance is not worth losing a good data write over.
+      console.warn('mess-sheet: Sheet styling failed, values are still correct', styleError);
+    }
   } catch (sheetError) {
     // Leave synced_gsheet_id untouched so the next call retries the write
     // instead of assuming these rows made it into the Sheet.
@@ -291,10 +446,9 @@ Deno.serve(async (req: Request) => {
 
     const authenticated = await authenticate(req);
     if ('error' in authenticated) return authenticated.error;
-    const { admin, messId, role } = authenticated;
+    const { admin, messId } = authenticated;
 
     if (action === 'oauth-start') {
-      if (role !== 'admin') return json({ error: 'Admin access required' }, 403);
       const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID');
       if (!clientId) return json({ error: 'GOOGLE_OAUTH_CLIENT_ID secret is missing.' }, 500);
       const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/mess-oauth-callback`;
