@@ -212,13 +212,21 @@ async function googleFetch(url: string, init: RequestInit = {}) {
   return data;
 }
 
+// Accepts either the bare folder ID or the full Drive URL someone pastes
+// straight from their browser's address bar — both are common to store here.
+function extractFolderId(raw: string): string {
+  const match = raw.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  return (match ? match[1] : raw).trim();
+}
+
 async function createMessSheet(messName: string) {
-  const folderId = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID');
-  if (!folderId) {
+  const rawFolderId = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID');
+  if (!rawFolderId) {
     throw new Error(
       'Live Google Sheet is not configured yet: GOOGLE_DRIVE_FOLDER_ID secret is missing.',
     );
   }
+  const folderId = extractFolderId(rawFolderId);
 
   // Create the file itself via the Drive API, inside a folder a real Google
   // account owns (see file header) — spreadsheets.create would try to place
