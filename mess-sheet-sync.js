@@ -1,13 +1,19 @@
-/* Live Google Sheet sync for the monthly Bazar / Khawa & Taka workbook.
+/* Live Google Sheet: fully automatic, no setup screen.
  *
- * The math never leaves the browser: this reuses window.mmBuildSheetSnapshotRows
- * (bazar-excel-export.js), the exact same calcMonth()/utilityLedger()-backed
- * rows the .xlsx download and the Dashboard/Settlement pages already show,
- * and just pushes them to the mess-sheet edge function whenever the app has
- * fresh data for the real current month. A tiny Google Apps Script the admin
- * pastes into their own Sheet (Extensions > Apps Script) pulls that snapshot
- * every time the Sheet is opened — no Google account or Drive access on our
- * side, no service account, nothing to authorize beyond the one paste.
+ * Tapping "Download Sheets" asks the mess-sheet edge function to open the
+ * mess's own Google Sheet, creating it the first time (via a Google service
+ * account the function holds credentials for — nobody pastes anything).
+ * From then on, every data change in the app pushes fresh rows to that same
+ * function, which writes them straight into the live Sheet, so the Sheet is
+ * already current by the time anyone opens it.
+ *
+ * A real <a href="https://docs.google.com/..."> click, not window.open() or
+ * the Web Share API, is what actually hands off to an installed Sheets app:
+ * docs.google.com is a Universal/App Link on both iOS and Android, and the
+ * OS — not this page — decides whether to intercept it into the app or fall
+ * back to the browser. Sharing a locally-generated file depends on the OS
+ * matching its MIME type to an installed app in the share sheet, which is
+ * exactly the step that was failing silently on iPhone.
  */
 'use strict';
 (() => {
@@ -24,9 +30,9 @@
     && typeof profile !== 'undefined' && profile?.mess_id;
 
   async function call(body) {
-    const session_ = (await client.auth.getSession()).data.session;
+    const activeSession = (await client.auth.getSession()).data.session;
     const headers = {'Content-Type': 'application/json', apikey: cfg.supabaseAnonKey};
-    if (session_?.access_token) headers.Authorization = `Bearer ${session_.access_token}`;
+    if (activeSession?.access_token) headers.Authorization = `Bearer ${activeSession.access_token}`;
     const response = await fetch(FUNCTION_URL, {method: 'POST', headers, body: JSON.stringify(body)});
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.error) throw new Error(data.error || 'Sheet sync request failed.');
@@ -37,8 +43,8 @@
   function scheduleSnapshotPush() {
     if (!ready()) return;
     // Only the real current month is ever pushed — a member reading a past
-    // month's Bazar page must never overwrite the live snapshot with stale
-    // data. The sheet simply keeps showing the last real push until then.
+    // month's Bazar page must never overwrite the live Sheet with stale
+    // data. The Sheet simply keeps showing the last real push until then.
     if (state.month !== monthKey()) return;
     clearTimeout(pushTimer);
     pushTimer = setTimeout(pushSnapshotNow, 900);
@@ -68,92 +74,35 @@
     return result;
   };
 
-  /* -------------------------------------------------------- settings card */
-  const scriptTemplate = token => `const MESS_SHEET_URL = '${FUNCTION_URL}';
-const MESS_SHEET_TOKEN = '${token}';
-
-function onOpen() { refreshMessSheet(); }
-
-function refreshMessSheet() {
-  const res = UrlFetchApp.fetch(MESS_SHEET_URL, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify({action: 'pull', token: MESS_SHEET_TOKEN}),
-    muteHttpExceptions: true,
-  });
-  const data = JSON.parse(res.getContentText());
-  if (!data.ok) {
-    SpreadsheetApp.getActive().toast(data.error || 'Sync failed', 'Mess Manager', 5);
-    return;
-  }
-  writeSheet('Bazar', data.bazar);
-  writeSheet('Khawa & Taka', data.khawa);
-}
-
-function writeSheet(name, rows) {
-  const ss = SpreadsheetApp.getActive();
-  let sheet = ss.getSheetByName(name);
-  if (!sheet) sheet = ss.insertSheet(name);
-  sheet.clearContents();
-  if (rows && rows.length) sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
-}`;
-
-  function detailsHtml(token) {
-    const script = scriptTemplate(token);
-    return `
-      <ol class="mm-sheet-steps">
-        <li>Google Sheets-এ <b>sheets.new</b> খুলে একটা নতুন blank sheet তৈরি করুন।</li>
-        <li>উপরে <b>Extensions → Apps Script</b>-এ যান।</li>
-        <li>ওখানে যা লেখা আছে সব মুছে নিচের স্ক্রিপ্টটা paste করুন।</li>
-        <li>উপরে ফাংশনের তালিকায় <b>refreshMessSheet</b> বেছে ▶ চাপুন। প্রথমবার permission চাইবে — Allow করুন।</li>
-        <li>ব্যস — এরপর এই Sheet যতবার খুলবেন, প্রতিবার automatic আপডেট হয়ে যাবে।</li>
-      </ol>
-      <textarea class="mm-sheet-script" id="liveSheetScript" readonly spellcheck="false">${esc(script)}</textarea>
-      <div class="actions gap-top"><button class="btn primary" type="button" id="liveSheetCopy">Copy script</button></div>
-      <p class="mm-sheet-note">এই স্ক্রিপ্টে আপনার মেসের একটা গোপন টোকেন আছে — শুধু বিশ্বস্ত জায়গায় পেস্ট করুন।</p>`;
-  }
-
-  async function openSetup(button) {
-    const old = button.textContent;
+  /* --------------------------------------------------------- open the sheet
+     get-or-create, then a real anchor click — see file header for why. */
+  async function openLiveSheet(button) {
+    const old = button.innerHTML;
     button.disabled = true;
-    button.textContent = 'Preparing…';
+    button.innerHTML = '<span class="mm-sheet-spin" aria-hidden="true"></span><span>Opening…</span>';
     try {
-      const data = await call({action: 'get-token'});
-      const panel = document.getElementById('liveSheetDetails');
-      if (panel) {
-        panel.innerHTML = detailsHtml(data.token);
-        panel.classList.remove('hidden');
-        document.getElementById('liveSheetCopy').onclick = async e => {
-          // Capture the button before the first await: event.currentTarget
-          // is only live for the synchronous part of dispatch and the
-          // browser resets it to null the moment this handler yields.
-          const b = e.currentTarget, was = b.textContent;
-          const area = document.getElementById('liveSheetScript');
-          try {
-            await navigator.clipboard.writeText(area.value);
-          } catch (_) {
-            area.select();
-            document.execCommand('copy');
-          }
-          b.textContent = 'Copied ✓';
-          setTimeout(() => { b.textContent = was; }, 1800);
-        };
-      }
-      button.textContent = 'Set up again';
-      void pushSnapshotNow(); // seed a fresh snapshot right away, not on the next data change
+      const data = await call({action: 'open'});
+      const link = document.createElement('a');
+      link.href = data.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      void pushSnapshotNow(); // make sure a freshly-created Sheet isn't empty on first open
     } catch (error) {
-      if (typeof notify === 'function') notify(error?.message || 'Live sheet setup ব্যর্থ হয়েছে।');
-      button.textContent = old;
+      if (typeof notify === 'function') notify(error?.message || 'Sheet খোলা যায়নি। আবার চেষ্টা করুন।');
     } finally {
       button.disabled = false;
+      button.innerHTML = old;
     }
   }
 
   const baseSettings = window.settings;
   window.settings = function settingsWithLiveSheet(container) {
     const result = typeof baseSettings === 'function' ? baseSettings(container) : undefined;
-    const button = document.getElementById('liveSheetSetup');
-    if (button) button.onclick = () => openSetup(button);
+    const button = document.getElementById('exportMessData');
+    if (button) button.onclick = () => openLiveSheet(button);
     return result;
   };
 })();
