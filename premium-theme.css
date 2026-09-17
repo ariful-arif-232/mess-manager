@@ -63,20 +63,37 @@ html[data-skin="premium"] body :is(.eyebrow,.kpi .label,.member-identity small,.
 html[data-skin="premium"] body .brand-mark{background:var(--mm-p-accent)!important;color:#fff!important}
 html[data-skin="premium"] body :is(.avatar,.chat-avatar){background:linear-gradient(135deg,#ffe1b8,#ffd0c2)!important;color:#b9581f!important}
 
-/* --- navigation: deep plum band so the cream/white content pops --------- */
+/* --- navigation: the theme's own warm ground, not a separate dark band --
+   The nav now uses the same cream family as the page behind it — a shade
+   creamier than the cards so it still reads as its own surface — instead of
+   a plum band that fought the rest of the palette. .sidebar/.mobilebar set
+   color:#fff and rgba(255,255,255,*) chrome for a dark bg by default, so
+   every child (brand, nav labels, the account footer) needs its own
+   light-surface colour here too. */
 html[data-skin="premium"] body .sidebar{
-  background:linear-gradient(180deg,#3e2e68 0%,#2b2150 55%,#1c1638 100%)!important;
-  border-right:1px solid rgba(255,158,66,.2)!important;
+  background:linear-gradient(180deg,#fff3df 0%,#ffe9c9 55%,#ffe0bb 100%)!important;
+  border-right:1px solid rgba(255,158,66,.3)!important;
+  color:var(--mm-p-ink)!important;
 }
 html[data-skin="premium"] body .mobilebar{
-  background:linear-gradient(135deg,#4a3777,#2b2150 60%,#1c1638)!important;
-  border:1px solid rgba(255,158,66,.24)!important;
-  box-shadow:0 18px 40px rgba(28,22,56,.4)!important;
+  background:linear-gradient(160deg,#fff8ee 0%,#ffedd3 100%)!important;
+  border:1px solid rgba(255,158,66,.32)!important;
+  box-shadow:0 18px 40px rgba(255,130,60,.24)!important;
 }
-html[data-skin="premium"] body :is(.nav button,.mobilebar button){color:#c9bdf0!important}
+html[data-skin="premium"] body :is(.brand strong,.sidebar-user b){color:var(--mm-p-ink)!important}
+html[data-skin="premium"] body :is(.brand small,.sidebar-user small){color:var(--mm-p-muted)!important}
+html[data-skin="premium"] body :is(.nav button,.mobilebar button){color:#8a6a4a!important}
+html[data-skin="premium"] body :is(.nav button:hover){background:rgba(255,158,66,.14)!important;color:#5b4636!important}
 html[data-skin="premium"] body :is(.nav button.active,.mobilebar button.active){
   background:var(--mm-p-accent)!important;color:#fff!important;
+  box-shadow:0 8px 18px rgba(255,111,75,.32)!important;
 }
+/* #logout (.btn, not .primary) already gets the violet secondary treatment
+   from the accents block below — that rule is more specific than anything
+   written here, so it wins on its own without restating it. Only the
+   download link needs its own override: it isn't a .btn, so nothing else
+   in this file reaches it. */
+html[data-skin="premium"] body .sidebar-foot .mm-apk-side{background:rgba(139,127,240,.14)!important;color:#5b4c9e!important;border:1px solid rgba(139,127,240,.26)!important}
 
 /* --- accents -------------------------------------------------------------- */
 html[data-skin="premium"] body :is(.btn.primary,.auth-main-btn,.settings-hero){
