@@ -100,6 +100,21 @@ else
   FAIL=1
 fi
 
+
+# ---------------------------------------------------------------------------
+# 5. Regression guard: without this permission Android 13+ never shows the
+#    notification prompt at all, and every web push the TWA delegates to
+#    this app (chat messages) is silently dropped at the OS level — this
+#    exact bug shipped once already with no build-time signal.
+# ---------------------------------------------------------------------------
+echo
+if echo "$MANIFEST" | grep -q "android.permission.POST_NOTIFICATIONS"; then
+  echo "PASS: POST_NOTIFICATIONS permission declared"
+else
+  echo "::error::android.permission.POST_NOTIFICATIONS is not declared — notifications will silently never work on Android 13+"
+  FAIL=1
+fi
+
 echo
 [ "$FAIL" = "0" ] || { echo "APK VERIFICATION FAILED"; exit 1; }
 echo "APK VERIFICATION PASSED"

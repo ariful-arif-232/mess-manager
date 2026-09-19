@@ -3,6 +3,14 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Without this, Android 13+ (API 33+, and this app targets 36) never
+         shows the "Allow notifications?" prompt at all, and any web push the
+         TWA delegates to this app (chat messages) is silently dropped at the
+         OS level — Chrome's own site-level notification permission is a
+         separate thing from this app-level runtime permission. Declaring it
+         here is enough: androidbrowserhelper's LauncherActivity (2.5.0+,
+         this app uses 2.7.3) requests it automatically at launch. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
