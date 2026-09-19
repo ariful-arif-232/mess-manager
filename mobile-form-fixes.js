@@ -22,8 +22,8 @@
     const m=db.members.find(x=>x.id===memberId);if(!m?.email)throw new Error('Selected member-এর email নেই।');
     const pretty=new Date(`${date}T00:00:00`).toLocaleDateString('en-BD',{day:'numeric',month:'long',year:'numeric'});
     const lines=String(list||'').split(/\n|,/).map(x=>x.trim()).filter(Boolean);
-    const message=`🛒 BAZAR SCHEDULE\n\nHello ${m.name},\n\nআপনার বাজারের তারিখ: ${pretty}\n\nযে বাজারগুলো লাগবে:\n${lines.map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\nসময়মতো বাজার সম্পন্ন করার অনুরোধ রইল।\n\n— ${mess.name}\nMess Manager`;
-    const r=await client.functions.invoke('mess-notify',{body:{member_id:memberId,subject:`${mess.name}: Bazar list for ${pretty}`,message}});if(r.error)throw r.error;if(r.data?.error)throw new Error(r.data.error);
+    const message=`আপনার বাজারের তারিখ: ${pretty}\n\nযে বাজারগুলো লাগবে:\n${lines.map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\nসময়মতো বাজার সম্পন্ন করার অনুরোধ রইল।`;
+    const r=await client.functions.invoke('mess-notify',{body:{member_id:memberId,type:'schedule',subject:`Bazar List — ${pretty}`,message}});if(r.error)throw r.error;if(r.data?.error)throw new Error(r.data.error);
   }
 
   window.scheduleModal=function scheduleModalPro(id){
