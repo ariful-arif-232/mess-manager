@@ -56,11 +56,32 @@
     win.document.close();
   }
 
+  function statementSummaryText(x) {
+    return `${mess.name}\n${state.month} Monthly Statement\n\nMember: ${x.member.name}\nMeals: ${x.units}\nDeposit: ${money(x.deposit)}\nFood: ${money(x.food)}\nUtility: ${money(x.util)}\nTotal bill: ${money(x.total)}\n${x.balance >= 0 ? 'Advance' : 'Due'}: ${money(Math.abs(x.balance))}`;
+  }
+
   async function emailStatement(x) {
-    const message = `${mess.name}\n${state.month} Monthly Statement\n\nMember: ${x.member.name}\nMeals: ${x.units}\nDeposit: ${money(x.deposit)}\nFood: ${money(x.food)}\nUtility: ${money(x.util)}\nTotal bill: ${money(x.total)}\n${x.balance >= 0 ? 'Advance' : 'Due'}: ${money(Math.abs(x.balance))}`;
+    const message = statementSummaryText(x);
     const result = await client.functions.invoke('mess-notify', { body: { member_id: x.member.id, type: 'statement', subject: `${state.month} Monthly Statement`, message } });
     if (result.error) throw result.error;
     if (result.data?.error) throw new Error(result.data.error);
+  }
+
+  // Any member can share or self-email their own statement — no admin
+  // permission needed, unlike Notice/Email which act on someone else.
+  async function shareStatement(x) {
+    const text = statementSummaryText(x);
+    if (navigator.share) {
+      try { await navigator.share({ title: `${state.month} Statement`, text }); }
+      catch (error) { if (error?.name !== 'AbortError') notify(friendlyError(error)); }
+      return;
+    }
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      notify('Statement summary copied.', 'success');
+      return;
+    }
+    notify('Sharing is not supported on this device.');
   }
 
   function openNotice(x) {
@@ -79,11 +100,28 @@
     };
   }
 
+  // Admin sees Notice/Email — actions taken on someone else, so they stay
+  // admin-only. On the viewer's own card, those two slots become Share and
+  // Email-to-me instead: no special permission needed since both only ever
+  // touch the viewer's own data. Anyone else's card (viewed by a non-admin)
+  // just gets PDF.
+  function reportActionsHtml(x) {
+    if (profile.role === 'admin') {
+      return `<button class="btn" data-notice="${x.member.id}">Notice</button><button class="btn primary" data-email="${x.member.id}" ${x.member.email?'':'disabled'}>Email</button>`;
+    }
+    if (String(x.member.id) === String(profile.id)) {
+      return `<button class="btn" data-share="${x.member.id}">Share</button><button class="btn primary" data-email-self="${x.member.id}" ${x.member.email?'':'disabled'}>Email me</button>`;
+    }
+    return '';
+  }
+
   window.reports = function reportsV3(c) {
     const calc = calcMonth();
-    c.innerHTML = `<div class="section-head report-page-head v3-report-head"><div><span class="eyebrow">Monthly accounts</span><h2>${esc(state.month)} Statements</h2></div><div class="report-count"><span>Members</span><b>${calc.length}</b></div></div><div class="report-list clean-report-list">${calc.map(x => `<article class="report-card clean-report-card v3-report-card"><div class="report-person">${avatarHtml(x.member)}<div><h3>${esc(x.member.name)}</h3>${x.member.email?`<span>${esc(x.member.email)}</span>`:''}</div>${x.balance>=0?`<span class="pill advance">Advance ${money(x.balance)}</span>`:`<span class="pill due">Due ${money(-x.balance)}</span>`}</div><div class="report-stat-grid"><div><span>Deposit</span><b>${money(x.deposit)}</b></div><div><span>Total bill</span><b>${money(x.total)}</b></div><div><span>Meals</span><b>${x.units}</b></div></div><div class="report-actions report-actions-pro${profile.role==='admin'?'':' solo'}"><button class="btn" data-pdf="${x.member.id}">PDF</button>${profile.role==='admin'?`<button class="btn" data-notice="${x.member.id}">Notice</button><button class="btn primary" data-email="${x.member.id}" ${x.member.email?'':'disabled'}>Email</button>`:''}</div></article>`).join('')}</div>`;
+    c.innerHTML = `<div class="section-head report-page-head v3-report-head"><div><span class="eyebrow">Monthly accounts</span><h2>${esc(state.month)} Statements</h2></div><div class="report-count"><span>Members</span><b>${calc.length}</b></div></div><div class="report-list clean-report-list">${calc.map(x => { const actions = reportActionsHtml(x); return `<article class="report-card clean-report-card v3-report-card"><div class="report-person">${avatarHtml(x.member)}<div><h3>${esc(x.member.name)}</h3>${x.member.email?`<span>${esc(x.member.email)}</span>`:''}</div>${x.balance>=0?`<span class="pill advance">Advance ${money(x.balance)}</span>`:`<span class="pill due">Due ${money(-x.balance)}</span>`}</div><div class="report-stat-grid"><div><span>Deposit</span><b>${money(x.deposit)}</b></div><div><span>Total bill</span><b>${money(x.total)}</b></div><div><span>Meals</span><b>${x.units}</b></div></div><div class="report-actions report-actions-pro${actions?'':' solo'}"><button class="btn" data-pdf="${x.member.id}">PDF</button>${actions}</div></article>`; }).join('')}</div>`;
     c.querySelectorAll('[data-pdf]').forEach(b => b.onclick = () => openProfessionalInvoice(calc.find(x => x.member.id === b.dataset.pdf)));
     c.querySelectorAll('[data-email]').forEach(b => b.onclick = () => run(() => emailStatement(calc.find(x => x.member.id === b.dataset.email)), 'Statement emailed.'));
     c.querySelectorAll('[data-notice]').forEach(b => b.onclick = () => openNotice(calc.find(x => x.member.id === b.dataset.notice)));
+    c.querySelectorAll('[data-share]').forEach(b => b.onclick = () => shareStatement(calc.find(x => x.member.id === b.dataset.share)));
+    c.querySelectorAll('[data-email-self]').forEach(b => b.onclick = () => run(() => emailStatement(calc.find(x => x.member.id === b.dataset.emailSelf)), 'Statement emailed to you.'));
   };
 })();

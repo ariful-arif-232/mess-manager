@@ -83,7 +83,7 @@ Deno.serve(async (req: Request) => {
       .eq('user_id', user.id)
       .eq('active', true)
       .single();
-    if (meErr || !me || me.role !== 'admin') return json({ error: 'Admin access required' }, 403);
+    if (meErr || !me) return json({ error: 'Unauthorized' }, 401);
 
     const body = await req.json();
     const memberId = String(body.member_id || '');
@@ -91,6 +91,12 @@ Deno.serve(async (req: Request) => {
     const subject = String(body.subject || 'Mess Manager notice').trim().slice(0, 160);
     const message = String(body.message || '').trim().slice(0, 5000);
     if (!memberId || !message) return json({ error: 'Member and message required' }, 400);
+
+    // Any member can email a copy of their OWN monthly statement to
+    // themselves; every other notice type (and any other member's
+    // statement) stays admin-only.
+    const isSelfStatement = type === 'statement' && memberId === me.id;
+    if (me.role !== 'admin' && !isSelfStatement) return json({ error: 'Admin access required' }, 403);
 
     const { data: member, error: memberErr } = await admin.from('members')
       .select('id,name,email')
