@@ -14,7 +14,6 @@
     const day=String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${day}`;
   };
-  const currentMonthStart=()=>`${localToday().slice(0,7)}-01`;
   const nextDate=value=>{
     const d=new Date(`${value}T00:00:00`);
     if(Number.isNaN(d.getTime()))return value;
@@ -25,9 +24,8 @@
     return `${y}-${m}-${day}`;
   };
   const cutoffMinFor=member=>{
-    const monthStart=currentMonthStart();
     const joined=String(member?.join_date||'');
-    return joined&&joined>monthStart?joined:monthStart;
+    return joined||'2000-01-01';
   };
   const unitsOf=row=>Number(row?.units||1);
   const sum=(rows,fn)=>rows.reduce((total,row)=>total+Number(fn?fn(row):row?.amount||0),0);
@@ -204,23 +202,40 @@
     };
   }
 
-  async function activateMember(member,button){
-    if(state.busy)return;
-    const old=button.textContent;
-    button.disabled=true;
-    button.textContent='Activating…';
-    state.busy=true;
-    try{
-      const result=await client.rpc('activate_mess_member',{p_member_id:member.id});
-      assertResult(result);
-      await loadData();
-      render();
-      notify(`${member.name} activated. Meal প্রয়োজনমতো ON করুন.`,'success');
-    }catch(error){
-      notify(friendlyError(error));
-      button.disabled=false;
-      button.textContent=old;
-    }finally{state.busy=false;}
+  function activateConfirm(member){
+    modal(`<div class="modal-title member-state-modal-title"><div><span class="eyebrow">Activate member</span><h2>Activate ${esc(member.name)}?</h2></div><button class="icon-btn" data-close aria-label="Close">×</button></div>
+      <div class="member-state-confirm">
+        <div class="member-state-person">${avatar(member)}<div><b>${esc(member.name)}</b><span>Currently inactive</span></div></div>
+        <div class="member-state-note"><span class="member-state-note-icon" aria-hidden="true">!</span><div><b class="member-state-note-title">What will happen</b>
+          <ul class="member-state-points">
+            <li>${esc(member.name)} will show in Members Summary again from this month onward.</li>
+            <li>Meal stays OFF until you turn it on for them.</li>
+            <li>Earlier food cutoff history stays saved.</li>
+          </ul>
+        </div></div>
+        <div class="member-state-actions"><button type="button" class="btn" data-state-cancel>Cancel</button><button type="button" class="btn member-deactivate-confirm" data-state-confirm>Activate</button></div>
+      </div>`);
+
+    $('[data-close]').onclick=closeModal;
+    $('[data-state-cancel]').onclick=closeModal;
+    $('[data-state-confirm]').onclick=async event=>{
+      const button=event.currentTarget;
+      const old=button.textContent;
+      button.disabled=true;
+      button.textContent='Activating…';
+      try{
+        const result=await client.rpc('activate_mess_member',{p_member_id:member.id});
+        assertResult(result);
+        closeModal();
+        await loadData();
+        render();
+        notify(`${member.name} activated. Meal প্রয়োজনমতো ON করুন.`,'success');
+      }catch(error){
+        notify(friendlyError(error));
+        button.disabled=false;
+        button.textContent=old;
+      }
+    };
   }
 
   /* ---------------------------------------------------- member directory
@@ -279,7 +294,7 @@
     c.querySelectorAll('[data-toggle-member]').forEach(b=>b.onclick=()=>{
       const m=db.members.find(x=>String(x.id)===String(b.dataset.toggleMember));
       if(!m)return;
-      if(m.active)deactivateConfirm(m);else activateMember(m,b);
+      if(m.active)deactivateConfirm(m);else activateConfirm(m);
     });
   };
   try{members=window.members;}catch(_){/* normal window binding is enough */}

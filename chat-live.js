@@ -334,7 +334,7 @@
            an empty form and the browser popped its own "Fill out this field"
            bubble over the chat. send() already ignores an empty body. -->
       <form class="chat-compose chat-compose-pro chat-compose-live" id="chatForm" novalidate>
-        <textarea name="body" rows="1" maxlength="2000" placeholder="Message লিখুন…" aria-label="Message"></textarea>
+        <textarea name="body" rows="1" maxlength="2000" placeholder="Write a message…" aria-label="Message"></textarea>
         <button class="btn primary" aria-label="Send">Send</button>
       </form>
     </div>`;
