@@ -22,8 +22,8 @@ function shell(eyebrow: string, messName: string, bodyHtml: string) {
 <table role="presentation" width="600" style="max-width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 10px 34px rgba(20,30,55,.10);">
   <tr><td style="background:linear-gradient(135deg,#1c3a86,#2a63d6);padding:26px 30px;">
     <table role="presentation" width="100%"><tr>
-      <td style="width:46px;vertical-align:top;"><div style="width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.18);color:#fff;font-weight:800;font-size:19px;text-align:center;line-height:44px;font-family:Arial,sans-serif;">M</div></td>
-      <td style="padding-left:14px;color:#fff;">
+      <td style="width:56px;vertical-align:top;"><table role="presentation" width="52" height="52" style="background:#fff8ec;border-radius:15px;box-shadow:0 6px 16px rgba(10,20,50,.22);"><tr><td align="center" valign="middle" style="width:52px;height:52px;"><img src="https://mess-manager.app/icons/icon-512.png" width="34" height="34" alt="Mess Manager" style="display:block;border-radius:9px;"></td></tr></table></td>
+      <td style="padding-left:16px;color:#fff;">
         <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.78;font-weight:700;">${clean(eyebrow)}</div>
         <div style="font-size:19px;font-weight:800;margin-top:2px;">${clean(messName)}</div>
       </td>
@@ -39,6 +39,7 @@ function shell(eyebrow: string, messName: string, bodyHtml: string) {
 function eyebrowFor(type: string) {
   if (type === 'statement') return 'Monthly Statement';
   if (type === 'notice') return 'Payment Reminder';
+  if (type === 'schedule') return 'Bazar Schedule';
   return 'Notice';
 }
 

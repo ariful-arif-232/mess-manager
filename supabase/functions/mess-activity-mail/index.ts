@@ -28,8 +28,8 @@ function shell(eyebrow: string, messName: string, bodyHtml: string) {
 <table role="presentation" width="600" style="max-width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 10px 34px rgba(20,30,55,.10);">
   <tr><td style="background:linear-gradient(135deg,#1c3a86,#2a63d6);padding:26px 30px;">
     <table role="presentation" width="100%"><tr>
-      <td style="width:46px;vertical-align:top;"><div style="width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.18);color:#fff;font-weight:800;font-size:19px;text-align:center;line-height:44px;font-family:Arial,sans-serif;">M</div></td>
-      <td style="padding-left:14px;color:#fff;">
+      <td style="width:56px;vertical-align:top;"><table role="presentation" width="52" height="52" style="background:#fff8ec;border-radius:15px;box-shadow:0 6px 16px rgba(10,20,50,.22);"><tr><td align="center" valign="middle" style="width:52px;height:52px;"><img src="https://mess-manager.app/icons/icon-512.png" width="34" height="34" alt="Mess Manager" style="display:block;border-radius:9px;"></td></tr></table></td>
+      <td style="padding-left:16px;color:#fff;">
         <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.78;font-weight:700;">${esc(eyebrow)}</div>
         <div style="font-size:19px;font-weight:800;margin-top:2px;">${esc(messName)}</div>
       </td>
@@ -189,17 +189,17 @@ Deno.serve(async (req: Request) => {
         </tr>`;
       }).join('');
 
-      const bodyHtml = `<p style="margin:0 0 6px;color:#68778f;font-size:13px;">${esc(entry.data.entry_date)} &middot; Bought by <b style="color:#172033;">${esc(buyer.data?.name || '—')}</b></p>
-        <h2 style="margin:6px 0 18px;font-size:19px;">New bazar entry added</h2>
+      const bodyHtml = `<p style="margin:0 0 4px;color:#68778f;font-size:13px;">${esc(entry.data.entry_date)}</p>
+        <p style="margin:0 0 18px;font-size:15px;">Bought by <b style="color:#172033;">${esc(buyer.data?.name || '—')}</b> — here's what was picked up:</p>
         <table role="presentation" width="100%" style="border-collapse:collapse;">
           ${itemRowsHtml}
           <tr><td style="padding:12px 0 0;font-weight:800;font-size:15px;">Total</td><td style="padding:12px 0 0;text-align:right;font-weight:800;font-size:17px;color:#1c3a86;">${money(total)}</td></tr>
         </table>`;
 
       const members = await activeMembersWithEmail(admin, messId);
-      const subject = `${messName}: New bazar entry — ${money(total)}`;
+      const subject = `New Bazar Entry — ${money(total)}`;
       const html = shell('New Bazar Entry', messName, bodyHtml);
-      const text = `${messName}: new bazar entry (${entry.data.entry_date}) by ${buyer.data?.name || ''} — total ${money(total)}`;
+      const text = `New bazar entry (${entry.data.entry_date}) by ${buyer.data?.name || ''} — total ${money(total)}`;
       await sendToMembers(resendKey, members, subject, html, text);
       return json({ ok: true, sent: members.length });
     }
@@ -220,17 +220,16 @@ Deno.serve(async (req: Request) => {
       if (member.error) throw member.error;
       if (!member.data?.email) return json({ ok: true, sent: 0 });
 
-      const bodyHtml = `<p style="margin:0 0 6px;color:#68778f;font-size:13px;">${esc(deposit.data.deposit_date)}</p>
-        <h2 style="margin:6px 0 18px;font-size:19px;">Deposit received</h2>
-        <p style="margin:0 0 18px;">Hi ${esc(member.data.name)}, a deposit has been recorded for you.</p>
+      const bodyHtml = `<p style="margin:0 0 4px;color:#68778f;font-size:13px;">${esc(deposit.data.deposit_date)}</p>
+        <p style="margin:0 0 18px;font-size:15px;">Hi ${esc(member.data.name)}, a deposit has been recorded for you.</p>
         <table role="presentation" width="100%" style="border-collapse:collapse;">
           ${statRow('Purpose', esc(deposit.data.purpose || 'Bazar'))}
           ${statRow('Amount', money(deposit.data.amount), { strong: true, accent: '#0f8f5f' })}
         </table>`;
 
-      const subject = `${messName}: Deposit received — ${money(deposit.data.amount)}`;
+      const subject = `Deposit Received — ${money(deposit.data.amount)}`;
       const html = shell('Deposit Received', messName, bodyHtml);
-      const text = `${messName}: deposit of ${money(deposit.data.amount)} recorded for ${member.data.name} (${deposit.data.purpose || 'Bazar'})`;
+      const text = `Deposit of ${money(deposit.data.amount)} recorded for ${member.data.name} (${deposit.data.purpose || 'Bazar'})`;
       await sendToMembers(resendKey, [{ email: member.data.email }], subject, html, text);
       return json({ ok: true, sent: 1 });
     }
@@ -267,18 +266,18 @@ Deno.serve(async (req: Request) => {
       const perHead = fixed ? Number(bill.data.amount || 0) : Number(bill.data.amount || 0) / memberIds.length;
       const total = fixed ? perHead * memberIds.length : Number(bill.data.amount || 0);
       const recipients = (membersResult.data || []).filter((member) => member.email);
-      const subject = `${messName}: New ${bill.data.bill_type} bill — ${money(total)}`;
+      const subject = `New ${bill.data.bill_type} Bill — ${money(total)}`;
 
       await Promise.all(recipients.map((member) => {
-        const bodyHtml = `<p style="margin:0 0 6px;color:#68778f;font-size:13px;">${esc(bill.data.bill_date)} &middot; ${esc(bill.data.bill_type)}</p>
-          <h2 style="margin:6px 0 18px;font-size:19px;">New utility bill added</h2>
+        const bodyHtml = `<p style="margin:0 0 4px;color:#68778f;font-size:13px;">${esc(bill.data.bill_date)}</p>
+          <p style="margin:0 0 18px;font-size:15px;">A new <b style="color:#172033;">${esc(bill.data.bill_type)}</b> bill has been added.</p>
           <table role="presentation" width="100%" style="border-collapse:collapse;">
             ${statRow('Total bill', money(total))}
             ${statRow('Shared by', `${memberIds.length} member${memberIds.length === 1 ? '' : 's'}`)}
             ${statRow('Your share', money(perHead), { strong: true, accent: '#1c3a86' })}
           </table>`;
         const html = shell('Utility Bill', messName, bodyHtml);
-        const text = `${messName}: new ${bill.data.bill_type} bill, total ${money(total)}, your share ${money(perHead)}`;
+        const text = `New ${bill.data.bill_type} bill, total ${money(total)}, your share ${money(perHead)}`;
         return sendWithResend(resendKey, {
           from: 'Mess Manager <notice@mess-manager.app>',
           to: [member.email],
