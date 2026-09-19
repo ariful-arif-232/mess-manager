@@ -1,9 +1,10 @@
 // Every mess's own, auto-created, auto-updating Google Sheet.
 //
-// "Download Sheets" (and every data change afterwards) never asks anyone to
-// create a Sheet or paste a script: the first time a mess needs one, this
-// function creates it itself, using whichever real Google account an admin
-// connected once in Settings.
+// Nobody ever creates a Sheet or pastes a script, and nobody has to press
+// anything to get one: the first data change that needs a Sheet creates it,
+// using whichever real Google account an admin connected once in Settings,
+// and every change after that writes straight into it. "Download Sheets"
+// only opens whatever is already there and current.
 //
 // Every Sheet is created and owned by a real Google account (whoever
 // clicked "Connect Google Drive" in Settings once — see
@@ -95,7 +96,7 @@ async function authenticate(req: Request) {
 
   const memberResult = await admin
     .from('members')
-    .select('id')
+    .select('id,role')
     .eq('user_id', user.id)
     .eq('mess_id', messId)
     .eq('active', true)
@@ -104,7 +105,7 @@ async function authenticate(req: Request) {
   if (memberResult.error) throw memberResult.error;
   if (!memberResult.data) return { error: json({ error: 'Active mess membership required' }, 403) } as const;
 
-  return { admin, messId } as const;
+  return { admin, messId, role: String(memberResult.data.role || 'member') } as const;
 }
 
 const BAZAR_TAB = 'Bazar Cost';
@@ -156,6 +157,22 @@ async function getGoogleAccessToken(): Promise<string> {
   return cachedToken.token;
 }
 
+class GoogleApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+// The Sheet this mess has on record cannot be written to any more. Google
+// answers 403 once the connected account loses access to it (Google Drive
+// was reconnected as a different account, or the same account's access was
+// removed and re-granted, which drops every per-file drive.file grant made
+// under the old one) and 404 once the file itself is gone.
+const isSheetAccessError = (error: unknown) =>
+  error instanceof GoogleApiError && (error.status === 403 || error.status === 404);
+
 async function googleFetch(url: string, init: RequestInit = {}) {
   const token = await getGoogleAccessToken();
   const response = await fetch(url, {
@@ -166,14 +183,7 @@ async function googleFetch(url: string, init: RequestInit = {}) {
   if (!response.ok) {
     console.error('Google API call failed', url, response.status, data);
     const raw = (data as { error?: { message?: string } })?.error?.message || 'Google Sheets API request failed.';
-    // A 403 here almost always means the currently connected Google account
-    // (Settings → Connect Google Drive) is not the one that created this
-    // mess's Sheet, so it has no edit access to it — surfaced clearly
-    // instead of the generic Google wording, which gave no hint of that.
-    const message = response.status === 403
-      ? `Google denied this write (${raw}). The connected Google account may not have edit access to this Sheet — reconnect Google Drive from Settings.`
-      : raw;
-    throw new Error(message);
+    throw new GoogleApiError(raw, response.status);
   }
   return data;
 }
@@ -439,18 +449,74 @@ async function styleSpreadsheet(idByTitle: Map<string, number>, spreadsheetId: s
   }
 }
 
-async function getOrCreateSheet(admin: ReturnType<typeof createAdminClient>, messId: string) {
-  const mess = await admin.from('messes').select('id,name,gsheet_id').eq('id', messId).single();
+// How long a create claim is honoured before another caller may take it:
+// long enough for Google to answer, short enough that a function killed
+// mid-create does not block the next sync for long.
+const CLAIM_TIMEOUT_MS = 90_000;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// The mess's Sheet id, creating the Sheet when there is none yet.
+//
+// Every data change asks for this, from every open browser, so creation is
+// claimed first (see the gsheet_claim_at migration): exactly one caller
+// creates, the rest return null and pick the id up on their next sync
+// rather than each leaving an orphaned Sheet in the connected Drive.
+// `wait` is for the one path that has nothing useful to return without an
+// id — a deliberate "Download Sheets" tap — and simply waits out whoever
+// else is mid-create.
+async function ensureSheet(
+  admin: ReturnType<typeof createAdminClient>,
+  messId: string,
+  { create = false, wait = false }: { create?: boolean; wait?: boolean } = {},
+): Promise<string | null> {
+  const mess = await admin.from('messes').select('id,name,gsheet_id,gsheet_claim_at').eq('id', messId).single();
   if (mess.error) throw mess.error;
   if (mess.data.gsheet_id) return mess.data.gsheet_id as string;
+  if (!create) return null;
 
-  const spreadsheetId = await createMessSheet(mess.data.name);
+  // Compare-and-swap on the claim just read: callers that saw the same free
+  // (or the same long-expired) claim all try, and only one update matches.
+  const heldClaim = mess.data.gsheet_claim_at as string | null;
+  const claimIsFree = !heldClaim || Date.parse(heldClaim) < Date.now() - CLAIM_TIMEOUT_MS;
+  let claimed = false;
+  if (claimIsFree) {
+    const claimQuery = admin
+      .from('messes')
+      .update({ gsheet_claim_at: new Date().toISOString() })
+      .eq('id', messId)
+      .is('gsheet_id', null);
+    const claim = await (heldClaim ? claimQuery.eq('gsheet_claim_at', heldClaim) : claimQuery.is('gsheet_claim_at', null))
+      .select('id')
+      .maybeSingle();
+    if (claim.error) throw claim.error;
+    claimed = !!claim.data;
+  }
 
-  // Someone else may have created one concurrently; keep whichever the
-  // database already recorded rather than leaking a second orphaned Sheet.
+  if (!claimed) {
+    if (!wait) return null;
+    // Someone else is creating it right now; their id lands in a moment.
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      await sleep(1_200);
+      const polled = await admin.from('messes').select('gsheet_id').eq('id', messId).single();
+      if (polled.error) throw polled.error;
+      if (polled.data.gsheet_id) return polled.data.gsheet_id as string;
+    }
+    return null;
+  }
+
+  let spreadsheetId: string;
+  try {
+    spreadsheetId = await createMessSheet(mess.data.name as string);
+  } catch (error) {
+    // Release the claim so the next sync retries straight away instead of
+    // waiting out the whole timeout.
+    await admin.from('messes').update({ gsheet_claim_at: null }).eq('id', messId).is('gsheet_id', null);
+    throw error;
+  }
+
   const saved = await admin
     .from('messes')
-    .update({ gsheet_id: spreadsheetId })
+    .update({ gsheet_id: spreadsheetId, gsheet_claim_at: null })
     .eq('id', messId)
     .is('gsheet_id', null)
     .select('gsheet_id')
@@ -527,20 +593,80 @@ async function syncSheetData(
       console.warn('mess-sheet: Sheet styling failed, values are still correct', styleError);
     }
   } catch (sheetError) {
-    // Leave synced_gsheet_id untouched so the next call retries the write
-    // instead of assuming these rows made it into the Sheet.
+    // The rows are still kept (nothing is lost, and the next sync retries
+    // from them), but synced_gsheet_id stays untouched so this write is
+    // never mistaken for one that landed. What to do about the failure —
+    // rebuild the Sheet, tell the caller, or quietly try again next time —
+    // is syncMessSheet's decision, not this function's.
     console.warn('mess-sheet: live Sheet write failed, snapshot still saved', sheetError);
     const upserted = await admin.from('mess_sheet_snapshots').upsert(snapshot, { onConflict: 'mess_id' });
-    if (upserted.error) throw upserted.error;
-    // A background 'push' retries silently on the next data change, but
-    // 'open' (force) is a deliberate "Download Sheets" tap — that one must
-    // surface the failure instead of quietly handing back a stale Sheet.
-    if (force) throw sheetError;
-    return;
+    if (upserted.error) console.warn('mess-sheet: snapshot save failed too', upserted.error);
+    throw sheetError;
   }
 
   const upserted = await admin.from('mess_sheet_snapshots').upsert(snapshot, { onConflict: 'mess_id' });
   if (upserted.error) throw upserted.error;
+}
+
+// Saves the rows without touching Google — for a mess whose Sheet is being
+// created by someone else right now, so the next sync writes them.
+async function saveSnapshotOnly(
+  admin: ReturnType<typeof createAdminClient>,
+  messId: string,
+  month: string,
+  bazar: Cell[][],
+  khawa: Cell[][],
+) {
+  const upserted = await admin
+    .from('mess_sheet_snapshots')
+    .upsert({ mess_id: messId, month, bazar, khawa, updated_at: new Date().toISOString() }, { onConflict: 'mess_id' });
+  if (upserted.error) throw upserted.error;
+}
+
+// The one entry point both actions use: find or create the mess's Sheet,
+// write the rows into it, and replace it when it turns out to be one the
+// connected Google account can no longer write to.
+//
+// That last part is what reconnecting Google Drive used to break for good:
+// every Sheet created under the previous grant answers 403 afterwards, so
+// the sync failed on every data change from then on and the Sheet silently
+// stopped updating until someone re-created it by hand. Now the stale id is
+// dropped and a fresh Sheet is built in its place, on the spot.
+async function syncMessSheet(
+  admin: ReturnType<typeof createAdminClient>,
+  messId: string,
+  month: string,
+  bazar: Cell[][],
+  khawa: Cell[][],
+  { force = false, create = false, wait = false }: { force?: boolean; create?: boolean; wait?: boolean } = {},
+): Promise<string | null> {
+  const spreadsheetId = await ensureSheet(admin, messId, { create, wait });
+  if (!spreadsheetId) {
+    await saveSnapshotOnly(admin, messId, month, bazar, khawa);
+    return null;
+  }
+
+  try {
+    await syncSheetData(admin, messId, spreadsheetId, month, bazar, khawa, force);
+    return spreadsheetId;
+  } catch (error) {
+    if (!isSheetAccessError(error) || !create) throw error;
+
+    console.warn('mess-sheet: stored Sheet is no longer writable, building a fresh one', error);
+    const cleared = await admin
+      .from('messes')
+      .update({ gsheet_id: null, gsheet_claim_at: null })
+      .eq('id', messId)
+      .eq('gsheet_id', spreadsheetId);
+    if (cleared.error) throw cleared.error;
+
+    const replacement = await ensureSheet(admin, messId, { create: true, wait: true });
+    if (!replacement || replacement === spreadsheetId) throw error;
+    // Forced: the snapshot still carries the old Sheet's synced id, which
+    // would otherwise read as "these rows are already in there".
+    await syncSheetData(admin, messId, replacement, month, bazar, khawa, true);
+    return replacement;
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -553,7 +679,7 @@ Deno.serve(async (req: Request) => {
 
     const authenticated = await authenticate(req);
     if ('error' in authenticated) return authenticated.error;
-    const { admin, messId } = authenticated;
+    const { admin, messId, role } = authenticated;
 
     if (action === 'oauth-start') {
       const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID');
@@ -576,13 +702,13 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === 'open') {
-      const spreadsheetId = await getOrCreateSheet(admin, messId);
       const bazar = sanitizeRows(body?.bazar, 'bazar');
       const khawa = sanitizeRows(body?.khawa, 'khawa');
-      if (bazar && khawa) {
-        const month = `${new Date().toISOString().slice(0, 7)}-01`;
-        await syncSheetData(admin, messId, spreadsheetId, month, bazar, khawa, true);
-      }
+      const month = `${new Date().toISOString().slice(0, 7)}-01`;
+      const spreadsheetId = bazar && khawa
+        ? await syncMessSheet(admin, messId, month, bazar, khawa, { force: true, create: true, wait: true })
+        : await ensureSheet(admin, messId, { create: true, wait: true });
+      if (!spreadsheetId) return json({ error: 'The Sheet is still being set up — try again in a moment.' }, 503);
       return json({ ok: true, url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit` });
     }
 
@@ -593,21 +719,22 @@ Deno.serve(async (req: Request) => {
       const khawa = sanitizeRows(body?.khawa, 'khawa');
       if (!bazar || !khawa) return json({ error: 'Invalid sheet data' }, 400);
 
-      // Only write to Google once a Sheet actually exists for this mess —
-      // every mess member's browser can call this after every data change,
-      // long before anyone has ever pressed "Download Sheets".
-      const mess = await admin.from('messes').select('gsheet_id').eq('id', messId).single();
-      if (mess.error) throw mess.error;
-      if (mess.data.gsheet_id) {
-        await syncSheetData(admin, messId, mess.data.gsheet_id, month, bazar, khawa);
-      } else {
-        const upserted = await admin
-          .from('mess_sheet_snapshots')
-          .upsert({ mess_id: messId, month, bazar, khawa, updated_at: new Date().toISOString() }, { onConflict: 'mess_id' });
-        if (upserted.error) throw upserted.error;
+      // The mess's Sheet is created here, by the first data change that
+      // needs one, so it is already live and current without anyone ever
+      // tapping "Download Sheets". Only an admin's browser may create it:
+      // every member pushes after every data change, and one creator is
+      // enough — the rest just keep the rows saved for the next sync.
+      try {
+        const spreadsheetId = await syncMessSheet(admin, messId, month, bazar, khawa, {
+          create: role === 'admin',
+        });
+        return json({ ok: true, synced: !!spreadsheetId });
+      } catch (error) {
+        // Never worth failing a save over: the rows are already stored and
+        // the next data change retries the write from them.
+        console.warn('mess-sheet: background push could not reach the Sheet', error);
+        return json({ ok: true, synced: false });
       }
-
-      return json({ ok: true });
     }
 
     return json({ error: 'Unknown action' }, 400);

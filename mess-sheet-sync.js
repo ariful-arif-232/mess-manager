@@ -1,12 +1,12 @@
 /* Live Google Sheet: no per-mess setup screen, one one-time app-wide step.
  *
- * Tapping "Download Sheets" asks the mess-sheet edge function to open the
- * mess's own Google Sheet, creating it the first time — as whichever real
- * Google account an admin connected once via the "Connect Google Drive"
- * button in Settings (see connectGoogleDrive() below and
- * mess-oauth-callback). From then on, every data change in the app pushes
- * fresh rows to that same function, which writes them straight into the
- * live Sheet, so the Sheet is already current by the time anyone opens it.
+ * Every data change pushes fresh rows to the mess-sheet edge function, which
+ * writes them straight into the mess's own Google Sheet — creating that Sheet
+ * on the first push that needs one, as whichever real Google account an admin
+ * connected once via the "Connect Google Drive" button in Settings (see
+ * connectGoogleDrive() below and mess-oauth-callback). Nothing has to be
+ * tapped for any of that: "Download Sheets" only opens the Sheet, which is
+ * already current by the time anyone gets there.
  *
  * A real <a href="https://docs.google.com/..."> click, not window.open() or
  * the Web Share API, is what actually hands off to an installed Sheets app:
@@ -59,7 +59,11 @@
       const {bazar, khawa} = window.mmBuildSheetSnapshotRows();
       const key = JSON.stringify({bazar, khawa});
       if (key === lastPushedKey) return; // nothing actually changed since the last push
-      await call({action: 'push', month: `${state.month}-01`, bazar, khawa});
+      const result = await call({action: 'push', month: `${state.month}-01`, bazar, khawa});
+      // The rows are always stored server-side, but they only reached the
+      // Sheet itself when synced is true — anything else stays un-marked so
+      // the next data change tries again rather than assuming it is in there.
+      if (result?.synced === false) return;
       lastPushedKey = key;
     } catch (error) {
       console.warn('Live sheet snapshot push failed (will retry on the next data change).', error);
