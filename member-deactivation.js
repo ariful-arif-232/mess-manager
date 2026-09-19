@@ -302,16 +302,20 @@
   }
 
   // A small header icon replaces a permanent "N inactive" banner in the main
-  // list: a people icon by default, swapping to the same pause icon the
-  // Deactivate action uses once tapped, so its own look says what it's
-  // showing. Persists for the session so switching months keeps it open.
+  // list: the same people icon as the bottom nav, with a red strike drawn
+  // across it once tapped, so its own look says what it's showing. Tapping
+  // switches the page to a dedicated inactive-only view (not appended to
+  // the active list) with a brief loading pulse for the transition.
+  // Persists for the session so switching months keeps it open.
   let showInactiveArchive=false;
 
   function memberArchiveToggleButton(count,isOn){
-    const label=isOn?'Hide inactive members':`Show ${count} inactive member${count===1?'':'s'}`;
+    const label=isOn?'Back to all members':`Show ${count} inactive member${count===1?'':'s'}`;
     return `<button type="button" class="member-grid-archive-btn${isOn?' is-active':''}" data-toggle-inactive-archive aria-expanded="${isOn?'true':'false'}" aria-label="${label}" title="${label}">
-      <span class="grid-ico ${isOn?'grid-ico-pause':'grid-ico-people'}"></span>
-      <span class="member-grid-archive-count">${count}</span>
+      <span class="member-grid-archive-icon">
+        <span class="grid-ico grid-ico-people"></span>
+        <span class="grid-ico-strike" aria-hidden="true"></span>
+      </span>
     </button>`;
   }
 
@@ -324,16 +328,22 @@
     const admins=visible.filter(m=>String(m.role||'').toLowerCase()==='admin');
     const regular=visible.filter(m=>String(m.role||'').toLowerCase()!=='admin');
     const showArchive=isAdminViewer&&showInactiveArchive&&archived.length>0;
-    c.innerHTML=`<div class="section-head member-grid-head"><div><span class="eyebrow">Mess family</span><h2>All Members</h2><small class="member-grid-count">${visible.length} member${visible.length===1?'':'s'} · ${admins.length} admin${admins.length===1?'':'s'}</small></div><div class="member-grid-head-actions">${isAdminViewer&&archived.length?memberArchiveToggleButton(archived.length,showArchive):''}${isAdminViewer?'<button class="btn primary" data-add>+ Add Member</button>':''}</div></div>
-      ${memberGroupSection('Admins',admins,isAdminViewer)}
-      ${memberGroupSection('Members',regular,isAdminViewer)}
-      ${showArchive?memberGroupSection('Inactive (earlier months)',archived,isAdminViewer):''}`;
+    const headTitle=showArchive?'Inactive Members':'All Members';
+    const headCount=showArchive
+      ?`${archived.length} inactive member${archived.length===1?'':'s'}`
+      :`${visible.length} member${visible.length===1?'':'s'} · ${admins.length} admin${admins.length===1?'':'s'}`;
+    const bodyHtml=showArchive
+      ?`<div class="member-grid">${archived.map(m=>memberGridCard(m,isAdminViewer)).join('')}</div>`
+      :`${memberGroupSection('Admins',admins,isAdminViewer)}${memberGroupSection('Members',regular,isAdminViewer)}`;
+    c.innerHTML=`<div class="section-head member-grid-head"><div><span class="eyebrow">Mess family</span><h2>${esc(headTitle)}</h2><small class="member-grid-count">${headCount}</small></div><div class="member-grid-head-actions">${isAdminViewer&&(showArchive||archived.length)?memberArchiveToggleButton(archived.length,showArchive):''}${isAdminViewer&&!showArchive?'<button class="btn primary" data-add>+ Add Member</button>':''}</div></div>
+      ${bodyHtml}`;
 
     // Tapping [data-view-member] opens the profile bottom sheet — handled
     // app-wide by a capturing listener in member-profile-sheet-final.js.
     if(!isAdminViewer)return;
     c.querySelector('[data-add]')?.addEventListener('click',()=>memberModal());
     c.querySelector('[data-toggle-inactive-archive]')?.addEventListener('click',()=>{
+      window.mmLoading?.pulse?.(320);
       showInactiveArchive=!showInactiveArchive;
       membersDirectoryGrid(c);
     });
