@@ -50,6 +50,20 @@
     hideTimer=setTimeout(()=>{overlay.classList.remove('is-visible');},wait);
   }
 
+  // For a UI-only transition that has no network call to wrap (e.g.
+  // switching a list between two already-loaded views) but still deserves
+  // a brief, visible loading moment: shows immediately, no delay, and
+  // clears itself after durationMs.
+  function pulseBusy(durationMs){
+    clearTimeout(showTimer);
+    clearTimeout(hideTimer);
+    ensureOverlay().classList.add('is-visible');
+    shownAt=Date.now();
+    hideTimer=setTimeout(()=>{overlay.classList.remove('is-visible');},durationMs||260);
+  }
+
+  window.mmLoading={beginBusy,endBusy,pulse:pulseBusy};
+
   let bootstrapped=false;
   const baseLoadData=window.loadData;
   if(typeof baseLoadData==='function'){

@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v118-loading-overlay';
+const CACHE = 'mess-manager-v119-inactive-toggle';
 const SHELL = [
   './',
   './index.html',
@@ -36,7 +36,7 @@ const SHELL = [
   './settlement-home-summary-sync.css?v=20260828-settlehome1',
   './settlement-bazar-compact-polish.js?v=20260828-settlehome1',
   './settlement-bazar-compact-polish.css?v=20260828-settlehome1',
-  './loading-overlay.js?v=20260919-loading1',
+  './loading-overlay.js?v=20260919-loading2',
   './loading-overlay.css?v=20260919-loading1'
 ];
 
