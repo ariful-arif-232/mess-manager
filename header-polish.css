@@ -17,7 +17,7 @@ body{font-size:12px!important;letter-spacing:-.012em}
 .chip-icon{display:grid;place-items:center;flex:0 0 auto}
 .chip-icon svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .month-chip{padding-right:5px!important}
-.month-chip input,#month{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;margin:0!important;width:68px!important;height:27px!important;min-height:0!important;font:600 9.5px/1 var(--app-font)!important;color:#172744!important}
+.month-chip input,#month{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;margin:0!important;width:96px!important;height:27px!important;min-height:0!important;font:600 9.5px/1 var(--app-font)!important;color:#172744!important}
 .badge.user-chip{margin:0!important;font:600 9px/1 var(--app-font)!important;max-width:105px!important;overflow:hidden!important;text-overflow:ellipsis!important}
 .section-head{margin:10px 0 8px!important}
 .section-head .eyebrow,.section-title,.eyebrow{font-size:8.5px!important;letter-spacing:.11em!important}
@@ -45,7 +45,7 @@ h3{font-size:13px!important;line-height:1.18!important}
 .page-heading h1{font-size:13px!important;max-width:91px!important}
 .top-actions{gap:4px!important}
 .top-chip{height:29px!important;padding:0 5px!important;border-radius:8px!important}
-.month-chip input,#month{width:61px!important;font-size:8.7px!important}
+.month-chip input,#month{width:88px!important;font-size:8.7px!important}
 .badge.user-chip{font-size:8.2px!important;max-width:94px!important}
 .chip-icon svg{width:12px;height:12px}
 .kpis{gap:8px!important}

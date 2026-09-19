@@ -125,7 +125,7 @@ html[data-skin="premium"] body .chat-shell-live .chat-bubble-pro{background:#fff
 html[data-skin="premium"] body .chat-shell-live .chat-row-live.mine .chat-bubble-pro{background:var(--mm-p-accent)!important;border-color:transparent!important;box-shadow:0 10px 26px rgba(255,111,75,.3)!important}
 html[data-skin="premium"] body .chat-shell-live .chat-day span{background:#fff!important;border-color:var(--mm-p-line)!important;color:var(--mm-p-muted)!important}
 html[data-skin="premium"] body .chat-shell-live .chat-compose-pro.chat-compose-live{
-  background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(255,246,232,.92))!important;
+  background:transparent!important;
   border-color:var(--mm-p-line)!important;
 }
 html[data-skin="premium"] body .chat-shell-live .chat-compose-pro textarea{background:#fff!important;border-color:var(--mm-p-line)!important}

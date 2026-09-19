@@ -82,7 +82,8 @@ html body .chat-shell-live .chat-jump.is-on{opacity:1!important;pointer-events:a
 
 /* --- composer --------------------------------------------------------- */
 html body .chat-shell-live .chat-compose-live{align-items:flex-end!important}
-html body .chat-shell-live .chat-compose-pro textarea{overflow-y:auto!important;line-height:1.4!important}
+html body .chat-shell-live .chat-compose-pro textarea{overflow-y:auto!important;line-height:1.4!important;resize:none!important;scrollbar-width:none!important}
+html body .chat-shell-live .chat-compose-pro textarea::-webkit-scrollbar{width:0!important;height:0!important;display:none!important}
 html body .chat-shell-live .chat-compose-pro textarea:focus{border-color:#8fb4f5!important;box-shadow:0 0 0 3px rgba(47,109,232,.1)!important}
 
 /* --- composer: a floating pill, not a white band ----------------------
@@ -102,10 +103,8 @@ html body .chat-shell-live .chat-compose-pro textarea:focus{border-color:#8fb4f5
     border-radius:22px!important;
     padding:7px 8px 7px 10px!important;
     gap:8px!important;
-    background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(240,246,255,.88))!important;
-    backdrop-filter:blur(20px) saturate(155%)!important;
-    -webkit-backdrop-filter:blur(20px) saturate(155%)!important;
-    box-shadow:0 14px 34px rgba(24,48,88,.16),inset 0 1px 0 rgba(255,255,255,.75)!important;
+    background:transparent!important;
+    box-shadow:none!important;
   }
   html.mm-chat-keyboard body #app .chat-compose-pro.chat-compose-live{
     bottom:calc(var(--mm-keyboard-bottom,0px) + 8px)!important;
@@ -119,8 +118,8 @@ html body .chat-shell-live .chat-compose-pro textarea:focus{border-color:#8fb4f5
   html[data-theme="dark"].mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)) body #app .chat-compose-pro.chat-compose-live,
   html[data-theme="dark"].mm-chat-keyboard body #app .chat-compose-pro.chat-compose-live{
     border-color:rgba(70,104,138,.5)!important;
-    background:linear-gradient(135deg,rgba(17,38,58,.93),rgba(11,26,41,.9))!important;
-    box-shadow:0 14px 34px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06)!important;
+    background:transparent!important;
+    box-shadow:none!important;
   }
 }
 /* Desktop keeps the composer in flow; it just loses the hard white edge. */

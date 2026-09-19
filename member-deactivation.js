@@ -48,6 +48,7 @@
     const [start,end]=dateRange();
     const result=await client.from('member_food_cutoffs')
       .select('id,mess_id,member_id,cutoff_date,created_at')
+      .eq('mess_id',profile.mess_id)
       .gte('cutoff_date',start)
       .lte('cutoff_date',end)
       .order('cutoff_date',{ascending:true})
