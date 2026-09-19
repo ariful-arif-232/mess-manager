@@ -42,16 +42,29 @@
   const baseLoadData=window.loadData;
   async function loadDataWithFoodCutoffs(){
     await baseLoadData();
-    if(!profile?.mess_id){db.foodCutoffs=[];return;}
+    if(!profile?.mess_id){db.foodCutoffs=[];db.memberLastCutoff=new Map();return;}
     const [start,end]=dateRange();
-    const result=await client.from('member_food_cutoffs')
-      .select('id,mess_id,member_id,cutoff_date,created_at')
-      .eq('mess_id',profile.mess_id)
-      .gte('cutoff_date',start)
-      .lte('cutoff_date',end)
-      .order('cutoff_date',{ascending:true})
-      .order('created_at',{ascending:true});
-    db.foodCutoffs=assertResult(result)||[];
+    const [monthResult,historyResult]=await Promise.all([
+      client.from('member_food_cutoffs')
+        .select('id,mess_id,member_id,cutoff_date,created_at')
+        .eq('mess_id',profile.mess_id)
+        .gte('cutoff_date',start)
+        .lte('cutoff_date',end)
+        .order('cutoff_date',{ascending:true})
+        .order('created_at',{ascending:true}),
+      client.from('member_food_cutoffs')
+        .select('member_id,cutoff_date')
+        .eq('mess_id',profile.mess_id)
+        .order('cutoff_date',{ascending:false})
+    ]);
+    db.foodCutoffs=assertResult(monthResult)||[];
+
+    const lastCutoff=new Map();
+    for(const row of (assertResult(historyResult)||[])){
+      const memberId=String(row.member_id);
+      if(!lastCutoff.has(memberId))lastCutoff.set(memberId,row.cutoff_date);
+    }
+    db.memberLastCutoff=lastCutoff;
   }
   if(typeof baseLoadData==='function'){
     window.loadData=loadDataWithFoodCutoffs;
@@ -276,19 +289,53 @@
     return `<div class="member-grid-group-label">${esc(title)}</div><div class="member-grid">${rows.map(m=>memberGridCard(m,isAdminViewer)).join('')}</div>`;
   }
 
+  // An inactive member stays visible through the month they were cut off in,
+  // then drops out of the roster from the next month onward — same rule the
+  // Members Summary already follows. A member never given a cutoff date
+  // (deactivated before this existed) stays visible so nobody vanishes
+  // without explanation.
+  function isPastCutoffMonth(member,monthKey){
+    if(member.active)return false;
+    const cutoff=(db.memberLastCutoff||new Map()).get(String(member.id));
+    if(!cutoff)return false;
+    return String(cutoff).slice(0,7)<monthKey;
+  }
+
+  function memberInactiveArchiveSection(rows,isAdminViewer){
+    if(!rows.length)return'';
+    return `<div class="member-grid-archive">
+      <button type="button" class="member-grid-archive-toggle" data-toggle-inactive-archive aria-expanded="false">
+        <span>${rows.length} inactive from earlier months</span><i class="member-grid-archive-chevron"></i>
+      </button>
+      <div class="member-grid" data-inactive-archive hidden>${rows.map(m=>memberGridCard(m,isAdminViewer)).join('')}</div>
+    </div>`;
+  }
+
   window.members=function membersDirectoryGrid(c){
     const isAdminViewer=profile?.role==='admin';
-    const visible=db.members.filter(m=>!m.deleted_at);
+    const monthKey=String(state.month||'').slice(0,7);
+    const all=db.members.filter(m=>!m.deleted_at);
+    const visible=all.filter(m=>!isPastCutoffMonth(m,monthKey));
+    const archived=isAdminViewer?all.filter(m=>isPastCutoffMonth(m,monthKey)):[];
     const admins=visible.filter(m=>String(m.role||'').toLowerCase()==='admin');
     const regular=visible.filter(m=>String(m.role||'').toLowerCase()!=='admin');
     c.innerHTML=`<div class="section-head member-grid-head"><div><span class="eyebrow">Mess family</span><h2>All Members</h2><small class="member-grid-count">${visible.length} member${visible.length===1?'':'s'} · ${admins.length} admin${admins.length===1?'':'s'}</small></div>${isAdminViewer?'<button class="btn primary" data-add>+ Add Member</button>':''}</div>
       ${memberGroupSection('Admins',admins,isAdminViewer)}
-      ${memberGroupSection('Members',regular,isAdminViewer)}`;
+      ${memberGroupSection('Members',regular,isAdminViewer)}
+      ${memberInactiveArchiveSection(archived,isAdminViewer)}`;
 
     // Tapping [data-view-member] opens the profile bottom sheet — handled
     // app-wide by a capturing listener in member-profile-sheet-final.js.
     if(!isAdminViewer)return;
     c.querySelector('[data-add]')?.addEventListener('click',()=>memberModal());
+    c.querySelector('[data-toggle-inactive-archive]')?.addEventListener('click',event=>{
+      const button=event.currentTarget;
+      const list=c.querySelector('[data-inactive-archive]');
+      if(!list)return;
+      const expanded=list.hasAttribute('hidden');
+      if(expanded)list.removeAttribute('hidden');else list.setAttribute('hidden','');
+      button.setAttribute('aria-expanded',expanded?'true':'false');
+    });
     c.querySelectorAll('[data-edit-member]').forEach(b=>b.onclick=()=>memberModal(b.dataset.editMember));
     c.querySelectorAll('[data-delete-member]').forEach(b=>b.onclick=()=>confirmMemberDelete(db.members.find(x=>String(x.id)===String(b.dataset.deleteMember))));
     c.querySelectorAll('[data-toggle-member]').forEach(b=>b.onclick=()=>{
