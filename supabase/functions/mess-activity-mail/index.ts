@@ -1,13 +1,14 @@
-// Automatic activity emails: a mess admin's browser calls this right after
+// Automatic activity alerts: a mess admin's browser calls this right after
 // successfully saving a new bazar entry, deposit or utility bill — never on
 // an edit — and this function re-reads the authoritative row(s) from the
-// database (never trusting client-supplied amounts) and mails whoever
-// needs to know:
-//   bazar-added    -> every active member with an email, the itemised list
+// database (never trusting client-supplied amounts) and tells whoever
+// needs to know, by email and by push notification:
+//   bazar-added    -> every active member, the itemised list
 //   deposit-added  -> only the member the deposit was recorded for
 //   utility-added  -> every member the bill actually covers, each shown
 //                     their own share
 import { createClient } from 'npm:@supabase/supabase-js@2.55.0';
+import { sendNotification } from 'npm:web-push-neo@0.1.2';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -139,6 +140,107 @@ async function sendToMembers(
   }).catch((error) => console.warn('mess-activity-mail: send failed', error))));
 }
 
+/* ------------------------------------------------------------ phone alert
+   An email alone does not reliably raise a banner on a phone — whether a
+   mail app pops one is the mail app's own call, and Gmail on Android stays
+   silent for anything it files outside Primary. So the same news also goes
+   out as a web push, over the subscriptions and VAPID keys the chat
+   notifications already use, which is the one alert this app fully
+   controls. Keys are only ever read here: chat-push creates them, and
+   making a second pair would invalidate every existing subscription. */
+type PushRow = { id: string; endpoint: string; p256dh: string; auth: string };
+
+async function activeMemberIds(admin: ReturnType<typeof createAdminClient>, messId: string) {
+  const result = await admin
+    .from('members')
+    .select('id')
+    .eq('mess_id', messId)
+    .eq('active', true)
+    .is('deleted_at', null);
+  if (result.error) throw result.error;
+  return (result.data || []).map((row) => String(row.id));
+}
+
+async function pushToMembers(
+  admin: ReturnType<typeof createAdminClient>,
+  messId: string,
+  memberIds: string[],
+  payload: { title: string; body: string; tag: string },
+) {
+  if (!memberIds.length) return;
+
+  const config = await admin
+    .from('push_vapid_config')
+    .select('public_key,private_key,subject')
+    .eq('id', true)
+    .maybeSingle();
+  if (config.error) throw config.error;
+  if (!config.data) return;
+  const vapid = config.data as { public_key: string; private_key: string; subject: string };
+
+  const subscriptions = await admin
+    .from('push_subscriptions')
+    .select('id,endpoint,p256dh,auth')
+    .eq('mess_id', messId)
+    .in('member_id', memberIds);
+  if (subscriptions.error) throw subscriptions.error;
+  const rows = (subscriptions.data || []) as PushRow[];
+  if (!rows.length) return;
+
+  const body = JSON.stringify({
+    type: 'mess-activity',
+    title: payload.title,
+    body: payload.body,
+    tag: payload.tag,
+    mess_id: messId,
+    created_at: new Date().toISOString(),
+    url: './',
+  });
+
+  const stale: string[] = [];
+  await Promise.all(rows.map(async (row) => {
+    try {
+      await sendNotification({
+        endpoint: row.endpoint,
+        keys: { p256dh: row.p256dh, auth: row.auth },
+      }, body, {
+        vapidDetails: {
+          subject: vapid.subject,
+          publicKey: vapid.public_key,
+          privateKey: vapid.private_key,
+        },
+        TTL: 86_400,
+        urgency: 'high',
+        topic: payload.tag.replace(/[^a-zA-Z0-9]/g, '').slice(0, 27),
+        signal: AbortSignal.timeout(15_000),
+      });
+    } catch (error) {
+      const status = Number((error as { statusCode?: number })?.statusCode || 0);
+      if (status === 404 || status === 410) stale.push(row.id);
+      console.warn('mess-activity-mail: push delivery failed', status || 'unknown');
+    }
+  }));
+
+  if (stale.length) {
+    const cleanup = await admin.from('push_subscriptions').delete().in('id', stale);
+    if (cleanup.error) console.warn('mess-activity-mail: stale subscription cleanup failed', cleanup.error.code || 'unknown');
+  }
+}
+
+// Never at the cost of the email that already went out.
+async function notify(
+  admin: ReturnType<typeof createAdminClient>,
+  messId: string,
+  memberIds: string[],
+  payload: { title: string; body: string; tag: string },
+) {
+  try {
+    await pushToMembers(admin, messId, memberIds, payload);
+  } catch (error) {
+    console.warn('mess-activity-mail: push notification failed', error);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -201,6 +303,16 @@ Deno.serve(async (req: Request) => {
       const html = shell('New Bazar Entry', messName, bodyHtml);
       const text = `New bazar entry (${entry.data.entry_date}) by ${buyer.data?.name || ''} — total ${money(total)}`;
       await sendToMembers(resendKey, members, subject, html, text);
+
+      const itemNames = rows.map((row) => {
+        const groupItems = Array.isArray(row.group_items) ? row.group_items as string[] : null;
+        return groupItems?.length ? groupItems.join(', ') : String(row.item_name || '');
+      }).filter(Boolean).join(', ');
+      await notify(admin, messId, await activeMemberIds(admin, messId), {
+        title: `New bazar · ${money(total)}`,
+        body: `${buyer.data?.name || 'Someone'} — ${itemNames.slice(0, 160) || 'bazar added'}`,
+        tag: `bazar-${entryId}`,
+      });
       return json({ ok: true, sent: members.length });
     }
 
@@ -218,7 +330,17 @@ Deno.serve(async (req: Request) => {
 
       const member = await admin.from('members').select('name,email').eq('id', deposit.data.member_id).single();
       if (member.error) throw member.error;
-      if (!member.data?.email) return json({ ok: true, sent: 0 });
+
+      const depositPush = notify(admin, messId, [String(deposit.data.member_id)], {
+        title: `Deposit received · ${money(deposit.data.amount)}`,
+        body: `Recorded for you · ${deposit.data.purpose || 'Bazar'}`,
+        tag: `deposit-${depositId}`,
+      });
+
+      if (!member.data?.email) {
+        await depositPush;
+        return json({ ok: true, sent: 0 });
+      }
 
       const bodyHtml = `<p style="margin:0 0 4px;color:#68778f;font-size:13px;">${esc(deposit.data.deposit_date)}</p>
         <p style="margin:0 0 18px;font-size:15px;">Hi ${esc(member.data.name)}, a deposit has been recorded for you.</p>
@@ -231,6 +353,7 @@ Deno.serve(async (req: Request) => {
       const html = shell('Deposit Received', messName, bodyHtml);
       const text = `Deposit of ${money(deposit.data.amount)} recorded for ${member.data.name} (${deposit.data.purpose || 'Bazar'})`;
       await sendToMembers(resendKey, [{ email: member.data.email }], subject, html, text);
+      await depositPush;
       return json({ ok: true, sent: 1 });
     }
 
@@ -287,6 +410,12 @@ Deno.serve(async (req: Request) => {
           text,
         }).catch((error) => console.warn('mess-activity-mail: utility send failed', error));
       }));
+
+      await notify(admin, messId, memberIds, {
+        title: `New ${bill.data.bill_type} bill · ${money(total)}`,
+        body: `Your share ${money(perHead)} · shared by ${memberIds.length} member${memberIds.length === 1 ? '' : 's'}`,
+        tag: `utility-${billId}`,
+      });
 
       return json({ ok: true, sent: recipients.length });
     }

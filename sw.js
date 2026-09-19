@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v116-member-fund-transfer';
+const CACHE = 'mess-manager-v117-activity-push';
 const SHELL = [
   './',
   './index.html',
@@ -47,14 +47,17 @@ self.addEventListener('activate', event => {
 self.addEventListener('push', event => {
   let payload = {};
   try { payload = event.data ? event.data.json() : {}; } catch (_) {}
-  const sender = String(payload.sender_name || '').trim();
+  const isChat = String(payload.type || 'chat-message') === 'chat-message';
+  // Chat shows who wrote it as the title; everything else (a bazar entry, a
+  // deposit, a bill) names the event itself, since it has no sender.
+  const title = String(payload.title || payload.sender_name || '').trim() || 'Mess Manager';
   const message = String(payload.body || '').trim();
-  const title = sender || 'Mess Manager';
+  const fallbackBody = isChat ? 'New Mess Chat message' : 'Tap to open Mess Manager';
   const createdAt = Date.parse(payload.created_at || '');
   event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     const active = list.some(client => client.url.startsWith(self.registration.scope) && client.visibilityState === 'visible' && client.focused);
     if (active) return;
-    const options = { body: message || 'New Mess Chat message', icon: './icons/icon-192.png?v=20260814-borderless2', badge: './icons/icon-192.png?v=20260814-borderless2', tag: `mess-chat-${payload.message_id || Date.now()}`, renotify: true, silent: false, data: { url: payload.url || './?open=chat', message_id: payload.message_id || '', mess_id: payload.mess_id || '' } };
+    const options = { body: message || fallbackBody, icon: './icons/icon-192.png?v=20260814-borderless2', badge: './icons/icon-192.png?v=20260814-borderless2', tag: String(payload.tag || `mess-chat-${payload.message_id || Date.now()}`), renotify: true, silent: false, data: { url: payload.url || (isChat ? './?open=chat' : './'), type: payload.type || 'chat-message', message_id: payload.message_id || '', mess_id: payload.mess_id || '' } };
     if (Number.isFinite(createdAt)) options.timestamp = createdAt;
     return self.registration.showNotification(title, options);
   }));
@@ -62,10 +65,12 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const scope = self.registration.scope;
-  const target = new URL(event.notification.data?.url || './?open=chat', scope).href;
+  const data = event.notification.data || {};
+  const isChat = String(data.type || 'chat-message') === 'chat-message';
+  const target = new URL(data.url || (isChat ? './?open=chat' : './'), scope).href;
   event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async list => {
     const existing = list.find(client => client.url.startsWith(scope));
-    if (existing) { await existing.focus(); existing.postMessage({ type: 'open-chat' }); return; }
+    if (existing) { await existing.focus(); if (isChat) existing.postMessage({ type: 'open-chat' }); return; }
     await clients.openWindow(target);
   }));
 });
