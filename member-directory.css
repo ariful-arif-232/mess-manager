@@ -68,6 +68,19 @@
 .grid-ico-play{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 4.5v15l13-7.5-13-7.5Z' fill='black'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 4.5v15l13-7.5-13-7.5Z' fill='black'/%3E%3C/svg%3E")}
 .grid-ico-trash{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 
+.member-grid-archive{margin-top:22px}
+.member-grid-archive-toggle{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  border:1px dashed var(--line);border-radius:14px;background:transparent;
+  padding:12px 14px;font-size:12px;font-weight:750;color:#6e7f9c;cursor:pointer;
+}
+.member-grid-archive-toggle:hover{background:var(--card)}
+.member-grid-archive-chevron{width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s}
+.member-grid-archive-toggle[aria-expanded="true"] .member-grid-archive-chevron{transform:rotate(-135deg)}
+.member-grid-archive [data-inactive-archive]{margin-top:12px}
+
+html[data-theme="dark"] .member-grid-archive-toggle{color:#8ea0bd;border-color:#2c4460}
+html[data-theme="dark"] .member-grid-archive-toggle:hover{background:#0e2234}
 html[data-theme="dark"] .member-grid-group-label{color:#7f9bbb}
 html[data-theme="dark"] .member-grid-count{color:#9db0c3}
 html[data-theme="dark"] .member-grid-card{background:#0e2234;border-color:#29465f;box-shadow:0 10px 26px rgba(0,0,0,.24)}
