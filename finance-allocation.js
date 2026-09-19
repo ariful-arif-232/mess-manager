@@ -234,6 +234,7 @@
       if(deleted.error)throw deleted.error;
     }
     await logActivity(id?'update':'create','utility_bill',billId,{bill_type:payload.bill_type,bill_mode:payload.bill_mode,member_count:memberIds.length});
+    if(!id)client.functions.invoke('mess-activity-mail',{body:{action:'utility-added',utility_bill_id:billId}}).catch(err=>console.warn('Utility email notify failed',err));
     return billId;
   }
 
