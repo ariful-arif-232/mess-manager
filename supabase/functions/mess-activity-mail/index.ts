@@ -23,12 +23,12 @@ const money = (value: unknown) => `৳${Math.round(Number(value) || 0).toLocaleS
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function shell(eyebrow: string, messName: string, bodyHtml: string) {
-  return `<!doctype html><html><body style="margin:0;padding:0;background:#eef1f7;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;">
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light;supported-color-schemes:light;}</style></head><body style="margin:0;padding:0;background:#eef1f7;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;">
 <table role="presentation" width="100%" style="background:#eef1f7;padding:28px 12px;"><tr><td align="center">
 <table role="presentation" width="600" style="max-width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 10px 34px rgba(20,30,55,.10);">
   <tr><td style="background:linear-gradient(135deg,#1c3a86,#2a63d6);padding:26px 30px;">
     <table role="presentation" width="100%"><tr>
-      <td style="width:56px;vertical-align:top;"><table role="presentation" width="52" height="52" style="background:#fff8ec;border-radius:15px;box-shadow:0 6px 16px rgba(10,20,50,.22);"><tr><td align="center" valign="middle" style="width:52px;height:52px;"><img src="https://mess-manager.app/icons/icon-512.png" width="34" height="34" alt="Mess Manager" style="display:block;border-radius:9px;"></td></tr></table></td>
+      <td style="width:56px;vertical-align:top;"><table role="presentation" width="52" height="52" bgcolor="#ffffff" style="background:#ffffff;border-radius:15px;box-shadow:0 6px 16px rgba(10,20,50,.22);"><tr><td align="center" valign="middle" bgcolor="#ffffff" style="width:52px;height:52px;background:#ffffff;border-radius:15px;"><img src="https://mess-manager.app/icons/icon-512.png" width="34" height="34" alt="Mess Manager" style="display:block;border-radius:9px;margin:0 auto;"></td></tr></table></td>
       <td style="padding-left:16px;color:#fff;">
         <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.78;font-weight:700;">${esc(eyebrow)}</div>
         <div style="font-size:19px;font-weight:800;margin-top:2px;">${esc(messName)}</div>
