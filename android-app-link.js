@@ -1,8 +1,7 @@
-/* "Download Android App" link for the signed-in shell. Purely additive: it
-   only appends a link into areas the app already renders (sidebar footer,
-   More sheet header) and never touches auth, data or navigation logic.
-   Not shown on the login/signup screen — that's a first-impression page and
-   the link was judged out of place there. */
+/* "Download Android App" link for the login screen and the signed-in shell.
+   Purely additive: it only appends a link into areas the app already renders
+   (Member Login card, sidebar footer, More sheet header) and never touches
+   auth, data or navigation logic. */
 'use strict';
 (() => {
   /* Always the newest published release — no version is hardcoded. */
@@ -31,6 +30,11 @@
   const missing=host=>host&&!host.querySelector('[data-apk-link]');
 
   function mount(){
+    /* Login screen: a compact icon in the top-right corner of the Member
+       Login card. */
+    const memberCard=document.querySelector('.auth-member-card');
+    if(missing(memberCard))memberCard.appendChild(makeLink('mm-apk-link mm-apk-auth',COMPACT_ICON));
+
     /* Signed-in desktop shell: sidebar footer, above Logout. */
     const sidebarFoot=document.querySelector('.layout .sidebar-foot');
     if(missing(sidebarFoot)){
