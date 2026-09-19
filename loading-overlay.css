@@ -1,0 +1,47 @@
+/* Global busy overlay: shown while any data-changing action (month change,
+   add/edit/delete, activate/deactivate, etc.) is waiting on the network.
+   Delayed slightly before showing and held for a minimum duration once
+   shown, so a fast action never flashes it and a slow one never feels
+   abrupt — see loading-overlay.js. */
+.mm-loading-overlay{
+  position:fixed;inset:0;z-index:30000;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(15,26,46,.2);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .18s ease;
+}
+.mm-loading-overlay.is-visible{opacity:1;visibility:visible;pointer-events:auto}
+
+.mm-loading-card{
+  display:flex;align-items:center;gap:11px;
+  padding:14px 20px;border-radius:16px;
+  background:rgba(255,255,255,.97);
+  border:1px solid rgba(226,233,242,.9);
+  box-shadow:0 18px 44px rgba(20,40,80,.18),0 2px 8px rgba(20,40,80,.08);
+  transform:translateY(4px) scale(.97);
+  transition:transform .22s cubic-bezier(.2,.8,.2,1);
+}
+.mm-loading-overlay.is-visible .mm-loading-card{transform:translateY(0) scale(1)}
+
+.mm-loading-spinner{
+  width:20px;height:20px;flex:0 0 20px;border-radius:50%;
+  border:2.5px solid rgba(43,104,223,.16);
+  border-top-color:#2868df;
+  animation:mm-loading-spin .7s linear infinite;
+}
+@keyframes mm-loading-spin{to{transform:rotate(360deg)}}
+
+.mm-loading-text{
+  font:700 12.5px/1 Inter,"Noto Sans Bengali","Hind Siliguri",system-ui,sans-serif;
+  color:#20304c;letter-spacing:-.01em;white-space:nowrap;
+}
+
+html[data-theme="dark"] .mm-loading-overlay{background:rgba(4,10,20,.4)}
+html[data-theme="dark"] .mm-loading-card{background:rgba(14,28,44,.97);border-color:rgba(41,69,95,.85);box-shadow:0 18px 44px rgba(0,0,0,.4)}
+html[data-theme="dark"] .mm-loading-spinner{border-color:rgba(127,181,255,.18);border-top-color:#79b5ff}
+html[data-theme="dark"] .mm-loading-text{color:#eaf3fc}
+
+@media(prefers-reduced-motion:reduce){
+  .mm-loading-spinner{animation-duration:1.4s}
+}

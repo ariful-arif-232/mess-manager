@@ -301,40 +301,41 @@
     return String(cutoff).slice(0,7)<monthKey;
   }
 
-  function memberInactiveArchiveSection(rows,isAdminViewer){
-    if(!rows.length)return'';
-    return `<div class="member-grid-archive">
-      <button type="button" class="member-grid-archive-toggle" data-toggle-inactive-archive aria-expanded="false">
-        <span>${rows.length} inactive from earlier months</span><i class="member-grid-archive-chevron"></i>
-      </button>
-      <div class="member-grid" data-inactive-archive hidden>${rows.map(m=>memberGridCard(m,isAdminViewer)).join('')}</div>
-    </div>`;
+  // A small header icon replaces a permanent "N inactive" banner in the main
+  // list: a people icon by default, swapping to the same pause icon the
+  // Deactivate action uses once tapped, so its own look says what it's
+  // showing. Persists for the session so switching months keeps it open.
+  let showInactiveArchive=false;
+
+  function memberArchiveToggleButton(count,isOn){
+    const label=isOn?'Hide inactive members':`Show ${count} inactive member${count===1?'':'s'}`;
+    return `<button type="button" class="member-grid-archive-btn${isOn?' is-active':''}" data-toggle-inactive-archive aria-expanded="${isOn?'true':'false'}" aria-label="${label}" title="${label}">
+      <span class="grid-ico ${isOn?'grid-ico-pause':'grid-ico-people'}"></span>
+      <span class="member-grid-archive-count">${count}</span>
+    </button>`;
   }
 
   window.members=function membersDirectoryGrid(c){
     const isAdminViewer=profile?.role==='admin';
     const monthKey=String(state.month||'').slice(0,7);
     const all=db.members.filter(m=>!m.deleted_at);
-    const visible=all.filter(m=>!isPastCutoffMonth(m,monthKey));
     const archived=isAdminViewer?all.filter(m=>isPastCutoffMonth(m,monthKey)):[];
+    const visible=all.filter(m=>!isPastCutoffMonth(m,monthKey));
     const admins=visible.filter(m=>String(m.role||'').toLowerCase()==='admin');
     const regular=visible.filter(m=>String(m.role||'').toLowerCase()!=='admin');
-    c.innerHTML=`<div class="section-head member-grid-head"><div><span class="eyebrow">Mess family</span><h2>All Members</h2><small class="member-grid-count">${visible.length} member${visible.length===1?'':'s'} · ${admins.length} admin${admins.length===1?'':'s'}</small></div>${isAdminViewer?'<button class="btn primary" data-add>+ Add Member</button>':''}</div>
+    const showArchive=isAdminViewer&&showInactiveArchive&&archived.length>0;
+    c.innerHTML=`<div class="section-head member-grid-head"><div><span class="eyebrow">Mess family</span><h2>All Members</h2><small class="member-grid-count">${visible.length} member${visible.length===1?'':'s'} · ${admins.length} admin${admins.length===1?'':'s'}</small></div><div class="member-grid-head-actions">${isAdminViewer&&archived.length?memberArchiveToggleButton(archived.length,showArchive):''}${isAdminViewer?'<button class="btn primary" data-add>+ Add Member</button>':''}</div></div>
       ${memberGroupSection('Admins',admins,isAdminViewer)}
       ${memberGroupSection('Members',regular,isAdminViewer)}
-      ${memberInactiveArchiveSection(archived,isAdminViewer)}`;
+      ${showArchive?memberGroupSection('Inactive (earlier months)',archived,isAdminViewer):''}`;
 
     // Tapping [data-view-member] opens the profile bottom sheet — handled
     // app-wide by a capturing listener in member-profile-sheet-final.js.
     if(!isAdminViewer)return;
     c.querySelector('[data-add]')?.addEventListener('click',()=>memberModal());
-    c.querySelector('[data-toggle-inactive-archive]')?.addEventListener('click',event=>{
-      const button=event.currentTarget;
-      const list=c.querySelector('[data-inactive-archive]');
-      if(!list)return;
-      const expanded=list.hasAttribute('hidden');
-      if(expanded)list.removeAttribute('hidden');else list.setAttribute('hidden','');
-      button.setAttribute('aria-expanded',expanded?'true':'false');
+    c.querySelector('[data-toggle-inactive-archive]')?.addEventListener('click',()=>{
+      showInactiveArchive=!showInactiveArchive;
+      membersDirectoryGrid(c);
     });
     c.querySelectorAll('[data-edit-member]').forEach(b=>b.onclick=()=>memberModal(b.dataset.editMember));
     c.querySelectorAll('[data-delete-member]').forEach(b=>b.onclick=()=>confirmMemberDelete(db.members.find(x=>String(x.id)===String(b.dataset.deleteMember))));

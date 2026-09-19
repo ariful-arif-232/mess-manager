@@ -1,4 +1,4 @@
-const CACHE = 'mess-manager-v117-activity-push';
+const CACHE = 'mess-manager-v118-loading-overlay';
 const SHELL = [
   './',
   './index.html',
@@ -35,7 +35,9 @@ const SHELL = [
   './settlement-home-summary-sync.js?v=20260828-settlehome1',
   './settlement-home-summary-sync.css?v=20260828-settlehome1',
   './settlement-bazar-compact-polish.js?v=20260828-settlehome1',
-  './settlement-bazar-compact-polish.css?v=20260828-settlehome1'
+  './settlement-bazar-compact-polish.css?v=20260828-settlehome1',
+  './loading-overlay.js?v=20260919-loading1',
+  './loading-overlay.css?v=20260919-loading1'
 ];
 
 self.addEventListener('install', event => {
