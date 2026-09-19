@@ -141,24 +141,6 @@
   window.calcMonth=calcMonthWithFoodCutoffs;
   try{calcMonth=calcMonthWithFoodCutoffs;}catch(_){/* window assignment is sufficient for normal global scripts */}
 
-  function addStatusIcon(card,member){
-    const copy=card.querySelector('.member-identity > span');
-    const name=copy?.querySelector(':scope > b');
-    if(!copy||!name||copy.querySelector('.member-name-state-icon'))return;
-    const line=document.createElement('span');
-    line.className='member-name-state-line';
-    copy.insertBefore(line,name);
-    line.appendChild(name);
-    const status=document.createElement('span');
-    status.className=`member-name-state-icon ${member.active?'is-active':'is-inactive'}`;
-    status.setAttribute('role','img');
-    status.setAttribute('aria-label',member.active?'Active member':'Inactive member');
-    status.title=member.active?'Active':'Inactive';
-    status.textContent=member.active?'✓':'–';
-    line.appendChild(status);
-    card.classList.toggle('is-member-inactive',!member.active);
-  }
-
   function deactivateConfirm(member){
     const todayValue=localToday();
     const minValue=cutoffMinFor(member);
@@ -240,42 +222,64 @@
     }finally{state.busy=false;}
   }
 
-  function decorateMemberPage(c){
-    const cards=[...c.querySelectorAll('.member-clean-card')];
-    cards.forEach(card=>{
-      const identity=card.querySelector('[data-view-member]');
-      const member=db.members.find(row=>String(row.id)===String(identity?.dataset?.viewMember||''));
-      if(!member)return;
-      addStatusIcon(card,member);
-      if(profile?.role!=='admin')return;
+  /* ---------------------------------------------------- member directory
+     Members grouped as Admins / Members, each a card: status-ring avatar,
+     name, joined date, role + status pills. An admin viewer gets compact
+     icon actions (edit / deactivate-activate / delete); a self row never
+     gets the deactivate/delete actions, only Edit plus a "Current admin"
+     chip. A non-admin viewer sees the same pills read-only, plus "You" on
+     their own row and a "View profile" link on everyone else's. */
+  function memberFooterActions(member,isAdminViewer){
+    const isSelf=String(member.id)===String(profile?.id);
+    if(!isAdminViewer){
+      return isSelf
+        ?'<span class="member-grid-chip self">You</span>'
+        :`<button type="button" class="member-grid-link" data-view-member="${member.id}">View profile →</button>`;
+    }
+    const editBtn=`<button type="button" class="member-grid-icon-btn" data-edit-member="${member.id}" title="Edit" aria-label="Edit ${esc(member.name)}">✎</button>`;
+    if(isSelf)return `<div class="member-grid-footer-actions">${editBtn}<span class="member-grid-chip self">Current admin</span></div>`;
+    return `<div class="member-grid-footer-actions">${editBtn}<button type="button" class="member-grid-icon-btn ${member.active?'warn':'good'}" data-toggle-member="${member.id}" title="${member.active?'Deactivate':'Activate'}" aria-label="${member.active?'Deactivate':'Activate'} ${esc(member.name)}">${member.active?'⏸':'▶'}</button><button type="button" class="member-grid-icon-btn danger" data-delete-member="${member.id}" title="Delete" aria-label="Delete ${esc(member.name)}">🗑</button></div>`;
+  }
 
-      const actions=card.querySelector('.member-admin-actions');
-      if(!actions||actions.dataset.cutoffReady==='1')return;
-      actions.dataset.cutoffReady='1';
-      actions.classList.add('member-admin-actions-cutoff');
+  function memberGridCard(member,isAdminViewer){
+    const role=String(member.role||'member').toLowerCase()==='admin'?'admin':'member';
+    return `<article class="member-grid-card" data-role="${role}" data-active="${!!member.active}">
+      <button type="button" class="member-grid-avatar-btn" data-view-member="${member.id}" aria-label="View ${esc(member.name)}'s profile">${avatar(member)}</button>
+      <b class="member-grid-name">${esc(member.name)}</b>
+      <span class="member-grid-joined">Joined ${esc(friendlyDate(member.join_date))}</span>
+      <div class="member-grid-pills">
+        <span class="member-grid-pill role is-${role}">${role==='admin'?'Admin':'Member'}</span>
+        <span class="member-grid-pill status is-${member.active?'active':'inactive'}"><i></i>${member.active?'Active':'Inactive'}</span>
+      </div>
+      ${memberFooterActions(member,isAdminViewer)}
+    </article>`;
+  }
 
-      const row=document.createElement('div');
-      row.className='member-admin-primary-row';
-      [...actions.children].forEach(child=>row.appendChild(child));
-      actions.appendChild(row);
+  function memberGroupSection(title,rows,isAdminViewer){
+    if(!rows.length)return'';
+    return `<div class="member-grid-group-label">${esc(title)}</div><div class="member-grid">${rows.map(m=>memberGridCard(m,isAdminViewer)).join('')}</div>`;
+  }
 
-      if(String(member.id)===String(profile.id))return;
-      const stateButton=document.createElement('button');
-      stateButton.type='button';
-      stateButton.className=`btn member-state-toggle ${member.active?'is-deactivate':'is-activate'}`;
-      stateButton.textContent=member.active?'Deactivate':'Activate';
-      if(member.active)stateButton.addEventListener('click',()=>deactivateConfirm(member));
-      else stateButton.addEventListener('click',()=>activateMember(member,stateButton));
-      actions.appendChild(stateButton);
+  window.members=function membersDirectoryGrid(c){
+    const isAdminViewer=profile?.role==='admin';
+    const visible=db.members.filter(m=>!m.deleted_at);
+    const admins=visible.filter(m=>String(m.role||'').toLowerCase()==='admin');
+    const regular=visible.filter(m=>String(m.role||'').toLowerCase()!=='admin');
+    c.innerHTML=`<div class="section-head member-grid-head"><div><span class="eyebrow">Mess family</span><h2>All Members</h2><small class="member-grid-count">${visible.length} member${visible.length===1?'':'s'} · ${admins.length} admin${admins.length===1?'':'s'}</small></div>${isAdminViewer?'<button class="btn primary" data-add>+ Add Member</button>':''}</div>
+      ${memberGroupSection('Admins',admins,isAdminViewer)}
+      ${memberGroupSection('Members',regular,isAdminViewer)}`;
+
+    // Tapping [data-view-member] opens the profile bottom sheet — handled
+    // app-wide by a capturing listener in member-profile-sheet-final.js.
+    if(!isAdminViewer)return;
+    c.querySelector('[data-add]')?.addEventListener('click',()=>memberModal());
+    c.querySelectorAll('[data-edit-member]').forEach(b=>b.onclick=()=>memberModal(b.dataset.editMember));
+    c.querySelectorAll('[data-delete-member]').forEach(b=>b.onclick=()=>confirmMemberDelete(db.members.find(x=>String(x.id)===String(b.dataset.deleteMember))));
+    c.querySelectorAll('[data-toggle-member]').forEach(b=>b.onclick=()=>{
+      const m=db.members.find(x=>String(x.id)===String(b.dataset.toggleMember));
+      if(!m)return;
+      if(m.active)deactivateConfirm(m);else activateMember(m,b);
     });
-  }
-
-  const baseMembers=window.members;
-  if(typeof baseMembers==='function'){
-    window.members=function membersWithDeactivation(c){
-      baseMembers(c);
-      decorateMemberPage(c);
-    };
-    try{members=window.members;}catch(_){/* normal window binding is enough */}
-  }
+  };
+  try{members=window.members;}catch(_){/* normal window binding is enough */}
 })();

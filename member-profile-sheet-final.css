@@ -1,56 +1,6 @@
-/* Final member profile sheet + compact member status marks.
+/* Final member profile sheet.
  * Loaded last in the stylesheet chain to win over older modal/mobile patches.
  */
-
-/* Smaller status circles with a centered drawn mark. */
-.member-name-state-icon{
-  position:relative!important;
-  display:inline-block!important;
-  width:13px!important;
-  height:13px!important;
-  min-width:13px!important;
-  min-height:13px!important;
-  max-width:13px!important;
-  max-height:13px!important;
-  flex:0 0 13px!important;
-  border:0!important;
-  border-radius:50%!important;
-  overflow:hidden!important;
-  font-size:0!important;
-  line-height:0!important;
-  box-sizing:border-box!important;
-  vertical-align:middle!important;
-}
-.member-name-state-icon.is-active{background:#35b94a!important;box-shadow:0 2px 5px rgba(39,157,64,.18)!important}
-.member-name-state-icon.is-inactive{background:#ef3038!important;box-shadow:0 2px 5px rgba(221,37,46,.16)!important}
-.member-name-state-icon::before{
-  content:""!important;
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  display:block!important;
-  pointer-events:none!important;
-  box-sizing:border-box!important;
-  -webkit-mask:none!important;
-  mask:none!important;
-}
-.member-name-state-icon.is-active::before{
-  width:3.2px!important;
-  height:5.8px!important;
-  border:solid #fff!important;
-  border-width:0 1.7px 1.7px 0!important;
-  border-radius:.6px!important;
-  background:transparent!important;
-  transform:translate(-50%,-58%) rotate(45deg)!important;
-}
-.member-name-state-icon.is-inactive::before{
-  width:6.8px!important;
-  height:1.8px!important;
-  border:0!important;
-  border-radius:999px!important;
-  background:#fff!important;
-  transform:translate(-50%,-50%)!important;
-}
 
 /* Member Profile now uses the same bottom-sheet foundation as Utility details. */
 .mm-member-profile-backdrop{
@@ -198,7 +148,4 @@ html[data-theme="dark"] .mm-member-sheet-field b.is-inactive{color:#ff8c98!impor
   .mm-member-sheet-title h3{font-size:20px!important}
   .mm-member-sheet-grid{gap:8px!important;margin-top:14px!important}
   .mm-member-sheet-field{padding:10px 11px!important;border-radius:15px!important}
-  .member-name-state-icon{width:12px!important;height:12px!important;min-width:12px!important;min-height:12px!important;max-width:12px!important;max-height:12px!important;flex-basis:12px!important}
-  .member-name-state-icon.is-active::before{width:3px!important;height:5.3px!important;border-width:0 1.6px 1.6px 0!important}
-  .member-name-state-icon.is-inactive::before{width:6.2px!important;height:1.7px!important}
 }

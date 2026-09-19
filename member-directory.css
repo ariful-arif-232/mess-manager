@@ -1,0 +1,79 @@
+/* Member Management — directory grid: members grouped as Admins / Members,
+   each a card with a status-ring avatar, role + status pills, and (for an
+   admin viewer) compact icon actions instead of full-width text buttons. */
+
+.member-grid-head{align-items:flex-start}
+.member-grid-count{display:block;margin-top:4px;font-size:12px;color:var(--muted);font-weight:600}
+
+.member-grid-group-label{margin:22px 2px 10px;font-size:11px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:#6e7f9c}
+.member-grid-group-label:first-of-type{margin-top:6px}
+
+.member-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+
+.member-grid-card{
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
+  background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:16px 12px;box-shadow:0 8px 22px rgba(20,52,86,.05);
+}
+
+.member-grid-avatar-btn{border:0;padding:0;background:none;cursor:pointer;border-radius:17px}
+.member-grid-avatar-btn:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+
+.member-photo{width:56px;height:56px;border-radius:17px;object-fit:cover;position:relative}
+.member-photo.fallback{display:grid;place-items:center;font-weight:800;font-size:17px;color:#fff;background:linear-gradient(150deg,#8695b8,#5c6c8a)}
+.member-grid-card[data-role="admin"] .member-photo.fallback{background:linear-gradient(150deg,var(--primary),var(--primary2))}
+
+.member-grid-avatar-btn{position:relative}
+.member-grid-avatar-btn::after{
+  content:"";position:absolute;inset:-4px;border-radius:21px;border:2px solid transparent;pointer-events:none;
+}
+.member-grid-card[data-active="true"] .member-grid-avatar-btn::after{border-color:var(--accent)}
+.member-grid-card[data-active="false"] .member-grid-avatar-btn::after{border-color:#c3cbdc;opacity:.7}
+
+.member-grid-name{font-size:14.5px;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.member-grid-joined{margin-top:-4px;font-size:11px;color:#93a2bd;font-weight:600}
+
+.member-grid-pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.member-grid-pill{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;padding:5px 9px;border-radius:999px;white-space:nowrap}
+.member-grid-pill.role.is-admin{background:#efeafb;color:var(--violet)}
+.member-grid-pill.role.is-member{background:#eef1f7;color:#64748f}
+.member-grid-pill.status.is-active{background:#e3f7f0;color:var(--good)}
+.member-grid-pill.status.is-inactive{background:#fbeaea;color:var(--danger)}
+.member-grid-pill i{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+.member-grid-chip{font-size:10.5px;font-weight:800;padding:6px 10px;border-radius:999px;background:#e7edfd;color:var(--primary2)}
+.member-grid-chip.self{display:inline-flex;align-items:center}
+
+.member-grid-link{font:inherit;font-size:11.5px;font-weight:750;color:var(--primary2);background:none;border:0;padding:2px;cursor:pointer;margin-top:1px}
+.member-grid-link:hover{text-decoration:underline}
+
+.member-grid-footer-actions{display:flex;gap:6px;width:100%;margin-top:2px}
+.member-grid-icon-btn{
+  flex:1;height:34px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);color:var(--muted);font-size:14px;cursor:pointer;
+}
+.member-grid-icon-btn:hover{border-color:var(--primary);color:var(--primary)}
+.member-grid-icon-btn.warn:hover{border-color:var(--warn);color:var(--warn)}
+.member-grid-icon-btn.good:hover{border-color:var(--good);color:var(--good)}
+.member-grid-icon-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+
+html[data-theme="dark"] .member-grid-group-label{color:#7f9bbb}
+html[data-theme="dark"] .member-grid-count{color:#9db0c3}
+html[data-theme="dark"] .member-grid-card{background:#0e2234;border-color:#29465f;box-shadow:0 10px 26px rgba(0,0,0,.24)}
+html[data-theme="dark"] .member-grid-name{color:#f2f7ff}
+html[data-theme="dark"] .member-grid-joined{color:#7f92ac}
+html[data-theme="dark"] .member-grid-pill.role.is-admin{background:#291f45;color:#c3b2fb}
+html[data-theme="dark"] .member-grid-pill.role.is-member{background:#182338;color:#9fb0c9}
+html[data-theme="dark"] .member-grid-pill.status.is-active{background:#0f2c22;color:#5fdaa8}
+html[data-theme="dark"] .member-grid-pill.status.is-inactive{background:#3a1c1c;color:#ef8d8d}
+html[data-theme="dark"] .member-grid-chip{background:#152b42;color:#a9c9ff}
+html[data-theme="dark"] .member-grid-link{color:#8fb3ff}
+html[data-theme="dark"] .member-grid-icon-btn{background:#0e2234;border-color:#2c4761;color:#9db0c3}
+html[data-theme="dark"] .member-grid-icon-btn:hover{border-color:#5c86ee;color:#8fb3ff}
+
+@media(max-width:520px){
+  .member-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+  .member-grid-card{padding:14px 10px}
+  .member-photo{width:50px;height:50px;border-radius:15px}
+  .member-photo.fallback{font-size:15px}
+}
