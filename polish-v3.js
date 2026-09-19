@@ -115,9 +115,23 @@
     return '';
   }
 
+  // A generic document glyph for the read-only "View Statement" pill —
+  // same inline-SVG-with-currentColor convention the rest of the app uses.
+  const DOC_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM15 3v5h4M9 12h6M9 16h6"/></svg>';
+
   window.reports = function reportsV3(c) {
     const calc = calcMonth();
-    c.innerHTML = `<div class="section-head report-page-head v3-report-head"><div><span class="eyebrow">Monthly accounts</span><h2>${esc(state.month)} Statements</h2></div><div class="report-count"><span>Members</span><b>${calc.length}</b></div></div><div class="report-list clean-report-list">${calc.map(x => { const actions = reportActionsHtml(x); return `<article class="report-card clean-report-card v3-report-card"><div class="report-person">${avatarHtml(x.member)}<div><h3>${esc(x.member.name)}</h3>${x.member.email?`<span>${esc(x.member.email)}</span>`:''}</div>${x.balance>=0?`<span class="pill advance">Advance ${money(x.balance)}</span>`:`<span class="pill due">Due ${money(-x.balance)}</span>`}</div><div class="report-stat-grid"><div><span>Deposit</span><b>${money(x.deposit)}</b></div><div><span>Total bill</span><b>${money(x.total)}</b></div><div><span>Meals</span><b>${x.units}</b></div></div><div class="report-actions report-actions-pro${actions?'':' solo'}"><button class="btn" data-pdf="${x.member.id}">PDF</button>${actions}</div></article>`; }).join('')}</div>`;
+    c.innerHTML = `<div class="section-head report-page-head v3-report-head"><div><span class="eyebrow">Monthly accounts</span><h2>${esc(state.month)} Statements</h2></div><div class="report-count"><span>Members</span><b>${calc.length}</b></div></div><div class="report-list clean-report-list">${calc.map(x => {
+      const actions = reportActionsHtml(x);
+      // With no Notice/Email/Share row to sit beside, PDF stops being a grid
+      // button and becomes a compact centered pill instead — reads as a
+      // deliberate, lighter "just look, don't act" affordance for someone
+      // else's statement, rather than a button that lost its neighbours.
+      const pdfBtn = actions
+        ? `<button class="btn" data-pdf="${x.member.id}">PDF</button>`
+        : `<button class="report-pdf-pill" data-pdf="${x.member.id}">${DOC_ICON}<span>View Statement</span></button>`;
+      return `<article class="report-card clean-report-card v3-report-card"><div class="report-person">${avatarHtml(x.member)}<div><h3>${esc(x.member.name)}</h3>${x.member.email?`<span>${esc(x.member.email)}</span>`:''}</div>${x.balance>=0?`<span class="pill advance">Advance ${money(x.balance)}</span>`:`<span class="pill due">Due ${money(-x.balance)}</span>`}</div><div class="report-stat-grid"><div><span>Deposit</span><b>${money(x.deposit)}</b></div><div><span>Total bill</span><b>${money(x.total)}</b></div><div><span>Meals</span><b>${x.units}</b></div></div><div class="report-actions report-actions-pro${actions?'':' view-only'}">${pdfBtn}${actions}</div></article>`;
+    }).join('')}</div>`;
     c.querySelectorAll('[data-pdf]').forEach(b => b.onclick = () => openProfessionalInvoice(calc.find(x => x.member.id === b.dataset.pdf)));
     c.querySelectorAll('[data-email]').forEach(b => b.onclick = () => run(() => emailStatement(calc.find(x => x.member.id === b.dataset.email)), 'Statement emailed.'));
     c.querySelectorAll('[data-notice]').forEach(b => b.onclick = () => openNotice(calc.find(x => x.member.id === b.dataset.notice)));
