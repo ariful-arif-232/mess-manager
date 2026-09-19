@@ -1,7 +1,14 @@
 /* "Download Android App" link. Sized and coloured to sit inside the existing
-   sidebar footer and More sheet header without changing their layout. */
+   Member Login card, sidebar footer and More sheet header without changing
+   their layout. */
 .mm-apk-link{display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;font-family:Inter,"Noto Sans Bengali",system-ui,sans-serif;font-weight:700;white-space:nowrap}
 .mm-apk-icon{width:14px;height:14px;flex:0 0 auto}
+
+/* Login screen: top-right corner of the Member Login card */
+.auth-member-card{position:relative}
+.mm-apk-auth{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:9px;border:1px solid #d9e4f6;background:#f6faff;color:#1a54c4}
+.mm-apk-auth .mm-apk-icon{width:15px;height:15px}
+html[data-theme="dark"] .mm-apk-auth{background:#13243a;border-color:#2c4864;color:#7fb6ff}
 
 /* Signed-in desktop sidebar footer */
 .mm-apk-side{margin-top:10px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font-size:13px}
