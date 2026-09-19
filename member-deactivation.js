@@ -236,9 +236,9 @@
         ?'<span class="member-grid-chip self">You</span>'
         :`<button type="button" class="member-grid-link" data-view-member="${member.id}">View profile →</button>`;
     }
-    const editBtn=`<button type="button" class="member-grid-icon-btn" data-edit-member="${member.id}" title="Edit" aria-label="Edit ${esc(member.name)}">✎</button>`;
+    const editBtn=`<button type="button" class="member-grid-icon-btn primary" data-edit-member="${member.id}" title="Edit" aria-label="Edit ${esc(member.name)}"><span class="grid-ico grid-ico-edit"></span></button>`;
     if(isSelf)return `<div class="member-grid-footer-actions">${editBtn}<span class="member-grid-chip self">Current admin</span></div>`;
-    return `<div class="member-grid-footer-actions">${editBtn}<button type="button" class="member-grid-icon-btn ${member.active?'warn':'good'}" data-toggle-member="${member.id}" title="${member.active?'Deactivate':'Activate'}" aria-label="${member.active?'Deactivate':'Activate'} ${esc(member.name)}">${member.active?'⏸':'▶'}</button><button type="button" class="member-grid-icon-btn danger" data-delete-member="${member.id}" title="Delete" aria-label="Delete ${esc(member.name)}">🗑</button></div>`;
+    return `<div class="member-grid-footer-actions">${editBtn}<button type="button" class="member-grid-icon-btn ${member.active?'warn':'good'}" data-toggle-member="${member.id}" title="${member.active?'Deactivate':'Activate'}" aria-label="${member.active?'Deactivate':'Activate'} ${esc(member.name)}"><span class="grid-ico ${member.active?'grid-ico-pause':'grid-ico-play'}"></span></button><button type="button" class="member-grid-icon-btn danger" data-delete-member="${member.id}" title="Delete" aria-label="Delete ${esc(member.name)}"><span class="grid-ico grid-ico-trash"></span></button></div>`;
   }
 
   function memberGridCard(member,isAdminViewer){

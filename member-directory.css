@@ -49,13 +49,24 @@
 
 .member-grid-footer-actions{display:flex;gap:6px;width:100%;margin-top:2px}
 .member-grid-icon-btn{
-  flex:1;height:34px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--line);
-  background:var(--card);color:var(--muted);font-size:14px;cursor:pointer;
+  flex:1;height:32px;display:grid;place-items:center;border-radius:10px;border:1px solid transparent;
+  background:#eef1f7;color:#64748f;cursor:pointer;transition:filter .12s;
 }
-.member-grid-icon-btn:hover{border-color:var(--primary);color:var(--primary)}
-.member-grid-icon-btn.warn:hover{border-color:var(--warn);color:var(--warn)}
-.member-grid-icon-btn.good:hover{border-color:var(--good);color:var(--good)}
-.member-grid-icon-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+.member-grid-icon-btn:hover{filter:brightness(.96)}
+.member-grid-icon-btn:active{filter:brightness(.92)}
+.member-grid-icon-btn.primary{background:#e7edfd;color:var(--primary)}
+.member-grid-icon-btn.warn{background:#fdf1e3;color:var(--warn)}
+.member-grid-icon-btn.good{background:#e3f7f0;color:var(--good)}
+.member-grid-icon-btn.danger{background:#fbeaea;color:var(--danger)}
+
+/* Line icons, drawn as CSS masks (same technique as the bottom nav icons)
+   instead of emoji — emoji glyph coverage varies by device/font and one
+   (the pencil) was rendering blank on Android. */
+.grid-ico{display:block;width:15px;height:15px;background:currentColor;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:15px 15px;mask-size:15px 15px}
+.grid-ico-edit{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.grid-ico-pause{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 5v14M16 5v14' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 5v14M16 5v14' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E")}
+.grid-ico-play{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 4.5v15l13-7.5-13-7.5Z' fill='black'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 4.5v15l13-7.5-13-7.5Z' fill='black'/%3E%3C/svg%3E")}
+.grid-ico-trash{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 
 html[data-theme="dark"] .member-grid-group-label{color:#7f9bbb}
 html[data-theme="dark"] .member-grid-count{color:#9db0c3}
@@ -68,12 +79,17 @@ html[data-theme="dark"] .member-grid-pill.status.is-active{background:#0f2c22;co
 html[data-theme="dark"] .member-grid-pill.status.is-inactive{background:#3a1c1c;color:#ef8d8d}
 html[data-theme="dark"] .member-grid-chip{background:#152b42;color:#a9c9ff}
 html[data-theme="dark"] .member-grid-link{color:#8fb3ff}
-html[data-theme="dark"] .member-grid-icon-btn{background:#0e2234;border-color:#2c4761;color:#9db0c3}
-html[data-theme="dark"] .member-grid-icon-btn:hover{border-color:#5c86ee;color:#8fb3ff}
+html[data-theme="dark"] .member-grid-icon-btn{background:#182338;color:#9fb0c9}
+html[data-theme="dark"] .member-grid-icon-btn.primary{background:#1a2a52;color:#8fb3ff}
+html[data-theme="dark"] .member-grid-icon-btn.warn{background:#3a2712;color:#e2a35b}
+html[data-theme="dark"] .member-grid-icon-btn.good{background:#0f2c22;color:#5fdaa8}
+html[data-theme="dark"] .member-grid-icon-btn.danger{background:#3a1c1c;color:#ef8d8d}
 
 @media(max-width:520px){
   .member-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
   .member-grid-card{padding:14px 10px}
   .member-photo{width:50px;height:50px;border-radius:15px}
   .member-photo.fallback{font-size:15px}
+  .member-grid-icon-btn{height:30px}
+  .grid-ico{width:14px;height:14px;-webkit-mask-size:14px 14px;mask-size:14px 14px}
 }
