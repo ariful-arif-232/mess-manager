@@ -12,6 +12,7 @@
     $('[data-close]').onclick=closeModal;$('[data-cancel-delete]').onclick=closeModal;
     $('#confirmMemberDelete').onclick=async e=>{const b=e.currentTarget,old=b.textContent;b.disabled=true;b.textContent='Deleting…';try{const result=assertResult(await client.rpc('delete_mess_member',{p_member_id:m.id}));closeModal();await loadData();render();notify(`${result?.member_name||m.name} deleted successfully.`,'success')}catch(err){notify(friendlyError(err));b.disabled=false;b.textContent=old}};
   }
+  window.confirmMemberDelete=confirmMemberDelete;
 
   window.members = function membersClean(c){
     const controls=profile.role==='admin',members=visibleMembers();
