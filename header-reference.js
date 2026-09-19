@@ -34,6 +34,11 @@
     mic:'<rect x="8" y="3" width="8" height="12" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>'
   };
   const svg=name=>`<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.home}</svg>`;
+  const monthLabel=value=>{
+    if(!value)return'';
+    const d=new Date(`${value}-01T00:00:00`);
+    return Number.isNaN(d.getTime())?value:d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  };
   function metaFor(text){
     const t=String(text||'').trim().toLowerCase();
     if(META[t])return META[t];
@@ -54,9 +59,27 @@
     const month=top.querySelector('#month');
     if(month&&!month.closest('.month-chip')){
       const wrap=document.createElement('label');wrap.className='top-chip month-chip';
-      wrap.innerHTML=`<span class="chip-icon">${svg('calendar')}</span>`;
+      wrap.innerHTML=`<span class="chip-icon">${svg('calendar')}</span><span class="month-chip-value" aria-hidden="true"></span>`;
       month.parentNode.insertBefore(wrap,month);wrap.appendChild(month);
     }
+    // The native month input can't shrink to fit its current value across
+    // browsers (it's sized for the widest possible formatting), so the
+    // visible text is this separately-sized span instead; the input stays
+    // functional but invisible, stretched over the whole chip for tapping.
+    // A direct listener covers a value change that doesn't also rebuild the
+    // DOM (the mutation observer below only fires on added/removed nodes).
+    const refreshMonthLabel=()=>{
+      const target=top.querySelector('.month-chip-value');
+      if(!target)return;
+      const label=monthLabel(top.querySelector('#month')?.value);
+      if(target.textContent!==label)target.textContent=label;
+    };
+    if(month&&!month.dataset.mmLabelBound){
+      month.dataset.mmLabelBound='1';
+      month.addEventListener('input',refreshMonthLabel);
+      month.addEventListener('change',refreshMonthLabel);
+    }
+    refreshMonthLabel();
     const badge=top.querySelector('.badge');
     if(badge&&!badge.classList.contains('user-chip')){
       badge.classList.add('top-chip','user-chip');
