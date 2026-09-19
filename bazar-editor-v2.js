@@ -311,6 +311,7 @@
         });
         const entryId=assertResult(result);
         await logActivity(id?'update':'create','bazar',entryId);
+        if(!id)client.functions.invoke('mess-activity-mail',{body:{action:'bazar-added',entry_id:entryId}}).catch(err=>console.warn('Bazar email notify failed',err));
         closeAllPickers();closeModal();await loadData();render();
       },'Bazar saved.');
     });

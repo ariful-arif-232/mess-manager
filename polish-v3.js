@@ -58,7 +58,7 @@
 
   async function emailStatement(x) {
     const message = `${mess.name}\n${state.month} Monthly Statement\n\nMember: ${x.member.name}\nMeals: ${x.units}\nDeposit: ${money(x.deposit)}\nFood: ${money(x.food)}\nUtility: ${money(x.util)}\nTotal bill: ${money(x.total)}\n${x.balance >= 0 ? 'Advance' : 'Due'}: ${money(Math.abs(x.balance))}`;
-    const result = await client.functions.invoke('mess-notify', { body: { member_id: x.member.id, subject: `${mess.name}: ${state.month} monthly statement`, message } });
+    const result = await client.functions.invoke('mess-notify', { body: { member_id: x.member.id, type: 'statement', subject: `${mess.name}: ${state.month} monthly statement`, message } });
     if (result.error) throw result.error;
     if (result.data?.error) throw new Error(result.data.error);
   }
@@ -71,7 +71,7 @@
       e.preventDefault();
       const text = new FormData(e.target).get('message').trim();
       await run(async () => {
-        const result = await client.functions.invoke('mess-notify', { body: { member_id: x.member.id, subject: `${mess.name}: Notice`, message: text } });
+        const result = await client.functions.invoke('mess-notify', { body: { member_id: x.member.id, type: 'notice', subject: `${mess.name}: Notice`, message: text } });
         if (result.error) throw result.error;
         if (result.data?.error) throw new Error(result.data.error);
         closeModal();
