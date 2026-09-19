@@ -99,7 +99,7 @@ html body .chat-shell-live .chat-compose-pro textarea:focus{border-color:#8fb4f5
   html.mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)) body #app .chat-compose-pro.chat-compose-live,
   html.mm-chat-keyboard body #app .chat-compose-pro.chat-compose-live{
     left:10px!important;right:10px!important;width:auto!important;
-    border:1px solid rgba(255,255,255,.72)!important;
+    border:none!important;
     border-radius:22px!important;
     padding:7px 8px 7px 10px!important;
     gap:8px!important;
@@ -117,7 +117,7 @@ html body .chat-shell-live .chat-compose-pro textarea:focus{border-color:#8fb4f5
   }
   html[data-theme="dark"].mm-chat-page:not(.mm-chat-keyboard):not(:has(.chat-compose-pro textarea:focus)) body #app .chat-compose-pro.chat-compose-live,
   html[data-theme="dark"].mm-chat-keyboard body #app .chat-compose-pro.chat-compose-live{
-    border-color:rgba(70,104,138,.5)!important;
+    border:none!important;
     background:transparent!important;
     box-shadow:none!important;
   }
