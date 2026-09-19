@@ -165,7 +165,15 @@ async function googleFetch(url: string, init: RequestInit = {}) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     console.error('Google API call failed', url, response.status, data);
-    throw new Error((data as { error?: { message?: string } })?.error?.message || 'Google Sheets API request failed.');
+    const raw = (data as { error?: { message?: string } })?.error?.message || 'Google Sheets API request failed.';
+    // A 403 here almost always means the currently connected Google account
+    // (Settings → Connect Google Drive) is not the one that created this
+    // mess's Sheet, so it has no edit access to it — surfaced clearly
+    // instead of the generic Google wording, which gave no hint of that.
+    const message = response.status === 403
+      ? `Google denied this write (${raw}). The connected Google account may not have edit access to this Sheet — reconnect Google Drive from Settings.`
+      : raw;
+    throw new Error(message);
   }
   return data;
 }
@@ -522,6 +530,13 @@ async function syncSheetData(
     // Leave synced_gsheet_id untouched so the next call retries the write
     // instead of assuming these rows made it into the Sheet.
     console.warn('mess-sheet: live Sheet write failed, snapshot still saved', sheetError);
+    const upserted = await admin.from('mess_sheet_snapshots').upsert(snapshot, { onConflict: 'mess_id' });
+    if (upserted.error) throw upserted.error;
+    // A background 'push' retries silently on the next data change, but
+    // 'open' (force) is a deliberate "Download Sheets" tap — that one must
+    // surface the failure instead of quietly handing back a stale Sheet.
+    if (force) throw sheetError;
+    return;
   }
 
   const upserted = await admin.from('mess_sheet_snapshots').upsert(snapshot, { onConflict: 'mess_id' });
