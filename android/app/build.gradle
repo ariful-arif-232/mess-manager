@@ -18,8 +18,8 @@ android {
         // androidbrowserhelper 2.7.3 (resolved by this build) requires 23.
         minSdk 23
         targetSdk 36
-        versionCode 6
-        versionName "1.0.5"
+        versionCode 7
+        versionName "1.0.6"
     }
 
     signingConfigs {
