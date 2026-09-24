@@ -29,7 +29,7 @@
     <div class="icon" id="icon">⏳</div>
     <h1 id="title">Working…</h1>
     <p id="message">One moment.</p>
-    <a class="btn" href="./">Return to Mess Manager</a>
+    <a class="btn" id="btn" href="./">Return to Mess Manager</a>
   </div>
 <script>
 (function(){
@@ -38,10 +38,17 @@
   var icon = document.getElementById('icon');
   var title = document.getElementById('title');
   var message = document.getElementById('message');
+  var btn = document.getElementById('btn');
   icon.className = 'icon ' + (ok ? 'ok' : 'err');
   icon.textContent = ok ? '✓' : '!';
   title.textContent = q.get('title') || (ok ? 'Google Drive connected' : 'Not connected');
   message.textContent = q.get('message') || (ok ? 'You can close this tab and go back to Mess Manager.' : 'Close this tab and try again from Settings.');
+  // On success, hop back into the app on its own — the button below is just
+  // a fallback for browsers that block a script-initiated navigation.
+  if (ok) {
+    btn.textContent = 'Returning to Mess Manager…';
+    setTimeout(function(){ location.replace('./'); }, 1100);
+  }
 })();
 </script>
 </body>
