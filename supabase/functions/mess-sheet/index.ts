@@ -115,7 +115,11 @@ const JOMA_TAB = 'Taka Joma';
 const LEGACY_TAB_NAMES: Record<string, string> = { 'Bazar': BAZAR_TAB, 'Khawa & Taka': JOMA_TAB };
 
 // Requested once, at "Connect Google Drive" time — see mess-oauth-callback.
-const GOOGLE_OAUTH_SCOPES = 'openid email https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+// drive.file alone is enough: every Sheets/Drive call below acts on a
+// spreadsheetId this app already created and stored (createMessSheet /
+// messes.gsheet_id) — never on a file discovered by searching the user's
+// Drive — so the broader spreadsheets scope was never actually needed.
+const GOOGLE_OAUTH_SCOPES = 'openid email https://www.googleapis.com/auth/drive.file';
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
