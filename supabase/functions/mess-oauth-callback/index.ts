@@ -15,17 +15,22 @@ function createAdminClient() {
   return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-function page(title: string, body: string) {
-  return new Response(
-    `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>` +
-    `<meta name="viewport" content="width=device-width, initial-scale=1">` +
-    `<style>body{font-family:system-ui,-apple-system,sans-serif;background:#fff3df;color:#3a2a1a;` +
-    `display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:24px;text-align:center}` +
-    `.card{background:#fff;border-radius:16px;padding:32px 24px;max-width:360px;box-shadow:0 12px 30px rgba(0,0,0,.08)}` +
-    `h1{font-size:20px;margin:0 0 8px}p{color:#7a6656;margin:0;line-height:1.5}</style></head>` +
-    `<body><div class="card"><h1>${title}</h1><p>${body}</p></div></body></html>`,
-    { headers: { 'Content-Type': 'text/html; charset=utf-8' } },
-  );
+// Redirects to a static confirmation page on the app's own domain instead of
+// rendering HTML inline from this function. Inline responses from this
+// *.supabase.co origin render fine in a normal browser tab, but iOS opens
+// external OAuth links from an installed ("standalone") Mess Manager in an
+// embedded in-app browser sheet, and that sheet was showing this page's raw
+// markup as unstyled plain text instead of parsing it. A plain 302 to a
+// static file served by the app's own known-good static hosting sidesteps
+// whatever that sheet was doing with the inline response.
+const APP_ORIGIN = 'https://mess-manager.app';
+
+function page(ok: boolean, title: string, message: string) {
+  const params = new URLSearchParams({ status: ok ? 'ok' : 'error', title, message });
+  return new Response(null, {
+    status: 302,
+    headers: { Location: `${APP_ORIGIN}/oauth-complete.html?${params.toString()}` },
+  });
 }
 
 function decodeEmailFromIdToken(idToken: string): string | null {
@@ -41,13 +46,13 @@ Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
   const oauthError = url.searchParams.get('error');
-  if (oauthError) return page('Not connected', `Google reported: ${oauthError}. Close this tab and try again from Settings.`);
-  if (!code) return page('Not connected', 'Missing authorization code. Close this tab and try again from Settings.');
+  if (oauthError) return page(false, 'Not connected', `Google reported: ${oauthError}. Close this tab and try again from Settings.`);
+  if (!code) return page(false, 'Not connected', 'Missing authorization code. Close this tab and try again from Settings.');
 
   const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID');
   const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET');
   if (!clientId || !clientSecret) {
-    return page('Not configured', 'GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET secrets are missing.');
+    return page(false, 'Not configured', 'GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET secrets are missing.');
   }
 
   const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/mess-oauth-callback`;
@@ -68,6 +73,7 @@ Deno.serve(async (req: Request) => {
     if (!response.ok || !data.refresh_token) {
       console.error('Google OAuth token exchange failed', response.status, data);
       return page(
+        false,
         'Not connected',
         "Google didn't return a long-lived connection. Close this tab and try again — if it keeps happening, " +
         'remove Mess Manager at myaccount.google.com/permissions first, then reconnect.',
@@ -84,9 +90,9 @@ Deno.serve(async (req: Request) => {
     });
     if (upserted.error) throw upserted.error;
 
-    return page('Google Drive connected', `Connected as ${email || 'your Google account'}. You can close this tab and go back to Mess Manager.`);
+    return page(true, 'Google Drive connected', `Connected as ${email || 'your Google account'}. You can close this tab and go back to Mess Manager.`);
   } catch (err) {
     console.error('mess-oauth-callback failed', err);
-    return page('Something went wrong', 'Close this tab and try again from Settings.');
+    return page(false, 'Something went wrong', 'Close this tab and try again from Settings.');
   }
 });
